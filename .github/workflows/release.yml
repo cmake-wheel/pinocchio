@@ -5,6 +5,10 @@ on:
     tags:
       - "v*"
 
+env:
+  CMEEL_JOBS: 1
+  CMEEL_TEST_JOBS: 1
+
 jobs:
   build_wheels:
     name: "Build ${{ matrix.build }} wheels on ${{ matrix.os }} ${{ matrix.arch }}"

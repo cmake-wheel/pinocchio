@@ -21,6 +21,7 @@ requires = [
     "hpp-fcl",
     ]
 build-backend = "cmeel.build"
+build-number = 1
 configure-args = [
     "-DBUILD_WITH_COLLISION_SUPPORT=ON",
     "-DBUILD_WITH_LIBPYTHON=OFF",

@@ -2,6 +2,10 @@ name: Test Wheel packaging
 
 on: ["push", "pull_request"]
 
+env:
+  CMEEL_JOBS: 1
+  CMEEL_TEST_JOBS: 1
+
 jobs:
   build:
     name: "Build python ${{ matrix.python }} on ${{ matrix.os }}"

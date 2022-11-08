@@ -95,8 +95,7 @@ BOOST_AUTO_TEST_CASE ( check_mesh_relative_path )
   pinocchio::urdf::buildGeom(model1, filename, pinocchio::COLLISION, geomModel1, dir);
   BOOST_CHECK_EQUAL(geomModel1.ngeoms, 2);
 
-  // check that both models point to the same mesh on the disk
-  BOOST_CHECK_EQUAL(geomModel0.geometryObjects[1].meshPath.compare(geomModel1.geometryObjects[1].meshPath), 0);
+  BOOST_CHECK_EQUAL(geomModel0.geometryObjects[1].name.compare(geomModel1.geometryObjects[1].name), 0);
 }
     
 BOOST_AUTO_TEST_CASE ( build_model_from_XML )
@@ -256,6 +255,21 @@ BOOST_AUTO_TEST_CASE(check_specific_models)
 
   pinocchio::Model model;
   pinocchio::urdf::buildModel(filename, model);
+}
+
+BOOST_AUTO_TEST_CASE(test_getFrameId_identical_link_and_joint_name)
+{
+    // This test checks whether the input argument of getFrameId raises an exception when multiple frames with identical names are found.
+    // Note, a model that contains a link and a joint with the same name is valid, but the look-up for e.g. getFrameId requires the explicit
+    // specification of the FrameType in order to be valid.
+    // It resolved https://github.com/stack-of-tasks/pinocchio/issues/1771
+    pinocchio::Model model;
+    const std::string filename = PINOCCHIO_MODEL_DIR + std::string("/../unittest/models/link_and_joint_identical_name.urdf");
+    pinocchio::urdf::buildModel(filename,model);
+
+    BOOST_CHECK_THROW(model.getFrameId("base"), std::invalid_argument);
+    BOOST_CHECK(model.getFrameId("base", pinocchio::FrameType::BODY) == 2);
+    BOOST_CHECK(model.getFrameId("base", pinocchio::FrameType::FIXED_JOINT) == 3);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -97,6 +97,7 @@ namespace pinocchio
     parents        .push_back(parent);
     jointPlacements.push_back(joint_placement);
     names          .push_back(joint_name);
+
     
     nq += joint_nq; nqs.push_back(joint_nq); idx_qs.push_back(joint_idx_q);
     nv += joint_nv; nvs.push_back(joint_nv); idx_vs.push_back(joint_idx_v);
@@ -185,7 +186,7 @@ namespace pinocchio
       previous_frame_index = (int)getFrameId(names[parents[joint_index]], (FrameType)(JOINT | FIXED_JOINT));
     }
     assert((size_t)previous_frame_index < frames.size() && "Frame index out of bound");
-    
+
     // Add a the joint frame attached to itself to the frame vector - redundant information but useful.
     return addFrame(Frame(names[joint_index],joint_index,(FrameIndex)previous_frame_index,SE3::Identity(),JOINT));
   }
@@ -260,9 +261,8 @@ namespace pinocchio
     = std::find_if(frames.begin()
                    ,frames.end()
                    ,details::FilterFrame(name, type));
-    assert(((it == frames.end()) ||
-            (std::find_if( boost::next(it), frames.end(), details::FilterFrame(name, type)) == frames.end()))
-        && "Several frames match the filter");
+    PINOCCHIO_CHECK_INPUT_ARGUMENT(((it == frames.end() || (std::find_if(boost::next(it), frames.end(), details::FilterFrame(name, type)) == frames.end()))),
+                                   "Several frames match the filter - please specify the FrameType");
     return FrameIndex(it - frames.begin());
   }
   
@@ -306,6 +306,34 @@ namespace pinocchio
     
     // Also add joint_id to the universe
     subtrees[0].push_back(joint_id);
+  }
+
+  template<typename Scalar, int Options, template<typename,int> class JointCollectionTpl>
+  std::vector<bool> ModelTpl<Scalar,Options,JointCollectionTpl>::hasConfigurationLimit()
+  {
+    std::vector<bool> vec;
+    for(Index i=1;i<(Index)(njoints);++i)
+    {
+      const std::vector<bool> & cf_limits = joints[i].hasConfigurationLimit();
+      vec.insert(vec.end(),
+                 cf_limits.begin(),
+                 cf_limits.end());
+    }    
+    return vec;
+  }
+
+  template<typename Scalar, int Options, template<typename,int> class JointCollectionTpl>
+  std::vector<bool> ModelTpl<Scalar,Options,JointCollectionTpl>::hasConfigurationLimitInTangent()
+  {
+    std::vector<bool> vec;
+    for(Index i=1;i<(Index)(njoints);++i)
+    {
+      const std::vector<bool> & cf_limits = joints[i].hasConfigurationLimitInTangent();
+      vec.insert(vec.end(),
+                 cf_limits.begin(),
+                 cf_limits.end());
+    }    
+    return vec;
   }
 
 } // namespace pinocchio

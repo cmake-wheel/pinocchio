@@ -82,6 +82,7 @@ cmake_dependent_option(BUILD_WITH_LIBPYTHON "Link to libpython to embed an inter
   "BUILD_PYTHON_INTERFACE" OFF)
 
 OPTION(INITIALIZE_WITH_NAN "Initialize Eigen entries with NaN" OFF)
+OPTION(SUFFIX_SO_VERSION "Suffix library name with its version" ON)
 
 IF(BUILD_WITH_COLLISION_SUPPORT)
   SET(BUILD_WITH_HPP_FCL_SUPPORT TRUE)

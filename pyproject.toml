@@ -9,6 +9,14 @@ dependencies = ["hpp-fcl", "cmeel-urdfdom", "cmeel-console-bridge", "cmeel-tinyx
 [project.urls]
 homepage = "https://github.com/stack-of-tasks/pinocchio"
 
+[tool.cmeel]
+build-number = 4
+configure-args = [
+    "-DBUILD_WITH_COLLISION_SUPPORT=ON",
+    "-DBUILD_WITH_LIBPYTHON=OFF",
+    "-DSUFFIX_SO_VERSION=OFF",
+    ]
+
 [build-system]
 requires = [
     "cmeel[build]",
@@ -21,9 +29,3 @@ requires = [
     "hpp-fcl",
     ]
 build-backend = "cmeel.build"
-build-number = 4
-configure-args = [
-    "-DBUILD_WITH_COLLISION_SUPPORT=ON",
-    "-DBUILD_WITH_LIBPYTHON=OFF",
-    "-DSUFFIX_SO_VERSION=OFF",
-    ]

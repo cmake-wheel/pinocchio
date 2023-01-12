@@ -1,6 +1,6 @@
 [project]
 name = "pin"
-version = "2.6.12.1"
+version = "2.6.13"
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
 readme = "README.md"
 license= "BSD-3-Clause"
@@ -17,6 +17,7 @@ configure-args = [
     ]
 
 [build-system]
+build-backend = "cmeel.build"
 requires = [
     "cmeel[build]",
     "cmeel-boost",
@@ -27,4 +28,3 @@ requires = [
     "cmeel-urdfdom-headers",
     "hpp-fcl",
     ]
-build-backend = "cmeel.build"

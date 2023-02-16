@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2015-2020 CNRS INRIA
+// Copyright (c) 2015-2023 CNRS INRIA
 // Copyright (c) 2015 Wandercraft, 86 rue de Paris 91400 Orsay, France.
 //
 
@@ -179,15 +179,45 @@ namespace pinocchio
   
   /** \brief Derivative of log3
    *
+   * This function is the right derivative of @ref log3, that is, for \f$R \in
+   * SO(3)\f$ and \f$\omega t in \mathfrak{so}(3)\f$, it provides the linear
+   * approximation:
+   *
+   * \f[
+   * \log_3(R \oplus \omega t) = \log_3(R \exp_3(\omega t)) \approx \log_3(R) + \text{Jlog3}(R) \omega t
+   * \f]
+   *
    *  \param[in] theta the angle value.
    *  \param[in] log the output of log3.
    *  \param[out] Jlog the jacobian
    *
-   *  \f[ Jlog = \frac{\theta \sin(\theta)}{2 (1 - \cos(\theta))} I_3
-   *             + \frac{1}{2} \hat{\log}
-   *             + (\frac{1}{\theta^2} - \frac{\sin(\theta)}{2\theta(1-\cos(\theta))}) \log \log^T
+   * Equivalently, \f$\text{Jlog3}\f$ is the right Jacobian of \f$\log_3\f$:
+   *
+   * \f[
+   * \text{Jlog3}(R) = \frac{\partial \log_3(R)}{\partial R}
+   * \f]
+   *
+   * Note that this is the right Jacobian: \f$\text{Jlog3}(R) : T_{R} SO(3) \to T_{\log_6(R)} \mathfrak{so}(3)\f$.
+   * (By convention, calculations in Pinocchio always perform right differentiation,
+   * i.e., Jacobians are in local coordinates (also known as body coordinates), unless otherwise specified.)
+   *
+   * If we denote by \f$\theta = \log_3(R)\f$ and \f$\log = \log_3(R,
+   * \theta)\f$, then \f$\text{Jlog} = \text{Jlog}_3(R)\f$ can be calculated as:
+   *
+   *  \f[
+   *  \begin{align*}
+   *  \text{Jlog} & = \frac{\theta \sin(\theta)}{2 (1 - \cos(\theta))} I_3
+   *             + \frac{1}{2} \widehat{\log}
+   *             + \left(\frac{1}{\theta^2} - \frac{\sin(\theta)}{2\theta(1-\cos(\theta))}\right) \log \log^T \\
+   *             & = I_3
+   *             + \frac{1}{2} \widehat{\log}
+   *             + \left(\frac{1}{\theta^2} - \frac{1 + \cos \theta}{2 \theta \sin \theta}\right) \widehat{\log}^2
+   *  \end{align*}
    *  \f]
-   *  \note the inputs must be such that \f$ \theta = ||\log|| \f$
+   *
+   *  where \f$\widehat{v}\f$ denotes the skew-symmetric matrix obtained from the 3D vector \f$v\f$.
+   *
+   *  \note The inputs must be such that \f$ \theta = \Vert \log \Vert \f$.
    */
   template<typename Scalar, typename Vector3Like, typename Matrix3Like>
   void Jlog3(const Scalar & theta,
@@ -348,7 +378,7 @@ namespace pinocchio
   ///
   /// \param[in] v The twist represented by a vector.
   ///
-  /// \return The rigid transformation associated to the integration of the twist vector during time 1..
+  /// \return The rigid transformation associated to the integration of the twist vector during time 1.
   ///
   template<typename Vector6Like>
   SE3Tpl<typename Vector6Like::Scalar,PINOCCHIO_EIGEN_PLAIN_TYPE(Vector6Like)::Options>
@@ -503,7 +533,29 @@ namespace pinocchio
   }
 
   /** \brief Derivative of log6
+   *
+   * This function is the right derivative of @ref log6, that is, for \f$M \in
+   * SE(3)\f$ and \f$\xi in \mathfrak{se}(3)\f$, it provides the linear
+   * approximation:
+   *
+   * \f[
+   * \log_6(M \oplus \xi) = \log_6(M \exp_6(\xi)) \approx \log_6(M) + \text{Jlog6}(M) \xi
+   * \f]
+   *
+   * Equivalently, \f$\text{Jlog6}\f$ is the right Jacobian of \f$\log_6\f$:
+   *
+   * \f[
+   * \text{Jlog6}(M) = \frac{\partial \log_6(M)}{\partial M}
+   * \f]
+   *
+   * Note that this is the right Jacobian: \f$\text{Jlog6}(M) : T_{M} SE(3) \to T_{\log_6(M)} \mathfrak{se}(3)\f$.
+   * (By convention, calculations in Pinocchio always perform right differentiation,
+   * i.e., Jacobians are in local coordinates (also known as body coordinates), unless otherwise specified.)
+   *
+   * Internally, it is calculated using the following formulas:
+   *
    *  \f[
+   *  \text{Jlog6}(M) =
    *  \left(\begin{array}{cc}
    *  \text{Jlog3}(R) & J * \text{Jlog3}(R) \\
    *            0     &     \text{Jlog3}(R) \\
@@ -528,10 +580,14 @@ namespace pinocchio
    *  \f[ \beta(x)=\left(\frac{1}{x^2} - \frac{\sin x}{2x(1-\cos x)}\right) \f]
    *
    *
-   * \cheatsheet For \f$(A,B) \in SE(3)^2\f$, let \f$m_1 = log_6(A B) \f$ and
-   * \f$ m_2 = log_6(A^{-1}) \f$. Then, we have: \n
+   * \cheatsheet For \f$(A,B) \in SE(3)^2\f$, let \f$M_1(A, B) = A B\f$ and
+   * \f$m_1 = \log_6(M_1) \f$. Then, we have the following partial (right)
+   * Jacobians: \n
    *  - \f$ \frac{\partial m_1}{\partial A} = Jlog_6(M_1) Ad_B^{-1} \f$,
-   *  - \f$ \frac{\partial m_1}{\partial B} = Jlog_6(M_1) \f$,
+   *  - \f$ \frac{\partial m_1}{\partial B} = Jlog_6(M_1) \f$.
+   *
+   * \cheatsheet Let \f$A \in SE(3)\f$, \f$M_2(A) = A^{-1}\f$ and \f$m_2 =
+   * \log_6(M_2)\f$. Then, we have the following partial (right) Jacobian: \n
    *  - \f$ \frac{\partial m_2}{\partial A} = - Jlog_6(M_2) Ad_A \f$.
    */
   template<typename Scalar, int Options, typename Matrix6Like>

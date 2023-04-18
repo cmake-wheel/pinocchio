@@ -2,7 +2,6 @@
 name = "pin"
 version = "2.6.17"
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
-readme = "README.md"
 license= "BSD-3-Clause"
 dependencies = ["hpp-fcl", "cmeel-urdfdom", "cmeel-console-bridge", "cmeel-tinyxml"]
 
@@ -18,13 +17,4 @@ configure-args = [
 
 [build-system]
 build-backend = "cmeel.build"
-requires = [
-    "cmeel[build]",
-    "cmeel-boost",
-    "cmeel-console-bridge",
-    "cmeel-eigen",
-    "cmeel-tinyxml",
-    "cmeel-urdfdom",
-    "cmeel-urdfdom-headers",
-    "hpp-fcl",
-    ]
+requires = ["cmeel[build]", "cmeel-urdfdom", "hpp-fcl[build]"]

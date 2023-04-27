@@ -10,6 +10,8 @@ jobs:
   build:
     name: "Build python ${{ matrix.python }} on ${{ matrix.os }}"
     runs-on: "${{ matrix.os }}-latest"
+    env:
+      SYSTEM_VERSION_COMPAT: 0
     strategy:
       matrix:
         os: ["ubuntu", "macos"]
@@ -26,7 +28,7 @@ jobs:
           python -m pip install -U pip
           python -m pip install -U wheel
       - name: build cmeel wheel
-        run: python -m pip wheel -w wh .
+        run: python -m pip wheel -vw wh .
       - uses: actions/upload-artifact@v3
         with:
           path: wh

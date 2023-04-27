@@ -13,7 +13,7 @@ dependencies = ["hpp-fcl", "cmeel-urdfdom", "cmeel-console-bridge", "cmeel-tinyx
 homepage = "https://github.com/stack-of-tasks/pinocchio"
 
 [tool.cmeel]
-build-number = 1
+build-number = 2
 configure-args = [
   "-DBUILD_WITH_COLLISION_SUPPORT=ON",
   "-DBUILD_WITH_LIBPYTHON=OFF",

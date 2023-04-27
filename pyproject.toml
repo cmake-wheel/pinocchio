@@ -17,4 +17,4 @@ configure-args = [
 
 [build-system]
 build-backend = "cmeel.build"
-requires = ["cmeel[build]", "cmeel-urdfdom", "hpp-fcl[build]"]
+requires = ["cmeel[build]", "cmeel-urdfdom[build]", "hpp-fcl[build]"]

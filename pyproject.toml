@@ -1,8 +1,12 @@
+[build-system]
+build-backend = "cmeel.build"
+requires = ["cmeel[build]", "cmeel-urdfdom[build]", "hpp-fcl[build]"]
+
 [project]
 name = "pin"
 version = "2.6.17"
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
-license= "BSD-3-Clause"
+license = "BSD-3-Clause"
 dependencies = ["hpp-fcl", "cmeel-urdfdom", "cmeel-console-bridge", "cmeel-tinyxml"]
 
 [project.urls]
@@ -10,11 +14,7 @@ homepage = "https://github.com/stack-of-tasks/pinocchio"
 
 [tool.cmeel]
 configure-args = [
-    "-DBUILD_WITH_COLLISION_SUPPORT=ON",
-    "-DBUILD_WITH_LIBPYTHON=OFF",
-    "-DSUFFIX_SO_VERSION=OFF",
-    ]
-
-[build-system]
-build-backend = "cmeel.build"
-requires = ["cmeel[build]", "cmeel-urdfdom[build]", "hpp-fcl[build]"]
+  "-DBUILD_WITH_COLLISION_SUPPORT=ON",
+  "-DBUILD_WITH_LIBPYTHON=OFF",
+  "-DSUFFIX_SO_VERSION=OFF"
+]

@@ -7,7 +7,7 @@ on:
 
 jobs:
   build_wheels:
-    name: "Build ${{ matrix.build }} wheels on ${{ matrix.os }} ${{ matrix.arch }}"
+    name: "${{ matrix.build }} ${{ matrix.os }} ${{ matrix.arch }}"
     runs-on: "${{ matrix.os }}"
     env:
       SYSTEM_VERSION_COMPAT: 0
@@ -53,7 +53,6 @@ jobs:
       - run: python -m pip install -U pip
       - run: python -m pip install cibuildwheel
       - run: touch setup.py
-        if: matrix.arch == 'aarch64'
       - run: python -m cibuildwheel --output-dir wh
         env:
           CIBW_BUILD: ${{ matrix.build }}

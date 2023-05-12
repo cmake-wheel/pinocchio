@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "cmeel.build"
-requires = ["cmeel-urdfdom[build] >= 3.1.0.2, < 4", "cmeel[build]", "hpp-fcl[build] >= 2.3.3 < 4"]
+requires = ["cmeel-urdfdom[build] >= 3.1.0.2, < 4", "cmeel[build]", "hpp-fcl[build] >= 2.3.3, < 4"]
 
 [project]
 dependencies = ["cmeel-console-bridge >= 1.2.2.2, < 2", "cmeel-tinyxml >= 2.6.2.2, < 3", "cmeel-urdfdom >= 3.1.0.2, < 4", "hpp-fcl >= 2.3.3, < 4"]

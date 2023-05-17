@@ -1,13 +1,29 @@
 [build-system]
 build-backend = "cmeel.build"
-requires = ["cmeel-urdfdom[build] >= 3.1.0.3, < 4", "cmeel[build]", "hpp-fcl[build] >= 2.3.3, < 4"]
+requires = [
+    "cmeel-console-bridge < 1.0.2.2",
+    "cmeel-urdfdom[build] < 3.1.0.3",
+    "cmeel[build]",
+    "hpp-fcl[build] < 2.3.3",
+    "cmeel-assimp < 5.2.5.1",
+    "cmeel-octomap < 1.9.8.2",
+    "cmeel-tinyxml < 2.6.2.2",
+]
 
 [project]
-dependencies = ["cmeel-console-bridge >= 1.0.2.2, < 2", "cmeel-tinyxml >= 2.6.2.2, < 3", "cmeel-urdfdom >= 3.1.0.3, < 4", "hpp-fcl >= 2.3.3, < 4"]
+dependencies = [
+    "cmeel-console-bridge < 1.0.2.2",
+    "cmeel-tinyxml < 2.6.2.2",
+    "cmeel-urdfdom < 3.1.0.3",
+    "hpp-fcl < 2.3.3",
+    "cmeel-assimp < 5.2.5.1",
+    "cmeel-octomap < 1.9.8.2",
+]
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
 license = "BSD-3-Clause"
 name = "pin"
 version = "2.6.18"
+requires-python = "3.7"
 
 [project.urls]
 homepage = "https://github.com/stack-of-tasks/pinocchio"

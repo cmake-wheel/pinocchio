@@ -41,6 +41,8 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "macos-latest"]
         python-version: ["3.7"]
+    env:
+      SYSTEM_VERSION_COMPAT: 0
     steps:
       - uses: actions/download-artifact@v3
       - uses: actions/setup-python@v4

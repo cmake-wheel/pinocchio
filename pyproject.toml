@@ -23,7 +23,7 @@ description = "A fast and flexible implementation of Rigid Body Dynamics algorit
 license = "BSD-3-Clause"
 name = "pin"
 version = "2.6.18"
-requires-python = "3.7"
+requires-python = "==3.7"
 
 [project.urls]
 homepage = "https://github.com/stack-of-tasks/pinocchio"

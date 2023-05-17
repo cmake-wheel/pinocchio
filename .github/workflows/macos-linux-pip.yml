@@ -24,9 +24,17 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -U pip
-      - run: python -m pip install cmeel-urdfdom[build] hpp-fcl[build]
+      - run: >
+          python -m pip install
+          "cmeel-console-bridge < 1.0.2.2"
+          "cmeel-urdfdom[build] < 3.1.0.3"
+          "cmeel[build]"
+          "hpp-fcl[build] < 2.3.3"
+          "cmeel-assimp < 5.2.5.1"
+          "cmeel-octomap < 1.9.8.2"
+          "cmeel-tinyxml < 2.6.2.2"
       - run: echo "CMAKE_PREFIX_PATH=$(python -m cmeel cmake)" >> $GITHUB_ENV
       - run: echo "LD_LIBRARY_PATH=$(python -m cmeel lib)" >> $GITHUB_ENV
-      - run: cmake -B build -S .
+      - run: cmake -B build -S . -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"
       - run: cmake --build build
       - run: cmake --build build -t test

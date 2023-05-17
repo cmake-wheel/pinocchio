@@ -3,6 +3,7 @@ name: Test Wheel packaging
 on: ["push", "pull_request"]
 
 env:
+  CMEEL_CMAKE_ARGS: '-DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0"'
   CMEEL_JOBS: 1
   CMEEL_LOG_LEVEL: 'DEBUG'
   CMEEL_TEST_JOBS: 1

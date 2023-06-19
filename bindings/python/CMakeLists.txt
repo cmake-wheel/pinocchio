@@ -1,7 +1,9 @@
 #
-# Copyright (c) 2015-2021 CNRS INRIA
+# Copyright (c) 2015-2023 CNRS INRIA
 # Copyright (c) 2015 Wandercraft, 86 rue de Paris 91400 Orsay, France.
 #
+
+include(${JRL_CMAKE_MODULES}/python-helpers.cmake)
 
 # --- MACROS --- #
 MACRO(SYMLINK_AND_INSTALL_HEADERS HEADERS SUBPATH)
@@ -127,6 +129,9 @@ SET(${PYWRAP}_HEADERS ${${PROJECT_NAME}_PYTHON_HEADERS})
 IF(BUILD_PYTHON_INTERFACE)
   ADD_CUSTOM_TARGET(python)
   SET_TARGET_PROPERTIES(python PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD True)
+
+  PYTHON_BUILD_GET_TARGET(python_build_target)
+  add_dependencies(python ${python_build_target})
 
   SET(PKG_CONFIG_PYWRAP_REQUIRES "eigenpy >= 2.6.2")
   ADD_LIBRARY(${PYWRAP} SHARED ${${PYWRAP}_SOURCES} ${${PYWRAP}_HEADERS})

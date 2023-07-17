@@ -16,7 +16,7 @@ jobs:
       matrix:
         os: ["ubuntu-latest", "macos-latest"]
         arch: ["x86_64", "aarch64"]
-        build: ["cp38-*", "cp39-*", "cp310-*", "cp311-*", "pp38-*"]
+        build: ["cp38-*", "cp39-*", "cp310-*", "cp311-*", "pp38-*", "pp39-*", "pp310-*"]
         exclude:
           - os: "macos-latest"
             build: "cp38-*"
@@ -28,6 +28,8 @@ jobs:
             build: "pp38-*"
           - arch: "aarch64"
             build: "pp39-*"
+          - arch: "aarch64"
+            build: "pp310-*"
     steps:
       - uses: actions/checkout@v3
         with:

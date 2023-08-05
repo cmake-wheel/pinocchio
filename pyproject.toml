@@ -1,5 +1,5 @@
 [build-system]
-build-backend = "cmeel.build"
+build-backend = "cmeel"
 requires = ["cmeel-urdfdom[build] >= 3.1.0.3, < 4", "cmeel[build]", "hpp-fcl[build] >= 2.3.4, < 4"]
 
 [project]

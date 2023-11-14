@@ -1,9 +1,20 @@
 [build-system]
 build-backend = "cmeel"
-requires = ["cmeel-urdfdom[build] >= 3.1.0.3, < 4", "cmeel[build]", "hpp-fcl[build] >= 2.3.4, < 4"]
+requires = [
+  "cmeel-boost ~= 1.83.0",
+  "cmeel-urdfdom[build] >= 3.1.0.3, < 4",
+  "cmeel[build]",
+  "hpp-fcl[build] >= 2.3.4, < 4"
+]
 
 [project]
-dependencies = ["cmeel-boost ~= 1.82.0", "cmeel-console-bridge >= 1.0.2.2, < 2", "cmeel-tinyxml >= 2.6.2.2, < 3", "cmeel-urdfdom >= 3.1.0.3, < 4", "hpp-fcl >= 2.3.4, < 4"]
+dependencies = [
+  "cmeel-boost ~= 1.83.0",
+  "cmeel-console-bridge >= 1.0.2.2, < 2",
+  "cmeel-tinyxml >= 2.6.2.2, < 3",
+  "cmeel-urdfdom >= 3.1.0.3, < 4",
+  "hpp-fcl >= 2.3.4, < 4"
+]
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
 license = "BSD-3-Clause"
 name = "pin"

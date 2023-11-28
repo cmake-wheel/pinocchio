@@ -18,13 +18,12 @@ dependencies = [
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
 license = "BSD-3-Clause"
 name = "pin"
-version = "2.6.20"
+version = "2.6.21"
 
 [project.urls]
 homepage = "https://github.com/stack-of-tasks/pinocchio"
 
 [tool.cmeel]
-build-number = 1
 configure-args = [
   "-DBUILD_WITH_COLLISION_SUPPORT=ON",
   "-DBUILD_WITH_LIBPYTHON=OFF",

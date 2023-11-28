@@ -24,6 +24,7 @@ version = "2.6.21"
 homepage = "https://github.com/stack-of-tasks/pinocchio"
 
 [tool.cmeel]
+build-number = 1
 configure-args = [
   "-DBUILD_WITH_COLLISION_SUPPORT=ON",
   "-DBUILD_WITH_LIBPYTHON=OFF",

@@ -22,6 +22,7 @@ version = "2.6.21"
 
 [project.urls]
 homepage = "https://github.com/stack-of-tasks/pinocchio"
+changelog = "https://github.com/stack-of-tasks/pinocchio/blob/master/CHANGELOG.md"
 
 [tool.cmeel]
 build-number = 1

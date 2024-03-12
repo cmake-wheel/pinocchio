@@ -25,7 +25,9 @@ jobs:
         build: ["cp38", "cp39", "cp310", "cp311", "cp312"]
         arch: ["x86_64", "aarch64", "arm64"]
         exclude:
-          - os: "macos"
+          - os: "ubuntu-latest"
+            arch: "arm64"
+          - os: "macos-latest"
             arch: "aarch64"
           - os: "macos-latest"
             arch: "arm64"

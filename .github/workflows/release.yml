@@ -23,6 +23,7 @@ jobs:
         # See: https://github.blog/changelog/2024-01-30-github-actions-macos-14-sonoma-is-now-available/
         os: ["ubuntu-latest", "macos-latest", "macos-14"] 
         build: ["cp38", "cp39", "cp310", "cp311", "cp312"]
+        arch: ["x86_64", "aarch64", "arm64"]
         exclude:
           - os: "macos"
             arch: "aarch64"

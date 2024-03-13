@@ -16,15 +16,28 @@ env:
 jobs:
   wheel:
     name: "${{ matrix.build }} ${{ matrix.os }} ${{ matrix.arch }}"
-    runs-on: "${{ matrix.os }}-latest"
+    runs-on: "${{ matrix.os }}"
     strategy:
       matrix:
-        os: ["ubuntu", "macos"]
-        arch: ["x86_64", "aarch64"]
+        # Starting with macos-14 runners the architecture is arm64, while macos-latest is still x86_64 for now.
+        # See: https://github.blog/changelog/2024-01-30-github-actions-macos-14-sonoma-is-now-available/
+        os: ["ubuntu-latest", "macos-latest", "macos-14"] 
         build: ["cp38", "cp39", "cp310", "cp311", "cp312"]
+        arch: ["x86_64", "aarch64", "arm64"]
         exclude:
-          - os: "macos"
+          - os: "ubuntu-latest"
+            arch: "arm64"
+          - os: "macos-latest"
             arch: "aarch64"
+          - os: "macos-latest"
+            arch: "arm64"
+          - os: "macos-14"
+            arch: "aarch64"
+          - os: "macos-14"
+            arch: "x86_64"
+          - os: "macos-14" # On arm64 macOS can build starting from cp39 and newer.
+            build: "cp38"
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,6 +47,15 @@ jobs:
         uses: docker/setup-qemu-action@v3
         with:
           platforms: all
+
+      # See discussion here: https://github.com/actions/runner-images/issues/9256
+      - name: Make sure pipx is installed for the arm64 macOS runners.
+        if: runner.os == 'macOS' && runner.arch == 'ARM64' 
+        run: |
+            brew install pipx
+            pipx ensurepath
+            echo "$HOME/.local/bin" >> $GITHUB_PATH
+            
       - run: pipx install cibuildwheel
       - run: cibuildwheel --output-dir wh
         env:

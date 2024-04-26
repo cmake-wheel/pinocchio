@@ -44,10 +44,12 @@ IF(BUILD_PYTHON_INTERFACE)
   # Do not report:
   #  -Wconversion as the BOOST_PYTHON_FUNCTION_OVERLOADS implicitly converts.
   #  -Wcomment as latex equations have multi-line comments.
-  #  -Wself-assign-overloaded as bp::self operations trigger this
-  IF(NOT WIN32)
-    TARGET_COMPILE_OPTIONS(${PYWRAP} PRIVATE -Wno-conversion -Wno-comment -Wno-self-assign-overloaded)
-  ENDIF(NOT WIN32)
+  #  -Wself-assign-overloaded as bp::self operations trigger this (Clang only)
+  CXX_FLAGS_BY_COMPILER_FRONTEND(
+    GNU -Wno-conversion -Wno-comment -Wno-self-assign-overloaded
+    OUTPUT PRIVATE_OPTIONS
+    FILTER)
+  TARGET_COMPILE_OPTIONS(${PYWRAP} PRIVATE ${PRIVATE_OPTIONS})
 
   IF(SUFFIX_SO_VERSION)
     SET_TARGET_PROPERTIES(${PYWRAP} PROPERTIES VERSION ${PROJECT_VERSION})
@@ -63,7 +65,6 @@ IF(BUILD_PYTHON_INTERFACE)
     TARGET_COMPILE_DEFINITIONS(${PYWRAP} PRIVATE -DPINOCCHIO_PYTHON_INTERFACE_WITH_HPP_FCL_PYTHON_BINDINGS)
   ENDIF(BUILD_WITH_HPP_FCL_PYTHON_BINDINGS)
   IF(WIN32)
-    TARGET_COMPILE_DEFINITIONS(${PYWRAP} PRIVATE -DNOMINMAX)
     TARGET_LINK_LIBRARIES(${PYWRAP} PUBLIC ${PYTHON_LIBRARY})
   ENDIF(WIN32)
 
@@ -92,7 +93,11 @@ IF(BUILD_PYTHON_INTERFACE)
   if(GENERATE_PYTHON_STUBS)
       include("${CMAKE_SOURCE_DIR}/cmake/stubs.cmake")
       LOAD_STUBGEN()
-      GENERATE_STUBS(${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_NAME} ${ABSOLUTE_PYTHON_SITELIB})
+      # Set PYWRAP and PROJECT_NAME as stubs dependencies.
+      # PROJECT_NAME is mandatory (even if it's a PYWRAP dependency)
+      # to find PROJECT_NAME name DLL on windows.
+      GENERATE_STUBS(${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_NAME} ${ABSOLUTE_PYTHON_SITELIB}
+        ${PYWRAP} ${PROJECT_NAME})
   endif(GENERATE_PYTHON_STUBS)
 
   INSTALL(

@@ -4,8 +4,8 @@ requires = [
   "cmeel-boost ~= 1.83.0",
   "cmeel-urdfdom[build] >= 3.1.1.1, < 4",
   "cmeel[build]",
-  "hpp-fcl[build] >= 2.3.4, < 4"
-  "scipy"
+  "hpp-fcl[build] >= 2.3.4, < 4",
+  "scipy",
 ]
 
 [project]
@@ -25,7 +25,7 @@ homepage = "https://github.com/cmake-wheel/pinocchio"
 upstream = "https://github.com/stack-of-tasks/pinocchio"
 
 [tool.cmeel]
-build-number = 1
+build-number = 2
 configure-args = [
   "-DBUILD_WITH_COLLISION_SUPPORT=ON",
   "-DBUILD_WITH_LIBPYTHON=OFF",

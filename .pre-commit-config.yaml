@@ -1,14 +1,14 @@
 ci:
-    autoupdate_branch: 'devel'
+  autoupdate_branch: devel
 repos:
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
-    hooks:
-    -   id: check-json
-    -   id: check-symlinks
-    -   id: check-toml
-    -   id: check-yaml
--   repo: https://github.com/pappasam/toml-sort
-    rev: v0.23.0
-    hooks:
-    - id: toml-sort-fix
+- repo: https://github.com/pappasam/toml-sort
+  rev: v0.23.0
+  hooks:
+  - id: toml-sort-fix
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.6.0
+  hooks:
+  - id: check-json
+  - id: check-symlinks
+  - id: check-toml
+  - id: check-yaml

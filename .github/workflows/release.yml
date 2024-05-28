@@ -25,6 +25,8 @@ jobs:
         exclude:
           - os: "macos"
             arch: "aarch64"
+          - os: "macos"
+            build: "cp38"
     steps:
       - uses: actions/checkout@v4
         with:

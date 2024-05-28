@@ -66,6 +66,7 @@ jobs:
         run: python -m build -nso dist .
       - uses: actions/upload-artifact@v4
         with:
+          name: sdist
           path: dist
 
   release:
@@ -86,7 +87,7 @@ jobs:
           git verify-tag --raw ${{ github.ref_name }} 2>&1
           | grep -q 'VALIDSIG 9B1A79065D2F2B806C8A5A1C7D2ACDAF4653CF28'
       - uses: actions/download-artifact@v4
-      - run: mkdir dist && mv artifact*/* dist
+      - run: mkdir dist && mv sdist/* artifact*/* dist
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:

@@ -262,7 +262,7 @@ if(BUILD_PYTHON_INTERFACE)
       "The Python bindings of Pinocchio will be compiled along the main library. If you want to disable this feature, please set the option BUILD_PYTHON_INTERFACE to OFF."
   )
 
-  set(PYTHON_COMPONENTS Interpreter Development NumPy)
+  set(PYTHON_COMPONENTS Interpreter Development.Module NumPy)
   add_project_dependency(eigenpy 2.7.10 REQUIRED)
 
   if(BUILD_WITH_URDF_SUPPORT)

@@ -1,17 +1,16 @@
 import unittest
 
 import numpy as np
-from numpy.random import rand
-
 import pinocchio as pin
-from pinocchio import skew, unSkew, skewSquare
+from numpy.random import rand
+from pinocchio import skew, skewSquare, unSkew
 
 try:
     import casadi
     from pinocchio import casadi as cpin
 
     WITH_CASADI = True
-except:
+except ImportError:
     WITH_CASADI = False
 
 from test_case import PinocchioTestCase
@@ -74,7 +73,7 @@ class TestSpatial(PinocchioTestCase):
             R = dM.rotation
             logR = pin.log3(R)
             Jrot = pin.Jlog3(R)
-            print(R, ":\nlog: {}".format(logR))
+            print(R, f":\nlog: {logR}")
             print(Jrot)
 
             self.assertApprox(dM, pin.SE3.Identity())

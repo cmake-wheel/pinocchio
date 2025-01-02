@@ -5,9 +5,8 @@
 
 include(${JRL_CMAKE_MODULES}/python-helpers.cmake)
 include(${JRL_CMAKE_MODULES}/stubs.cmake)
-set(CMAKE_MODULE_PATH
-    "${PINOCCHIO_PROJECT_SOURCE_DIR}/cmake/find-external/GMP"
-    "${PINOCCHIO_PROJECT_SOURCE_DIR}/cmake/find-external/MPFR" ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH "${JRL_CMAKE_MODULES}/find-external/GMP"
+                      "${JRL_CMAKE_MODULES}/find-external/MPFR" ${CMAKE_MODULE_PATH})
 
 # --- PYTHON TARGET --- #
 set(PYWRAP ${PROJECT_NAME}_pywrap)
@@ -43,10 +42,19 @@ function(PINOCCHIO_PYTHON_BINDINGS_SPECIFIC_TYPE scalar_name)
     # OpenMP is linked with pinocchio_parallel target
     target_compile_definitions(${PYTHON_LIB_NAME} PRIVATE -DPINOCCHIO_PYTHON_INTERFACE_WITH_OPENMP)
   endif()
-  add_dependencies(python ${PYTHON_LIB_NAME})
+  add_dependencies(${PROJECT_NAME}-python ${PYTHON_LIB_NAME})
 
-  # Remove lib prefix for the target and use the right define for DLLAPI definition
-  set_target_properties(${PYTHON_LIB_NAME} PROPERTIES PREFIX "" DEFINE_SYMBOL "${PYWRAP}_EXPORTS")
+  # Remove lib prefix for the target and use the right define for DLLAPI definition.
+  #
+  # Set inlined function visibility to hidden by default. This avoid bug on OSX where two symbol
+  # from two different binding (`pinocchio::python::exposeSpecificTypeFeatures`) can be wrongly
+  # loaded (see https://github.com/stack-of-tasks/pinocchio/issues/2462).
+  set_target_properties(
+    ${PYTHON_LIB_NAME}
+    PROPERTIES PREFIX ""
+               DEFINE_SYMBOL "${PYWRAP}_EXPORTS"
+               CXX_VISIBILITY_PRESET hidden
+               VISIBILITY_INLINES_HIDDEN ON)
 
   # Do not report:
   #
@@ -60,10 +68,10 @@ function(PINOCCHIO_PYTHON_BINDINGS_SPECIFIC_TYPE scalar_name)
   target_compile_options(${PYTHON_LIB_NAME} PRIVATE ${PRIVATE_OPTIONS})
 
   set(PINOCCHIO_PYTHON_CONTEXT_FILE_VALUE "pinocchio/bindings/python/context/${scalar_name}.hpp")
-  target_compile_options(
+  target_compile_definitions(
     ${PYTHON_LIB_NAME}
-    PRIVATE -DPINOCCHIO_PYTHON_CONTEXT_FILE="${PINOCCHIO_PYTHON_CONTEXT_FILE_VALUE}"
-            -DPINOCCHIO_PYTHON_MODULE_NAME=${PYTHON_LIB_NAME})
+    PRIVATE PINOCCHIO_PYTHON_CONTEXT_FILE="${PINOCCHIO_PYTHON_CONTEXT_FILE_VALUE}"
+            PINOCCHIO_PYTHON_MODULE_NAME=${PYTHON_LIB_NAME})
 
   set_target_properties(${PYTHON_LIB_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
   if(BUILD_WITH_COMMIT_VERSION)
@@ -81,15 +89,20 @@ function(PINOCCHIO_PYTHON_BINDINGS_SPECIFIC_TYPE scalar_name)
   if(BUILD_WITH_URDF_SUPPORT)
     # Link directly against console_bridge since we bind some enums and call
     # console_bridge::setLogLevel function.
-    target_link_libraries(${PYTHON_LIB_NAME} PUBLIC console_bridge::console_bridge)
+    modernize_target_link_libraries(
+      ${PYTHON_LIB_NAME}
+      SCOPE PUBLIC
+      TARGETS console_bridge::console_bridge
+      LIBRARIES ${console_bridge_LIBRARIES}
+      INCLUDE_DIRS ${console_bridge_INCLUDE_DIRS})
   endif()
-  if(BUILD_WITH_HPP_FCL_PYTHON_BINDINGS)
+  if(BUILD_WITH_HPP_FCL_SUPPORT)
     target_compile_definitions(${PYTHON_LIB_NAME}
                                PRIVATE -DPINOCCHIO_PYTHON_INTERFACE_WITH_HPP_FCL_PYTHON_BINDINGS)
-  endif(BUILD_WITH_HPP_FCL_PYTHON_BINDINGS)
+  endif()
   if(WIN32)
     target_link_libraries(${PYTHON_LIB_NAME} PUBLIC ${PYTHON_LIBRARY})
-  endif(WIN32)
+  endif()
 
   set(${PYWRAP}_INSTALL_DIR ${ABSOLUTE_PYTHON_SITELIB}/${PROJECT_NAME})
 
@@ -98,9 +111,9 @@ function(PINOCCHIO_PYTHON_BINDINGS_SPECIFIC_TYPE scalar_name)
     PROPERTIES PREFIX ""
                SUFFIX ${PYTHON_EXT_SUFFIX}
                OUTPUT_NAME "${PYTHON_LIB_NAME}"
-               LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bindings/python/${PROJECT_NAME}"
+               LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bindings/python/${PROJECT_NAME}"
                # On Windows, shared library are treat as binary
-               RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bindings/python/${PROJECT_NAME}")
+               RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bindings/python/${PROJECT_NAME}")
 
   if(UNIX AND NOT APPLE)
     get_relative_rpath(${${PYWRAP}_INSTALL_DIR} ${PYWRAP}_INSTALL_RPATH)
@@ -133,11 +146,11 @@ function(INSTALL_PYTHON_FILES)
 endfunction()
 
 if(BUILD_PYTHON_INTERFACE)
-  add_custom_target(python)
-  set_target_properties(python PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD True)
+  add_custom_target(${PROJECT_NAME}-python)
+  set_target_properties(${PROJECT_NAME}-python PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD True)
 
   python_build_get_target(python_build_target)
-  add_dependencies(python ${python_build_target})
+  add_dependencies(${PROJECT_NAME}-python ${python_build_target})
 
   set(PKG_CONFIG_PYWRAP_REQUIRES "eigenpy >= 2.6.5")
   if(IS_ABSOLUTE ${PYTHON_SITELIB})
@@ -160,7 +173,8 @@ if(BUILD_PYTHON_INTERFACE)
     target_compile_definitions(
       ${PYWRAP}_cppad PRIVATE PYCPPAD_EXCLUDE_EIGEN_NUMTRAITS_SPECIALIZATION
                               CPPAD_DEBUG_AND_RELEASE)
-    target_include_directories(${PYWRAP}_cppad SYSTEM PUBLIC ${cppad_INCLUDE_DIR})
+    target_include_directories(${PYWRAP}_cppad SYSTEM
+                               PUBLIC $<BUILD_INTERFACE:${cppad_INCLUDE_DIR}>)
     target_link_libraries(${PYWRAP}_cppad PUBLIC ${cppad_LIBRARY})
     list(APPEND STUBGEN_DEPENDENCIES "${PYWRAP}_cppad")
 
@@ -170,11 +184,20 @@ if(BUILD_PYTHON_INTERFACE)
 
   if(BUILD_WITH_CODEGEN_SUPPORT)
     pinocchio_python_bindings_specific_type(cppadcg cppadcg)
+
+    # On osx, use default visiblitiy because of an issue with thread_local storage defined in
+    # cppad/cg/cg.hpp header (see
+    # https://github.com/stack-of-tasks/pinocchio/pull/2469#issuecomment-2461845127)
+    if(APPLE)
+      set_target_properties(${PYWRAP}_cppadcg PROPERTIES CXX_VISIBILITY_PRESET default)
+    endif()
+
     # CPPAD_DEBUG_AND_RELEASE allow to mix debug and release versions of CppAD in the same program.
     target_compile_definitions(
       ${PYWRAP}_cppadcg PRIVATE PYCPPAD_EXCLUDE_EIGEN_NUMTRAITS_SPECIALIZATION
                                 CPPAD_DEBUG_AND_RELEASE)
-    target_include_directories(${PYWRAP}_cppadcg SYSTEM PUBLIC ${cppadcg_INCLUDE_DIR})
+    target_include_directories(${PYWRAP}_cppadcg SYSTEM
+                               PUBLIC $<BUILD_INTERFACE:${cppadcg_INCLUDE_DIR}>)
     target_link_libraries(${PYWRAP}_cppadcg PUBLIC ${cppadcg_LIBRARY} ${cppad_LIBRARY})
     list(APPEND STUBGEN_DEPENDENCIES "${PYWRAP}_cppadcg")
 
@@ -220,8 +243,14 @@ if(BUILD_PYTHON_INTERFACE)
 
   # --- INSTALL VISUALIZATION SCRIPTS
   install_python_files(
-    MODULE visualize FILES __init__.py base_visualizer.py gepetto_visualizer.py
-                           meshcat_visualizer.py panda3d_visualizer.py rviz_visualizer.py)
+    MODULE visualize
+    FILES __init__.py
+          base_visualizer.py
+          gepetto_visualizer.py
+          meshcat_visualizer.py
+          panda3d_visualizer.py
+          rviz_visualizer.py
+          visualizers.py)
 
   # --- STUBS --- #
   if(GENERATE_PYTHON_STUBS)

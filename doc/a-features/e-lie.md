@@ -1,5 +1,4 @@
-
-# Dealing with Lie group geometry {#e-lie}
+\page md_doc_a-features_e-lie Dealing with Lie-group geometry
 
 Pinocchio relies heavily on Lie groups and Lie algebras to handle motions and more specifically rotations.
 For this reason it supports the following special groups \\( SO(2), SO(3), SE(2), SE(3) \\) and implements their associated algebras
@@ -193,7 +192,7 @@ Indeed, we find :
 
 Assuming that we want to make the robot pass through known positions, we can use interpolations to plot a trajectory.
 
-The problem is an interpolation such as Lagrange's one only takes into account translations whlie the robot interact with its environment by performing translations and rotations.
+The problem is an interpolation such as Lagrange's one only takes into account translations while the robot interact with its environment by performing translations and rotations.
 
 A possibility is to use the \f$ \delta_{theta} \f$ method by using quaternions. The method is simple, we just vary the angle, the scalar component of the quaternion, with very small variations.
 

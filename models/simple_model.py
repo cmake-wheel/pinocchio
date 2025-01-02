@@ -2,8 +2,10 @@
 # Copyright (c) 2016-2023 CNRS INRIA
 #
 
-import pinocchio as pin
 from math import pi
+from typing import ClassVar
+
+import pinocchio as pin
 from pinocchio.utils import np, rotate
 
 DENSITY = 1
@@ -22,7 +24,7 @@ def color(body_number=1):
     return [int(i) for i in "%03d" % int(bin(body_number % 8)[2:])] + [1]
 
 
-class ModelWrapper(object):
+class ModelWrapper:
     def __init__(self, name=None, display=False):
         self.visuals = [
             ("universe", pin.SE3.Identity(), pin.SE3.Identity().translation)
@@ -61,7 +63,7 @@ class ModelWrapper(object):
         elif isinstance(lever, dict):
             lever = placement(**lever)
         joint_name, body_name = (
-            "world/%s_%s_%s" % (self.name, joint_name, i) for i in ("joint", "body")
+            f"world/{self.name}_{joint_name}_{i}" for i in ("joint", "body")
         )
         body_inertia = pin.Inertia.Random()
         if shape == "box":
@@ -113,14 +115,14 @@ class ModelWrapper(object):
         self.display.viewer.gui.refresh()
 
 
-class RobotDisplay(object):
+class RobotDisplay:
     def __init__(self, window_name="pinocchio"):
         from gepetto import corbaserver
 
         self.viewer = corbaserver.Client()
         try:
             window_id = self.viewer.gui.getWindowID(window_name)
-        except:
+        except:  # noqa: E722
             window_id = self.viewer.gui.createWindow(window_name)
             self.viewer.gui.createSceneWithFloor("world")
             self.viewer.gui.addSceneToWindow("world", window_id)
@@ -133,7 +135,7 @@ class RobotDisplay(object):
 
 
 class SimplestWalker(ModelWrapper):
-    joints = [
+    joints: ClassVar = [
         {
             "joint_name": "pelvis",
             "dimensions": (0.1, 0.2, 0.1),

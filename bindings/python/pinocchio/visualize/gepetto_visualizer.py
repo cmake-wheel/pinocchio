@@ -1,19 +1,17 @@
-from .. import pinocchio_pywrap_default as pin
-from ..shortcuts import buildModelsFromUrdf, createDatas
-from ..utils import npToTuple
+import warnings
 
 import numpy as np
 from numpy.linalg import norm
 
+from .. import pinocchio_pywrap_default as pin
+from ..utils import npToTuple
 from . import BaseVisualizer
-
-import warnings
 
 try:
     import hppfcl
 
     WITH_HPP_FCL_BINDINGS = True
-except:
+except:  # noqa: E722
     WITH_HPP_FCL_BINDINGS = False
 
 
@@ -53,7 +51,7 @@ class GepettoVisualizer(BaseVisualizer):
 
             # Create window
             window_l = gui.getWindowList()
-            if not windowName in window_l:
+            if windowName not in window_l:
                 self.windowID = self.viewer.gui.createWindow(windowName)
             else:
                 self.windowID = self.viewer.gui.getWindowID(windowName)
@@ -67,7 +65,7 @@ class GepettoVisualizer(BaseVisualizer):
 
             if loadModel:
                 self.loadViewerModel()
-        except:
+        except:  # noqa: E722
             import warnings
 
             msg = (
@@ -131,10 +129,7 @@ class GepettoVisualizer(BaseVisualizer):
             gui.setLightingMode(meshName, "OFF")
             return True
         else:
-            msg = "Unsupported geometry type for %s (%s)" % (
-                geometry_object.name,
-                type(geom),
-            )
+            msg = f"Unsupported geometry type for {geometry_object.name} ({type(geom)})"
             warnings.warn(msg, category=UserWarning, stacklevel=2)
             return False
 
@@ -156,16 +151,19 @@ class GepettoVisualizer(BaseVisualizer):
                 success = self.loadPrimitive(meshName, geometry_object)
             else:
                 if meshName == "":
-                    msg = "Display of geometric primitives is supported only if pinocchio is build with HPP-FCL bindings."
+                    msg = (
+                        "Display of geometric primitives is supported only if "
+                        "pinocchio is build with HPP-FCL bindings."
+                    )
                     warnings.warn(msg, category=UserWarning, stacklevel=2)
                     return
                 success = gui.addMesh(meshName, meshPath)
             if not success:
                 return
         except Exception as e:
-            msg = "Error while loading geometry object: %s\nError message:\n%s" % (
-                geometry_object.name,
-                e,
+            msg = (
+                "Error while loading geometry object: "
+                f"{geometry_object.name}\nError message:\n{e}"
             )
             warnings.warn(msg, category=UserWarning, stacklevel=2)
             return
@@ -212,7 +210,9 @@ class GepettoVisualizer(BaseVisualizer):
         gui.refresh()
 
     def display(self, q=None):
-        """Display the robot at configuration q in the viewer by placing all the bodies."""
+        """
+        Display the robot at configuration q in the viewer by placing all the bodies.
+        """
         if "viewer" not in self.__dict__:
             return
 

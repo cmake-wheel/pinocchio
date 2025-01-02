@@ -1,10 +1,10 @@
 import warnings
 
+import numpy as np
+
 from .. import pinocchio_pywrap_default as pin
 from ..utils import npToTuple
 from .base_visualizer import BaseVisualizer
-
-import numpy as np
 
 try:
     import hppfcl
@@ -48,21 +48,18 @@ class Panda3dVisualizer(BaseVisualizer):
             if WITH_HPP_FCL_BINDINGS and isinstance(geom, hppfcl.ShapeBase):
                 # append a primitive geometry
                 if isinstance(geom, hppfcl.Capsule):
-                    r, l = geom.radius, 2 * geom.halfLength
-                    self.viewer.append_capsule(root, obj.name, r, l)
+                    r, fl = geom.radius, 2 * geom.halfLength
+                    self.viewer.append_capsule(root, obj.name, r, fl)
                 elif isinstance(geom, hppfcl.Cylinder):
-                    r, l = geom.radius, 2 * geom.halfLength
-                    self.viewer.append_cylinder(root, obj.name, r, l)
+                    r, fl = geom.radius, 2 * geom.halfLength
+                    self.viewer.append_cylinder(root, obj.name, r, fl)
                 elif isinstance(geom, hppfcl.Box):
                     size = npToTuple(2.0 * geom.halfSide)
                     self.viewer.append_box(root, obj.name, size)
                 elif isinstance(geom, hppfcl.Sphere):
                     self.viewer.append_sphere(root, obj.name, geom.radius)
                 else:
-                    msg = "Unsupported geometry type for %s (%s)" % (
-                        obj.name,
-                        type(geom),
-                    )
+                    msg = f"Unsupported geometry type for {obj.name} ({type(geom)})"
                     warnings.warn(msg, category=UserWarning, stacklevel=2)
                     return
             else:
@@ -96,7 +93,9 @@ class Panda3dVisualizer(BaseVisualizer):
             return self.collision_group + "/" + geometry_object.name
 
     def display(self, q=None):
-        """Display the robot at configuration q in the viewer by placing all the bodies."""
+        """
+        Display the robot at configuration q in the viewer by placing all the bodies.
+        """
         if q is not None:
             pin.forwardKinematics(self.model, self.data, q)
 

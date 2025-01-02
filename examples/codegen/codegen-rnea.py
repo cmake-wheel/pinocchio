@@ -1,17 +1,15 @@
+import numpy as np
+import pinocchio as pin
+import pinocchio.cppadcg as cgpin
 from pycppad import (
-    AD,
     ADCG,
     CG,
-    Independent,
-    Value,
     ADCGFun,
     CodeHandler,
-    LanguageC,
+    Independent,
     LangCDefaultVariableNameGenerator,
+    LanguageC,
 )
-import pinocchio.cppadcg as cgpin
-import pinocchio as pin
-import numpy as np
 
 pinmodel = pin.buildSampleModelHumanoidRandom()
 model = cgpin.Model(pinmodel)

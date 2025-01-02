@@ -25,7 +25,7 @@ function(GET_CPP_TEST_NAME name src_dir full_test_name)
   string(REGEX REPLACE "[/]" "-" prefix_name "${prefix_name}-")
 
   set(${full_test_name}
-      "test-cpp${prefix_name}${name}"
+      "${PROJECT_NAME}-test-cpp${prefix_name}${name}"
       PARENT_SCOPE)
 endfunction()
 
@@ -38,6 +38,7 @@ function(ADD_PINOCCHIO_UNIT_TEST name)
       EXTRA
       COLLISION
       PARALLEL
+      PYTHON_PARSER
       PARSERS_OPTIONAL
       EXTRA_OPTIONAL
       COLLISION_OPTIONAL
@@ -62,7 +63,8 @@ function(ADD_PINOCCHIO_UNIT_TEST name)
   if(WIN32)
     string(REPLACE ";" "\\\;" _PATH "$ENV{PATH}")
     set(ENV_VARIABLES
-        "PATH=${_PATH}\\\;${CMAKE_BINARY_DIR}/src\\\;${CMAKE_BINARY_DIR}/bindings/python/pinocchio")
+        "PATH=${_PATH}\\\;${PROJECT_BINARY_DIR}/src\\\;${PROJECT_BINARY_DIR}/bindings/python/pinocchio"
+    )
     set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "${ENV_VARIABLES}")
   endif()
 
@@ -92,6 +94,22 @@ function(ADD_PINOCCHIO_UNIT_TEST name)
     target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_extra)
   endif()
 
+  if(unit_test_PYTHON_PARSER)
+    target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_python_parser)
+    add_windows_dll_path_to_test(${TEST_NAME})
+    get_test_property(${TEST_NAME} ENVIRONMENT ENV_VARIABLES)
+    compute_pythonpath(PYTHON_ENV_VARIABLES "bindings/python")
+    list(APPEND ENV_VARIABLES ${PYTHON_ENV_VARIABLES})
+    if(WIN32)
+      # This line is mandatory because of Github action. The test run well on Windows + Conda. This
+      # hide something wrong. Maybe the test is linking against the wrong Python library or call the
+      # wrong interpreter.
+      get_filename_component(_PYTHONHOME ${PYTHON_EXECUTABLE} PATH)
+      list(APPEND ENV_VARIABLES "PYTHONHOME=${_PYTHONHOME}")
+    endif()
+    set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "${ENV_VARIABLES}")
+  endif()
+
   modernize_target_link_libraries(
     ${TEST_NAME}
     SCOPE PRIVATE
@@ -102,11 +120,6 @@ function(ADD_PINOCCHIO_UNIT_TEST name)
     target_link_libraries(${TEST_NAME} PRIVATE ${PKGS})
   endif()
 endfunction()
-
-macro(ADD_OPTIONAL_COMPILE_DEPENDENCY PKG_CONFIG_STRING)
-  _get_pkg_config_debug_string("${PKG_CONFIG_STRING}" ${ARGN})
-  add_dependency(0 1 ${PKG_CONFIG_STRING} "${PKG_CONFIG_DEBUG_STRING}")
-endmacro()
 
 macro(ADD_PINOCCHIO_PARALLEL_UNIT_TEST NAME)
   if(BUILD_WITH_OPENMP_SUPPORT)
@@ -167,10 +180,14 @@ add_pinocchio_unit_test(sample-models COLLISION_OPTIONAL)
 add_pinocchio_unit_test(kinematics)
 # Test for unstable features TODO fix and reactivate these tests in next version
 # ADD_PINOCCHIO_UNIT_TEST(delassus) ADD_PINOCCHIO_UNIT_TEST(pv-solver)
-# ADD_PINOCCHIO_UNIT_TEST(impulse-dynamics-derivatives) IF(BUILD_WITH_SDF_SUPPORT)
-# ADD_PINOCCHIO_UNIT_TEST(contact-dynamics-derivatives PARSERS) ELSE()
-# ADD_PINOCCHIO_UNIT_TEST(contact-dynamics-derivatives) ENDIF()
-# ADD_PINOCCHIO_UNIT_TEST(constraint-variants) ADD_PINOCCHIO_UNIT_TEST(impulse-dynamics)
+add_pinocchio_unit_test(impulse-dynamics-derivatives)
+if(BUILD_WITH_SDF_SUPPORT)
+  add_pinocchio_unit_test(contact-dynamics-derivatives PARSERS)
+else()
+  add_pinocchio_unit_test(contact-dynamics-derivatives)
+endif()
+add_pinocchio_unit_test(constraint-variants)
+add_pinocchio_unit_test(impulse-dynamics)
 
 add_pinocchio_unit_test(
   mjcf
@@ -222,27 +239,11 @@ if(BUILD_WITH_EXTRA_SUPPORT)
     COLLISION_OPTIONAL)
 endif()
 
-if(BUILD_WITH_LIBPYTHON)
-  add_pinocchio_unit_test(python_parser PACKAGES Python3::Python)
-  target_include_directories(test-cpp-python_parser SYSTEM PUBLIC ${PYTHON_INCLUDE_DIRS})
+if(BUILD_WITH_PYTHON_PARSER_SUPPORT)
+  add_pinocchio_unit_test(python_parser PYTHON_PARSER)
+endif()
 
-  target_link_libraries(test-cpp-python_parser PUBLIC ${PYWRAP}_default)
-  target_link_libraries(test-cpp-python_parser PUBLIC ${PYTHON_LIBRARIES})
-  get_test_property(test-cpp-python_parser ENVIRONMENT ENV_VARIABLES)
-  if(WIN32)
-    get_filename_component(PYTHONHOME ${PYTHON_EXECUTABLE} PATH)
-    list(APPEND ENV_VARIABLES "PYTHONHOME=${PYTHONHOME}")
-    unset(PYTHONHOME)
-    string(REPLACE ";" "\\\;" _PYTHONPATH "$ENV{PYTHONPATH}")
-    list(APPEND ENV_VARIABLES "PYTHONPATH=${_PYTHONPATH}\\\;${CMAKE_BINARY_DIR}/bindings/python")
-  else()
-    list(APPEND ENV_VARIABLES "PYTHONPATH=$ENV{PYTHONPATH}:${CMAKE_BINARY_DIR}/bindings/python")
-  endif()
-  if(APPLE)
-    list(APPEND ENV_VARIABLES "LD_LIBRARY_PATH=$ENV{LD_LIBRARY_PATH}")
-    list(APPEND ENV_VARIABLES "DYLD_LIBRARY_PATH=$ENV{DYLD_LIBRARY_PATH}")
-  endif()
-  set_tests_properties(test-cpp-python_parser PROPERTIES ENVIRONMENT "${ENV_VARIABLES}")
+if(BUILD_PYTHON_INTERFACE)
   add_subdirectory(python)
 endif()
 
@@ -306,9 +307,6 @@ add_subdirectory(algorithm)
 # Multiprecision arithmetic
 if(BUILD_ADVANCED_TESTING)
   add_pinocchio_unit_test(multiprecision)
-
-  add_optional_compile_dependency(gmp)
-  add_optional_compile_dependency(mpfr)
 
   if(MPFR_FOUND)
     add_pinocchio_unit_test(multiprecision-mpfr PACKAGES mpfr gmp)

@@ -38,7 +38,10 @@ modernize_target_link_libraries(
   LIBRARIES ${Boost_SERIALIZATION_LIBRARY}
   INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
 
-target_include_directories(${PROJECT_NAME}_headers INTERFACE $<INSTALL_INTERFACE:include>)
+target_include_directories(
+  ${PROJECT_NAME}_headers
+  INTERFACE $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
 
 cxx_flags_by_compiler_frontend(
   MSVC "/bigobj"
@@ -85,13 +88,18 @@ function(PINOCCHIO_TARGET target_name)
 
   # On CMake 3.16 we can't call target_sources or set_target_properties with LINKER_LANGUAGE,
   # INSTALL_RPATH and VERSION on an INTERFACE target.
-  if(NOT ARGS_INTERFACE)
+  if(NOT ARGS_INTERFACE OR CMAKE_VERSION GREATER 3.16)
     target_sources(${LIB_NAME} PRIVATE ${ARGS_SOURCES})
+    target_sources(
+      ${LIB_NAME} PRIVATE ${${PROJECT_NAME}_CORE_PUBLIC_HEADERS}) # For IDE to get includes part of
+                                                                  # the project automatically.
     set_target_properties(
       ${LIB_NAME}
       PROPERTIES LINKER_LANGUAGE CXX
                  INSTALL_RPATH "\$ORIGIN"
-                 VERSION ${PROJECT_VERSION})
+                 VERSION ${PROJECT_VERSION}
+                 CXX_VISIBILITY_PRESET hidden
+                 VISIBILITY_INLINES_HIDDEN ON)
   endif()
 
   if(ENABLE_TEMPLATE_INSTANTIATION AND NOT ARGS_INTERFACE)
@@ -102,7 +110,10 @@ function(PINOCCHIO_TARGET target_name)
       PRIVATE PINOCCHIO_CONTEXT_FILE="${PINOCCHIO_CONTEXT_FILE_VALUE}")
   endif()
 
-  target_include_directories(${LIB_NAME} ${LIBRARY_PUBLIC_SCOPE} $<INSTALL_INTERFACE:include>)
+  target_include_directories(
+    ${LIB_NAME} ${LIBRARY_PUBLIC_SCOPE} $<INSTALL_INTERFACE:include>
+    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>)
 
   if(BUILD_WITH_COMMIT_VERSION)
     tag_library_version(${LIB_NAME})
@@ -293,7 +304,8 @@ if(BUILD_WITH_CODEGEN_SUPPORT)
   # CPPAD_DEBUG_AND_RELEASE allow to mix debug and release versions of CppAD in the same program.
   # This can happen when Pinocchio is build in Debug mode using another library using cppad.
   target_compile_definitions(${PROJECT_NAME}_cppadcg PUBLIC CPPAD_DEBUG_AND_RELEASE)
-  target_include_directories(${PROJECT_NAME}_cppadcg SYSTEM ${CPPADCG_SCOPE} ${cppadcg_INCLUDE_DIR})
+  target_include_directories(${PROJECT_NAME}_cppadcg SYSTEM ${CPPADCG_SCOPE}
+                             $<BUILD_INTERFACE:${cppadcg_INCLUDE_DIR}>)
   target_link_libraries(${PROJECT_NAME}_cppadcg ${CPPADCG_SCOPE} ${cppadcg_LIBRARY}
                         ${cppad_LIBRARY})
 endif()
@@ -304,7 +316,8 @@ if(BUILD_WITH_AUTODIFF_SUPPORT)
   # CPPAD_DEBUG_AND_RELEASE allow to mix debug and release versions of CppAD in the same program.
   # This can happen when Pinocchio is build in Debug mode using another library using cppad.
   target_compile_definitions(${PROJECT_NAME}_cppad PUBLIC CPPAD_DEBUG_AND_RELEASE)
-  target_include_directories(${PROJECT_NAME}_cppad SYSTEM ${CPPAD_SCOPE} ${cppad_INCLUDE_DIR})
+  target_include_directories(${PROJECT_NAME}_cppad SYSTEM ${CPPAD_SCOPE}
+                             $<BUILD_INTERFACE:${cppad_INCLUDE_DIR}>)
   target_link_libraries(${PROJECT_NAME}_cppad ${CPPAD_SCOPE} ${cppad_LIBRARY})
 endif()
 
@@ -314,8 +327,23 @@ if(BUILD_WITH_CASADI_SUPPORT)
   target_link_libraries(${PROJECT_NAME}_casadi ${CASADI_SCOPE} casadi)
 endif()
 
+if(BUILD_WITH_PYTHON_PARSER_SUPPORT)
+  set(PYTHON_PARSER_LIB_NAME "${PROJECT_NAME}_python_parser")
+
+  pinocchio_target(
+    ${PYTHON_PARSER_LIB_NAME}
+    SCALAR default
+    SOURCES ${${PROJECT_NAME}_PYTHON_PARSER_SOURCES}
+            ${${PROJECT_NAME}_PYTHON_PARSER_PUBLIC_HEADERS})
+  pinocchio_config(python_parser ${PYTHON_PARSER_LIB_NAME})
+
+  target_link_libraries(${PYTHON_PARSER_LIB_NAME} PUBLIC ${PROJECT_NAME}_default Python3::Python)
+  target_link_boost_python(${PYTHON_PARSER_LIB_NAME} PUBLIC)
+endif()
+
 # Define main target (default, parsers, extra).
 add_library(${PROJECT_NAME} INTERFACE)
+add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 if(ENABLE_TEMPLATE_INSTANTIATION)
   target_link_libraries(${PROJECT_NAME} INTERFACE ${PROJECT_NAME}_default)
 endif()

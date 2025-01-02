@@ -1,9 +1,11 @@
-import pinocchio as pin
+import math
+import sys
+import time
+
 import hppfcl as fcl
 import numpy as np
-import math
-import time
-import sys
+import pinocchio as pin
+from pinocchio.visualize import GepettoVisualizer
 
 N = 10  # number of pendulums
 model = pin.Model()
@@ -33,7 +35,7 @@ for k in range(N):
     geom1_name = "ball_" + str(k + 1)
     shape1 = fcl.Sphere(body_radius)
     geom1_obj = pin.GeometryObject(geom1_name, joint_id, body_placement, shape1)
-    geom1_obj.meshColor = np.ones((4))
+    geom1_obj.meshColor = np.ones(4)
     geom_model.addGeometryObject(geom1_obj)
 
     geom2_name = "bar_" + str(k + 1)
@@ -48,7 +50,6 @@ for k in range(N):
     parent_id = joint_id
     joint_placement = body_placement.copy()
 
-from pinocchio.visualize import GepettoVisualizer
 
 visual_model = geom_model
 viz = GepettoVisualizer(model, geom_model, visual_model)
@@ -58,7 +59,8 @@ try:
     viz.initViewer()
 except ImportError as err:
     print(
-        "Error while initializing the viewer. It seems you should install gepetto-viewer"
+        "Error while initializing the viewer. "
+        "It seems you should install gepetto-viewer"
     )
     print(err)
     sys.exit(0)
@@ -67,7 +69,8 @@ try:
     viz.loadViewerModel("pinocchio")
 except AttributeError as err:
     print(
-        "Error while loading the viewer model. It seems you should start gepetto-viewer"
+        "Error while loading the viewer model. "
+        "It seems you should start gepetto-viewer"
     )
     print(err)
     sys.exit(0)
@@ -85,12 +88,12 @@ N = math.floor(T / dt)
 model.lowerPositionLimit.fill(-math.pi)
 model.upperPositionLimit.fill(+math.pi)
 q = pin.randomConfiguration(model)
-v = np.zeros((model.nv))
+v = np.zeros(model.nv)
 
 t = 0.0
 data_sim = model.createData()
 for k in range(N):
-    tau_control = np.zeros((model.nv))
+    tau_control = np.zeros(model.nv)
     a = pin.aba(model, data_sim, q, v, tau_control)  # Forward dynamics
 
     v += a * dt

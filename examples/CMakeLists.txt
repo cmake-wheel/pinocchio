@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015-2022 CNRS INRIA
+# Copyright (c) 2015-2024 CNRS INRIA
 #
 
 # Compute flags outside the macro to avoid recomputing it for each tests
@@ -12,7 +12,7 @@ function(ADD_PINOCCHIO_CPP_EXAMPLE EXAMPLE)
   cmake_parse_arguments(example "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
   get_filename_component(EXAMPLE_NAME ${EXAMPLE} NAME)
-  set(EXAMPLE_NAME "example-cpp-${EXAMPLE_NAME}")
+  set(EXAMPLE_NAME "${PROJECT_NAME}-example-cpp-${EXAMPLE_NAME}")
   add_unit_test(${EXAMPLE_NAME} "${EXAMPLE}.cpp")
   target_link_libraries(${EXAMPLE_NAME} PUBLIC ${PROJECT_NAME})
 
@@ -39,12 +39,14 @@ function(ADD_PINOCCHIO_CPP_EXAMPLE EXAMPLE)
   if(WIN32)
     string(REPLACE ";" "\\\;" _PATH "$ENV{PATH}")
     set(ENV_VARIABLES
-        "PATH=${_PATH}\\\;${CMAKE_BINARY_DIR}/src\\\;${CMAKE_BINARY_DIR}/bindings/python/pinocchio")
+        "PATH=${_PATH}\\\;${PROJECT_BINARY_DIR}/src\\\;${PROJECT_BINARY_DIR}/bindings/python/pinocchio"
+    )
     set_tests_properties(${EXAMPLE_NAME} PROPERTIES ENVIRONMENT "${ENV_VARIABLES}")
   endif()
 endfunction()
 
 add_pinocchio_cpp_example(inverse-kinematics)
+add_pinocchio_cpp_example(inverse-kinematics-3d)
 add_pinocchio_cpp_example(overview-simple)
 add_pinocchio_cpp_example(overview-lie)
 add_pinocchio_cpp_example(overview-SE3)
@@ -69,8 +71,9 @@ if(BUILD_WITH_COLLISION_SUPPORT)
 endif()
 
 if(BUILD_PYTHON_INTERFACE)
-  set(${PROJECT_NAME}_PYTHON_EXAMPLES inverse-kinematics overview-simple kinematics-derivatives
-                                      forward-dynamics-derivatives inverse-dynamics-derivatives)
+  set(${PROJECT_NAME}_PYTHON_EXAMPLES
+      inverse-kinematics inverse-kinematics-3d overview-simple kinematics-derivatives
+      forward-dynamics-derivatives inverse-dynamics-derivatives)
 
   if(BUILD_WITH_URDF_SUPPORT)
     list(
@@ -106,16 +109,13 @@ if(BUILD_PYTHON_INTERFACE)
     list(APPEND ${PROJECT_NAME}_PYTHON_EXAMPLES run-algo-in-parallel)
   endif()
 
-  if(BUILD_WITH_CASADI_SUPPORT)
-    list(APPEND ${PROJECT_NAME}_PYTHON_EXAMPLES casadi-quadrotor-ocp)
-  endif()
-
   foreach(EXAMPLE ${${PROJECT_NAME}_PYTHON_EXAMPLES})
-    set(EXAMPLE_NAME "example-py-${EXAMPLE}")
+    set(EXAMPLE_NAME "${PROJECT_NAME}-example-py-${EXAMPLE}")
     add_python_unit_test("${EXAMPLE_NAME}" "examples/${EXAMPLE}.py" "bindings/python")
     add_windows_dll_path_to_test(${EXAMPLE_NAME})
   endforeach()
 endif()
 
-add_subdirectory(autodiff)
+add_subdirectory(casadi)
+add_subdirectory(cppad)
 add_subdirectory(codegen)

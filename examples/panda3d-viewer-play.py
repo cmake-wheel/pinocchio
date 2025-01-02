@@ -1,19 +1,19 @@
 # This examples shows how to load and move a robot in panda3d_viewer.
 # Note: this feature requires panda3d_viewer to be installed, this can be done using
 # pip install panda3d_viewer
+# ruff: noqa: E402
 
 
 import sys
+from pathlib import Path
+
 import numpy as np
-from os.path import dirname, join, abspath
 
-# Add path to the example-robot-data package
-path = join(
-    dirname(dirname(abspath(__file__))), "models", "example-robot-data", "python"
-)
-sys.path.append(path)
+# Add path to the example-robot-data package from git submodule.
+# If you have a proper install version, there is no need for this sys.path thing
+path = Path(__file__).parent.parent / "models" / "example-robot-data" / "python"
+sys.path.append(str(path))
 from example_robot_data.robots_loader import TalosLoader
-
 from panda3d_viewer import ViewerClosedError
 from pinocchio.visualize.panda3d_visualizer import Panda3dVisualizer
 

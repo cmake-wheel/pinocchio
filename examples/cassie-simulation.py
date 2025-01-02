@@ -1,49 +1,11 @@
-import numpy as np
-import hppfcl as fcl
-import pinocchio
-from example_robot_data import readParamsFromSrdf
-from pinocchio import buildModelFromSdf, buildGeomFromSdf, neutral, JointModelFreeFlyer
-from pinocchio.visualize import GepettoVisualizer
-from pinocchio import GeometryType
 from time import sleep
 
-from os.path import join, dirname, abspath
+import example_robot_data
+import numpy as np
+import pinocchio
+from pinocchio.visualize import GepettoVisualizer
 
-
-model_dir = "/local/rbudhira/devel/install/sot/share/example-robot-data/robots/"
-# pinocchio_model_dir = join(dirname(dirname(str(abspath(__file__)))), "models")
-sdf_filename = model_dir + "cassie_description/robots/cassie.sdf"
-srdf_path = model_dir + "cassie_description/srdf/cassie_v2.srdf"
-package_dir = model_dir + "../../"
-
-sdf_parent_guidance = [
-    "left-roll-op",
-    "left-yaw-op",
-    "left-pitch-op",
-    "left-knee-op",
-    "left-tarsus-spring-joint",
-    "left-foot-op",
-    "right-roll-op",
-    "right-yaw-op",
-    "right-pitch-op",
-    "right-knee-op",
-    "right-tarsus-spring-joint",
-    "right-foot-op",
-]
-
-
-robot = pinocchio.RobotWrapper.BuildFromSDF(
-    sdf_filename,
-    package_dirs=[package_dir],
-    root_joint=JointModelFreeFlyer(),
-    root_link_name="pelvis",
-    parent_guidance=sdf_parent_guidance,
-)
-
-robot.q0 = readParamsFromSrdf(
-    robot.model, srdf_path, has_rotor_parameters=False, referencePose="standing"
-)
-
+robot = example_robot_data.load("cassie")
 
 constraint_models = robot.constraint_models
 
@@ -97,9 +59,10 @@ for joint_id in foot_joint_ids:
 mid_point /= 4.0
 
 
-robot.initDisplay(loadModel=True)
+robot.setVisualizer(GepettoVisualizer())
+robot.initViewer()
+robot.loadViewerModel("pinocchio")
 gui = robot.viewer.gui
-
 robot.display(robot.q0)
 q0 = robot.q0.copy()
 constraint_datas = pinocchio.StdVec_RigidConstraintData()
@@ -196,14 +159,17 @@ mass = robot.data.mass[0]
 com_base = robot.data.com[0].copy()
 com_base[:2] = mid_point[:2]
 com_drop_amp = 0.1
-com_des = lambda k: com_base - np.array([0.0, 0.0, np.abs(com_drop_amp)])
+
+
+def com_des(k):
+    return com_base - np.array([0.0, 0.0, np.abs(com_drop_amp)])
 
 
 def squashing(model, data, q_in, Nin=N, epsin=eps, verbose=True):
     q = q_in.copy()
-    y = np.ones((constraint_dim))
+    y = np.ones(constraint_dim)
 
-    N_full = 200
+    _N_full = 200
 
     # Decrease CoMz by 0.2
     pinocchio.computeAllTerms(robot.model, robot.data, q, np.zeros(robot.model.nv))

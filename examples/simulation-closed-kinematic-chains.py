@@ -1,8 +1,10 @@
-import pinocchio as pin
-import numpy as np
-import hppfcl as fcl
+import time
 
+import hppfcl as fcl
+import numpy as np
+import pinocchio as pin
 from pinocchio.visualize import MeshcatVisualizer
+
 # Perform the simulation of a four-bar linkages mechanism
 
 height = 0.1
@@ -43,9 +45,7 @@ base_joint_id = 0
 geom_obj0 = pin.GeometryObject(
     "link_A1",
     base_joint_id,
-    pin.SE3(
-        pin.Quaternion.FromTwoVectors(pin.ZAxis, pin.XAxis).matrix(), np.zeros((3))
-    ),
+    pin.SE3(pin.Quaternion.FromTwoVectors(pin.ZAxis, pin.XAxis).matrix(), np.zeros(3)),
     shape_link_A,
 )
 geom_obj0.meshColor = WHITE_COLOR
@@ -112,7 +112,7 @@ mu = 1e-4
 
 q = q0.copy()
 
-y = np.ones((constraint_dim))
+y = np.ones(constraint_dim)
 data.M = np.eye(model.nv) * rho
 kkt_constraint = pin.ContactCholeskyDecomposition(model, [constraint_model])
 eps = 1e-10
@@ -150,18 +150,17 @@ viz.display(q_sol)
 
 # Perform the simulation
 q = q_sol.copy()
-v = np.zeros((model.nv))
-tau = np.zeros((model.nv))
+v = np.zeros(model.nv)
+tau = np.zeros(model.nv)
 dt = 5e-3
 
 T_sim = 100000
 t = 0
 mu_sim = 1e-10
 constraint_model.corrector.Kp[:] = 10
-constraint_model.corrector.Kd = 2.0 * np.sqrt(constraint_model.corrector.Kp)
+constraint_model.corrector.Kd[:] = 2.0 * np.sqrt(constraint_model.corrector.Kp)
 pin.initConstraintDynamics(model, data, [constraint_model])
 prox_settings = pin.ProximalSettings(1e-8, mu_sim, 10)
-import time
 
 while t <= T_sim:
     a = pin.constraintDynamics(

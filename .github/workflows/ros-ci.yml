@@ -13,7 +13,10 @@ on:
       - '*.md'
       - CITATION.*
       - COPYING.LESSER
+      - colcon.pkg
       - .pre-commit-config.yaml
+      - CHANGELOG.md
+      - development/*.md
   pull_request:
     paths-ignore:
       - doc/**
@@ -22,7 +25,10 @@ on:
       - '*.md'
       - CITATION.*
       - COPYING.LESSER
+      - colcon.pkg
       - .pre-commit-config.yaml
+      - CHANGELOG.md
+      - development/*.md
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -60,5 +66,5 @@ jobs:
           key: ccache-${{ matrix.env.ROS_DISTRO }}-${{ matrix.env.ROS_REPO }}-${{ github.sha }}
           restore-keys: ccache-${{ matrix.env.ROS_DISTRO }}-${{ matrix.env.ROS_REPO }}-
       # Run industrial_ci
-      - uses: ros-industrial/industrial_ci@3ed9846c96ed1e0bb36193e8e250632eaac980d0
+      - uses: ros-industrial/industrial_ci@8d0620b3c43fc3bb2599b6ede6e0a261a2eced02
         env: ${{ matrix.env }}

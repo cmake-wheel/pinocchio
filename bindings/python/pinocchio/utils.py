@@ -2,7 +2,6 @@
 # Copyright (c) 2015-2022 CNRS INRIA
 #
 
-from __future__ import print_function, division
 
 import sys
 
@@ -10,7 +9,7 @@ import numpy as np
 import numpy.linalg as npl
 
 from . import pinocchio_pywrap_default as pin
-from .pinocchio_pywrap_default.rpy import matrixToRpy, rpyToMatrix, rotate
+from .pinocchio_pywrap_default.rpy import matrixToRpy, rotate, rpyToMatrix
 
 
 def npToTTuple(M):
@@ -68,10 +67,8 @@ def mprint(M, name="ans", eps=1e-15):
     print(name, " = ")
     print()
 
-    Mmin = lambda M: M.min()
-    Mmax = lambda M: M.max()
-    Mm = Mmin(abs(M[np.nonzero(M)]))
-    MM = Mmax(abs(M[np.nonzero(M)]))
+    Mm = (abs(M[np.nonzero(M)])).min()
+    MM = (abs(M[np.nonzero(M)])).max()
 
     fmt = "% 10.3e" if Mm < 1e-5 or MM > 1e6 or MM / Mm > 1e3 else "% 1.5f"
 
@@ -79,7 +76,7 @@ def mprint(M, name="ans", eps=1e-15):
         cmin = i * 6
         cmax = (i + 1) * 6
         cmax = ncol if ncol < cmax else cmax
-        print("Columns %s through %s" % (cmin, cmax - 1))
+        print(f"Columns {cmin} through {cmax - 1}")
         print()
         for r in range(M.shape[0]):
             sys.stdout.write("  ")

@@ -1,6 +1,7 @@
 import unittest
-import pinocchio as pin
+from pathlib import Path
 
+import pinocchio as pin
 from test_case import PinocchioTestCase as TestCase
 
 
@@ -26,7 +27,7 @@ class TestData(TestCase):
         q = pin.neutral(model)
         pin.centerOfMass(model, data, q)
 
-        com_list = data.com.tolist()
+        _com_list = data.com.tolist()
         com = data.com[0]
         with self.assertRaises(Exception) as context:
             com = data.com[len(data.com) + 10]
@@ -44,11 +45,11 @@ class TestData(TestCase):
         import pickle
 
         data = self.data
-        filename = "data.pickle"
-        with open(filename, "wb") as f:
+        filename = Path("data.pickle")
+        with filename.open("wb") as f:
             pickle.dump(data, f)
 
-        with open(filename, "rb") as f:
+        with filename.open("rb") as f:
             data_copy = pickle.load(f)
 
         self.assertTrue(data == data_copy)

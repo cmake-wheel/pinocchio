@@ -1,7 +1,7 @@
 import unittest
-import pinocchio as pin
-import numpy as np
 
+import numpy as np
+import pinocchio as pin
 from test_case import PinocchioTestCase as TestCase
 
 
@@ -36,7 +36,7 @@ class TestLiegroupBindings(TestCase):
 
             q_int = lg.integrate(q, v)
 
-            q_interpolate = lg.interpolate(q, q_int, 0.5)
+            _q_interpolate = lg.interpolate(q, q_int, 0.5)
 
             v_diff = lg.difference(q, q_int)
             self.assertApprox(v, v_diff)
@@ -103,6 +103,40 @@ class TestLiegroupBindings(TestCase):
                 Jout1 = lg.dIntegrateTransport(q, v, J0, arg)
                 Jout1_ref = Jint.dot(J0)
                 self.assertApprox(Jout1, Jout1_ref)
+
+    def test_dIntegrateTransport_inverse(self):
+        for lg in [
+            pin.liegroups.R3(),
+            pin.liegroups.SO3(),
+            pin.liegroups.SO2(),
+            pin.liegroups.SE3(),
+            pin.liegroups.SE2(),
+            pin.liegroups.R3() * pin.liegroups.SO3(),
+        ]:
+            q0 = lg.random()
+            v = np.random.rand(lg.nv)
+            q1 = lg.integrate(q0, v)
+
+            # transport random tangent vector from q1 to q0
+            tvec_at_q1 = np.random.rand(lg.nv)
+            tvec_at_q0 = lg.dIntegrateTransport(q0, v, tvec_at_q1, pin.ARG0)
+
+            # test reverse direction
+            v_r = -v.copy()  # reverse path
+            q0_r = lg.integrate(q1, v_r)
+
+            self.assertApprox(q0, q0_r)  # recover init point on manifold
+
+            tvec_at_q1_r = lg.dIntegrateTransport(q1, v_r, tvec_at_q0, pin.ARG0)
+
+            self.assertApprox(tvec_at_q1, tvec_at_q1_r)
+
+            # same test for matrix
+            J_at_q1 = np.random.rand(lg.nv, lg.nv)
+            J_at_q0 = lg.dIntegrateTransport(q0, v, J_at_q1, pin.ARG0)
+            self.assertApprox(
+                J_at_q1, lg.dIntegrateTransport(q1, v_r, J_at_q0, pin.ARG0)
+            )
 
 
 if __name__ == "__main__":

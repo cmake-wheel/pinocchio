@@ -1,9 +1,10 @@
+import warnings
+
+import numpy as np
+
 from .. import pinocchio_pywrap_default as pin
 from ..utils import npToTuple
-
 from . import BaseVisualizer
-
-import warnings
 
 try:
     import hppfcl
@@ -13,22 +14,23 @@ except ImportError:
     WITH_HPP_FCL_BINDINGS = False
 
 
-def create_capsule_markers(marker_ref, oMg, d, l):
+def create_capsule_markers(marker_ref, oMg, d, fl):
     """Make capsule using two sphere and one cylinder"""
     from copy import deepcopy
-    from visualization_msgs.msg import Marker
+
     from geometry_msgs.msg import Point
+    from visualization_msgs.msg import Marker
 
     displacment = pin.SE3.Identity()
 
-    displacment.translation[2] = l / 2.0
+    displacment.translation[2] = fl / 2.0
     oMsphere_1 = oMg * displacment
-    displacment.translation[2] = -l / 2.0
+    displacment.translation[2] = -fl / 2.0
     oMsphere_2 = oMg * displacment
 
     marker_cylinder = marker_ref
     marker_cylinder.type = Marker.CYLINDER
-    marker_cylinder.scale = Point(d, d, l)
+    marker_cylinder.scale = Point(d, d, fl)
     marker_cylinder.pose = SE3ToROSPose(oMg)
 
     marker_sphere_1 = deepcopy(marker_ref)
@@ -48,7 +50,7 @@ def create_capsule_markers(marker_ref, oMg, d, l):
 
 def SE3ToROSPose(oMg):
     """Converts SE3 matrix to ROS geometry_msgs/Pose format"""
-    from geometry_msgs.msg import Pose, Point, Quaternion
+    from geometry_msgs.msg import Point, Pose, Quaternion
 
     xyz_quat = pin.SE3ToXYZQUATtuple(oMg)
     return Pose(position=Point(*xyz_quat[:3]), orientation=Quaternion(*xyz_quat[3:]))
@@ -69,11 +71,13 @@ class RVizVisualizer(BaseVisualizer):
         loadModel=False,
         initRosNode=True,
     ):
-        """Init RVizViewer by starting a ros node (or not) and creating an RViz window."""
-        from rospy import init_node, WARN
-        from rosgraph import is_master_online
-        from rviz import bindings as rviz
+        """
+        Init RVizViewer by starting a ros node (or not) and creating an RViz window.
+        """
         from python_qt_binding.QtWidgets import QApplication
+        from rosgraph import is_master_online
+        from rospy import WARN, init_node
+        from rviz import bindings as rviz
 
         if not is_master_online():  # Checks the master uri
             # ROS Master is offline
@@ -88,7 +92,7 @@ class RVizVisualizer(BaseVisualizer):
         if initRosNode:
             init_node("pinocchio_viewer", anonymous=True, log_level=WARN)
 
-        if viewer == None:
+        if viewer is None:
             self.viewer = RVizVisualizer.Viewer()
             self.viewer.app = QApplication([])
             self.viewer.viz = rviz.VisualizationFrame()
@@ -186,11 +190,14 @@ class RVizVisualizer(BaseVisualizer):
             )
 
     def _plot(self, publisher, model, data, previous_ids=()):
-        """Create markers for each object of the model and publish it as MarkerArray (also delete unused previously created markers)"""
-        from rospy import get_rostime
-        from std_msgs.msg import Header, ColorRGBA
+        """
+        Create markers for each object of the model and publish it as MarkerArray
+        (also delete unused previously created markers)
+        """
         from geometry_msgs.msg import Point
-        from visualization_msgs.msg import MarkerArray, Marker
+        from rospy import get_rostime
+        from std_msgs.msg import ColorRGBA, Header
+        from visualization_msgs.msg import Marker, MarkerArray
 
         self.seq += 1
         header = Header(
@@ -223,9 +230,9 @@ class RVizVisualizer(BaseVisualizer):
             if WITH_HPP_FCL_BINDINGS and isinstance(geom, hppfcl.ShapeBase):
                 # append a primitive geometry
                 if isinstance(geom, hppfcl.Cylinder):
-                    d, l = 2 * geom.radius, 2 * geom.halfLength
+                    d, fl = 2 * geom.radius, 2 * geom.halfLength
                     marker.type = Marker.CYLINDER
-                    marker.scale = Point(d, d, l)
+                    marker.scale = Point(d, d, fl)
                     marker_array.markers.append(marker)
                 elif isinstance(geom, hppfcl.Box):
                     size = npToTuple(2.0 * geom.halfSide)
@@ -238,15 +245,12 @@ class RVizVisualizer(BaseVisualizer):
                     marker.scale = Point(d, d, d)
                     marker_array.markers.append(marker)
                 elif isinstance(geom, hppfcl.Capsule):
-                    d, l = 2 * geom.radius, 2 * geom.halfLength
+                    d, fl = 2 * geom.radius, 2 * geom.halfLength
                     marker_array.markers.extend(
-                        create_capsule_markers(marker, data.oMg[obj_id], d, l)
+                        create_capsule_markers(marker, data.oMg[obj_id], d, fl)
                     )
                 else:
-                    msg = "Unsupported geometry type for %s (%s)" % (
-                        obj.name,
-                        type(geom),
-                    )
+                    msg = f"Unsupported geometry type for {obj.name} ({type(geom)})"
                     warnings.warn(msg, category=UserWarning, stacklevel=2)
                     continue
             else:
@@ -259,7 +263,7 @@ class RVizVisualizer(BaseVisualizer):
         # Remove unused markers
         new_ids = [marker.id for marker in marker_array.markers]
         for old_id in previous_ids:
-            if not old_id in new_ids:
+            if old_id not in new_ids:
                 marker_remove = Marker()
                 marker_remove.header = header
                 marker_remove.id = old_id
@@ -276,7 +280,7 @@ class RVizVisualizer(BaseVisualizer):
         """Delete all the markers from a topic (use one marker with action DELETEALL)"""
         from rospy import get_rostime
         from std_msgs.msg import Header
-        from visualization_msgs.msg import MarkerArray, Marker
+        from visualization_msgs.msg import Marker, MarkerArray
 
         # Increment seq number
         self.seq += 1
@@ -304,6 +308,33 @@ class RVizVisualizer(BaseVisualizer):
         from python_qt_binding.QtTest import QTest
 
         QTest.qWait(1e3 * dt)
+
+    def setBackgroundColor(self):
+        raise NotImplementedError()
+
+    def setCameraTarget(self, target):
+        raise NotImplementedError()
+
+    def setCameraPosition(self, position: np.ndarray):
+        raise NotImplementedError()
+
+    def setCameraZoom(self, zoom: float):
+        raise NotImplementedError()
+
+    def setCameraPose(self, pose: np.ndarray):
+        raise NotImplementedError()
+
+    def captureImage(self, w=None, h=None):
+        raise NotImplementedError()
+
+    def disableCameraControl(self):
+        raise NotImplementedError()
+
+    def enableCameraControl(self):
+        raise NotImplementedError()
+
+    def drawFrameVelocities(self, *args, **kwargs):
+        raise NotImplementedError()
 
 
 __all__ = ["RVizVisualizer"]

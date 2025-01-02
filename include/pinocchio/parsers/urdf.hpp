@@ -8,10 +8,9 @@
 
 #include "pinocchio/multibody/model.hpp"
 #include "pinocchio/multibody/geometry.hpp"
+#include "pinocchio/parsers/meshloader-fwd.hpp"
 
-#ifdef PINOCCHIO_WITH_CXX11_SUPPORT
-  #include <memory>
-#endif
+#include <memory>
 
 /// \cond
 // forward declaration of the unique type from urdfdom which is expose.
@@ -19,21 +18,31 @@ namespace urdf
 {
   class ModelInterface;
 }
-
-namespace hpp
-{
-  namespace fcl
-  {
-    class MeshLoader;
-    typedef std::shared_ptr<MeshLoader> MeshLoaderPtr;
-  } // namespace fcl
-} // namespace hpp
 /// \endcond
 
 namespace pinocchio
 {
   namespace urdf
   {
+
+    ///
+    /// \brief Build the model from a URDF file with a particular joint as root of the model tree
+    /// inside the model given as reference argument.
+    ///
+    /// \param[in] filename The URDF complete file path.
+    /// \param[in] rootJoint The joint at the root of the model tree.
+    /// \param[in] rootJointName Name of the rootJoint.
+    /// \param[in] verbose Print parsing info.
+    /// \param[out] model Reference model where to put the parsed information.
+    /// \return Return the reference on argument model for convenience.
+    ///
+    template<typename Scalar, int Options, template<typename, int> class JointCollectionTpl>
+    ModelTpl<Scalar, Options, JointCollectionTpl> & buildModel(
+      const std::string & filename,
+      const typename ModelTpl<Scalar, Options, JointCollectionTpl>::JointModel & rootJoint,
+      const std::string & rootJointName,
+      ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+      const bool verbose = false);
 
     ///
     /// \brief Build the model from a URDF file with a particular joint as root of the model tree
@@ -86,6 +95,27 @@ namespace pinocchio
       const bool verbose = false);
 
     ///
+    /// \brief Build the model from a URDF model with a particular joint as root of the model tree
+    /// inside the model given as reference argument.
+    ///
+    /// \param[in] urdfTree the tree build from the URDF
+    /// \param[in] rootJoint The joint at the root of the model tree.
+    /// \param[in] rootJointName Name of the rootJoint.
+    /// \param[in] verbose Print parsing info.
+    /// \param[out] model Reference model where to put the parsed information.
+    /// \return Return the reference on argument model for convenience.
+    ///
+    /// \note urdfTree can be build from ::urdf::parseURDF
+    ///       or ::urdf::parseURDFFile
+    template<typename Scalar, int Options, template<typename, int> class JointCollectionTpl>
+    ModelTpl<Scalar, Options, JointCollectionTpl> & buildModel(
+      const std::shared_ptr<::urdf::ModelInterface> urdfTree,
+      const typename ModelTpl<Scalar, Options, JointCollectionTpl>::JointModel & rootJoint,
+      const std::string & rootJointName,
+      ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+      const bool verbose = false);
+
+    ///
     /// \brief Build the model from a URDF model
     ///
     /// \param[in] urdfTree the tree build from the URDF
@@ -98,6 +128,27 @@ namespace pinocchio
     template<typename Scalar, int Options, template<typename, int> class JointCollectionTpl>
     ModelTpl<Scalar, Options, JointCollectionTpl> & buildModel(
       const std::shared_ptr<::urdf::ModelInterface> urdfTree,
+      ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+      const bool verbose = false);
+
+    ///
+    /// \brief Build the model from an XML stream with a particular joint as root of the model tree
+    /// inside the model given as reference argument.
+    ///
+    /// \param[in] xml_stream stream containing the URDF model.
+    /// \param[in] rootJoint The joint at the root of the model tree.
+    /// \param[in] rootJointName Name of the rootJoint.
+    /// \param[in] verbose Print parsing info.
+    /// \param[out] model Reference model where to put the parsed information.
+    /// \return Return the reference on argument model for convenience.
+    ///
+    /// \note urdfTree can be build from ::urdf::parseURDF
+    ///       or ::urdf::parseURDFFile
+    template<typename Scalar, int Options, template<typename, int> class JointCollectionTpl>
+    ModelTpl<Scalar, Options, JointCollectionTpl> & buildModelFromXML(
+      const std::string & xml_stream,
+      const typename ModelTpl<Scalar, Options, JointCollectionTpl>::JointModel & rootJoint,
+      const std::string & rootJointName,
       ModelTpl<Scalar, Options, JointCollectionTpl> & model,
       const bool verbose = false);
 

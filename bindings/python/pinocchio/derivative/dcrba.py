@@ -2,14 +2,25 @@
 # Copyright (c) 2016 CNRS
 #
 
-from __future__ import print_function
 
-import pinocchio as pin
-from pinocchio.robot_wrapper import RobotWrapper
-from pinocchio.utils import *
-from numpy.linalg import norm
 import lambdas
-from lambdas import Mcross, ancestors, parent, iv, td, quad, adj, adjdual
+import numpy as np
+import pinocchio as pin
+from lambdas import (
+    FCross,
+    MCross,
+    Mcross,
+    adj,
+    adjdual,
+    ancestors,
+    iv,
+    parent,
+    quad,
+    td,
+)
+from numpy.linalg import norm
+from pinocchio.robot_wrapper import RobotWrapper
+from pinocchio.utils import rand
 
 
 def hessian(robot, q, crossterms=False):
@@ -98,9 +109,12 @@ class DCRBA:
                         T_jSd = np.array(H[:, d, j0:j1])  # this is 0 is d<=j
 
                         """
-                        assert( norm(T_iSd)<1e-6 or not joint_diff<i )  # d<i => TiSd=0
-                        assert( norm(T_jSd)<1e-6 or not joint_diff<j )  # d<j => TjSd=0
-                        assert( norm(T_jSd)<1e-6 or not norm(T_iSd)<1e-6 )  # TiSd=0 => TjSd=0
+                        # d<i => TiSd=0
+                        assert( norm(T_iSd)<1e-6 or not joint_diff<i )
+                        # d<j => TjSd=0
+                        assert( norm(T_jSd)<1e-6 or not joint_diff<j )
+                        # TiSd=0 => TjSd=0
+                        assert( norm(T_jSd)<1e-6 or not norm(T_iSd)<1e-6 )
                         assert( norm(T_iSd)>1e-6 )
                         """
 
@@ -110,7 +124,8 @@ class DCRBA:
                         if j < joint_diff:
                             dM[i0:i1, j0:j1, d] += Si.T * Yd * T_jSd
 
-                        # Make dM triangular by copying strict-upper triangle to lower one.
+                        # Make dM triangular by copying strict-upper triangle to lower
+                        # one.
                         if i != j:
                             dM[j0:j1, i0:i1, d] = dM[i0:i1, j0:j1, d].T
                         else:
@@ -138,7 +153,7 @@ class VRNEA:
     def __init__(self, robot):
         self.robot = robot
         lambdas.setRobotArgs(robot)
-        self.YJ = zero([6, robot.model.nv])
+        self.YJ = np.zeros([6, robot.model.nv])
         self.Q = np.zeros(
             [
                 robot.model.nv,
@@ -158,7 +173,7 @@ class VRNEA:
         for k in range(robot.model.njoints - 1, 0, -1):
             k0, k1 = iv(k)[0], iv(k)[-1] + 1
             Yk = (robot.data.oMi[k] * robot.data.Ycrb[k]).matrix()
-            Sk = J[:, k0:k1]
+            _Sk = J[:, k0:k1]
             for j in ancestors(k):  # Fill YJ = [ ... Yk*Sj ... ]_j
                 j0, j1 = iv(j)[0], iv(j)[-1] + 1
                 YJ[:, j0:j1] = Yk * J[:, j0:j1]
@@ -166,7 +181,7 @@ class VRNEA:
             # Fill the diagonal of the current level of Q = Q[k,:k,:k]
             for i in ancestors(k):
                 i0, i1 = iv(i)[0], iv(i)[-1] + 1
-                Si = J[:, i0:i1]
+                _Si = J[:, i0:i1]
 
                 Q[k0:k1, i0:i1, i0:i1] = -td(
                     H[:, k0:k1, i0:i1], YJ[:, i0:i1], [0, 0]
@@ -175,7 +190,7 @@ class VRNEA:
                 # Fill the nondiag of the current level Q[k,:k,:k]
                 for j in ancestors(i)[:-1]:
                     j0, j1 = iv(j)[0], iv(j)[-1] + 1
-                    Sj = J[:, j0:j1]
+                    _Sj = J[:, j0:j1]
 
                     #  = Sk' * Yk * Si x Sj
                     Q[k0:k1, i0:i1, j0:j1] = td(
@@ -190,14 +205,15 @@ class VRNEA:
                         H[:, k0:k1, j0:j1], YJ[:, i0:i1], [0, 0]
                     )
 
-            # Fill the border elements of levels below k Q[kk,k,:] and Q[kk,:,k] with kk<k
+            # Fill the border elements of levels below k
+            # Q[kk,k,:] and Q[kk,:,k] with kk<k
             for kk in ancestors(k)[:-1]:
                 kk0, kk1 = iv(kk)[0], iv(kk)[-1] + 1
-                Skk = J[:, kk0:kk1]
+                _Skk = J[:, kk0:kk1]
 
                 for j in ancestors(k):
                     j0, j1 = iv(j)[0], iv(j)[-1] + 1
-                    Sj = J[:, j0:j1]
+                    _Sj = J[:, j0:j1]
 
                     #  = Skk' Yk Sk x Sj  = (Yk Skk)' Sk x Sj
                     if k != j:
@@ -230,14 +246,14 @@ class Coriolis:
         self.robot = robot
         lambdas.setRobotArgs(robot)
         NV = robot.model.nv
-        NJ = robot.model.njoints
-        self.C = zero([NV, NV])
-        self.YS = zero([6, NV])
-        self.Sxv = zero([6, NV])
+        _NJ = robot.model.njoints
+        self.C = np.zeros([NV, NV])
+        self.YS = np.zeros([6, NV])
+        self.Sxv = np.zeros([6, NV])
 
     def __call__(self, q, vq):
         robot = self.robot
-        NV = robot.model.nv
+        _NV = robot.model.nv
         NJ = robot.model.njoints
         C = self.C
         YS = self.YS
@@ -301,8 +317,6 @@ class Coriolis:
 # --- DRNEA -------------------------------------------------------------------------
 # --- DRNEA -------------------------------------------------------------------------
 
-from lambdas import MCross, FCross
-
 
 class DRNEA:
     def __init__(self, robot):
@@ -322,13 +336,18 @@ class DRNEA:
         Y = [(oMi[i] * robot.model.inertias[i]).matrix() for i in range(NJ)]
         Ycrb = [(oMi[i] * robot.data.Ycrb[i]).matrix() for i in range(NJ)]
 
-        Tkf = [zero([6, NV]) for i in range(NJ)]
-        Yvx = [zero([6, 6]) for i in range(NJ)]
-        adjf = lambda f: -np.bmat(
-            [[zero([3, 3]), skew(f[:3])], [skew(f[:3]), skew(f[3:])]]
-        )
+        Tkf = [np.zeros([6, NV]) for i in range(NJ)]
+        Yvx = [np.zeros([6, 6]) for i in range(NJ)]
 
-        R = self.R = zero([NV, NV])
+        def adjf(f):
+            return -np.bmat(
+                [
+                    [np.zeros([3, 3]), pin.skew(f[:3])],
+                    [pin.skew(f[:3]), pin.skew(f[3:])],
+                ]
+            )
+
+        R = self.R = np.zeros([NV, NV])
 
         for i in reversed(
             range(1, NJ)
@@ -337,12 +356,12 @@ class DRNEA:
             Yi = Y[i]
             Yci = Ycrb[i]
             Si = J[:, i0:i1]
-            vi = v[i]
-            ai = a[i]
-            fi = f[i]
-            aqi = aq[i0:i1]
+            _vi = v[i]
+            _ai = a[i]
+            _fi = f[i]
+            _aqi = aq[i0:i1]
             vqi = vq[i0:i1]
-            dvi = Si * vqi
+            _dvi = Si * vqi
             li = parent(i)
 
             Yvx[i] += Y[i] * adj(v[i])
@@ -361,7 +380,7 @@ class DRNEA:
                 Tkf = Yci * (-MCross(Sk, a[lk]) + MCross(MCross(Sk, v[lk]), v[lk]))
 
                 # Tk Si' fs = Tk Si' Ycrb[i] ai + Si' Ys (vs-vi) x (Sk x vlk)
-                #           =      ""           + Si' Ys vs x (Sk x vlk) - Si' Ys vi x (Sk x vlk)
+                #           =      ""           + Si' Ys vs x (Sk x vlk) - Si' Ys vi x (Sk x vlk)  # noqa E501
                 Tkf += Yvx[i] * MCross(Sk, v[lk])
 
                 R[i0:i1, k0:k1] = Si.T * Tkf
@@ -437,7 +456,7 @@ if __name__ == "__main__":
         * 3
     )
     eps = 1e-6
-    dq = zero(robot.model.nv)
+    dq = np.zeros(robot.model.nv)
 
     for diff in range(robot.model.nv):
         dM[:, :, diff] = -pin.crba(robot.model, robot.data, q)
@@ -464,7 +483,10 @@ if __name__ == "__main__":
 
     # --- Compute C from rnea, for future check
     robot.model.gravity = pin.Motion.Zero()
-    rnea0 = lambda q, vq: pin.nle(robot.model, robot.data, q, vq)
+
+    def rnea0(q, vq):
+        return pin.nle(robot.model, robot.data, q, vq)
+
     vq1 = vq * 0
     C = np.zeros(
         [
@@ -512,11 +534,11 @@ if __name__ == "__main__":
     R = drnea(q, vq, aq)
 
     NV = robot.model.nv
-    Rd = zero([NV, NV])
+    Rd = np.zeros([NV, NV])
     eps = 1e-8
     r0 = pin.rnea(robot.model, robot.data, q, vq, aq).copy()
     for i in range(NV):
-        dq = zero(NV)
+        dq = np.zeros(NV)
         dq[i] = eps
         qdq = pin.integrate(robot.model, q, dq)
         Rd[:, i] = (pin.rnea(robot.model, robot.data, qdq, vq, aq) - r0) / eps

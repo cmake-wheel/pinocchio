@@ -1,6 +1,6 @@
 import unittest
+
 import pinocchio as pin
-import numpy as np
 
 
 class TestJointCompositeBindings(unittest.TestCase):

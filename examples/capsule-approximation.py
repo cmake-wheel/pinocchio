@@ -1,13 +1,15 @@
 """
 Copyright (c) 2020 INRIA
-Inspired from Antonio El Khoury PhD: https://tel.archives-ouvertes.fr/file/index/docid/833019/filename/thesis.pdf
+Inspired from Antonio El Khoury PhD:
+https://tel.archives-ouvertes.fr/file/index/docid/833019/filename/thesis.pdf
 Section 3.8.1 Computing minimum bounding capsules
 """
 
-import numpy as np
-import scipy.optimize as optimize
+from pathlib import Path
 
 import hppfcl
+import numpy as np
+import scipy.optimize as optimize
 
 """
 Capsule definition
@@ -51,18 +53,23 @@ def capsule_approximation(vertices):
     a0, b0, r0 = pca_approximation(vertices)
     constraint_inflation = CONSTRAINT_INFLATION_RATIO * r0
     x0 = np.array(list(a0) + list(b0) + [r0])
-    constraint_cap = lambda x: distance_points_segment(vertices, x[:3], x[3:6]) - x[6]
-    capsule_vol = lambda x: capsule_volume(x[:3], x[3:6], x[6])
+
+    def constraint_cap(x):
+        return distance_points_segment(vertices, x[:3], x[3:6]) - x[6]
+
+    def capsule_vol(x):
+        return capsule_volume(x[:3], x[3:6], x[6])
+
     constraint = optimize.NonlinearConstraint(
         constraint_cap, lb=-np.inf, ub=-constraint_inflation
     )
     res = optimize.minimize(capsule_vol, x0, constraints=constraint)
     res_constraint = constraint_cap(res.x)
-    assert (
-        res_constraint <= 1e-4
-    ), "The computed solution is invalid, a vertex is at a distance {:.5f} of the capsule.".format(
-        res_constraint
+    err = (
+        "The computed solution is invalid, "
+        "a vertex is at a distance {:.5f} of the capsule."
     )
+    assert res_constraint <= 1e-4, err.format(res_constraint)
     a, b, r = res.x[:3], res.x[3:6], res.x[6]
     return a, b, r
 
@@ -87,8 +94,8 @@ def parse_urdf(infile, outfile):
             import os
 
             for rospath in os.environ["ROS_PACKAGE_PATH"].split(":"):
-                abspath = os.path.join(rospath, relpath)
-                if os.path.isfile(abspath):
+                abspath = Path(rospath) / relpath
+                if abspath.is_file():
                     return abspath
             raise ValueError("Could not find " + fn)
         return fn
@@ -101,7 +108,7 @@ def parse_urdf(infile, outfile):
         return SE3(rpy.rpyToMatrix(*_rpy), np.array(_xyz))
 
     def set_transform(origin, a, b):
-        from pinocchio import rpy, Quaternion
+        from pinocchio import Quaternion, rpy
 
         length = np.linalg.norm(b - a)
         z = (b - a) / length
@@ -125,9 +132,8 @@ def parse_urdf(infile, outfile):
         lMg = get_transform(origin)
 
         meshfile = get_path(mesh.attrib["filename"])
-        import os
 
-        name = os.path.basename(meshfile)
+        name = Path(meshfile).name
         # Generate capsule
         a, b, radius = approximate_mesh(meshfile, lMg)
         length = np.linalg.norm(b - a)
@@ -158,8 +164,10 @@ if __name__ == "__main__":
     # a, b, r = capsule_approximation(vertices)
 
     # Example for a whole URDF model
-    # This path refers to Pinocchio source code but you can define your own directory here.
-    pinocchio_model_dir = join(dirname(dirname(str(abspath(__file__)))), "models")
+    # This path refers to Pinocchio source code but you can define your own directory
+    # here.
+
+    pinocchio_model_dir = Path(__file__).parent.parent / "models"
     urdf_filename = (
         pinocchio_model_dir
         + "models/example-robot-data/robots/ur_description/urdf/ur5_gripper.urdf"

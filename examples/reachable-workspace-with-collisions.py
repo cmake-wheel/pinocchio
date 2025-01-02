@@ -1,11 +1,11 @@
-import meshcat.geometry as g
-import pinocchio as pin
-import numpy as np
-import sys
-from os.path import dirname, join, abspath
-import time
 import itertools
+import sys
+import time
+from pathlib import Path
 
+import meshcat.geometry as g
+import numpy as np
+import pinocchio as pin
 from pinocchio.visualize import MeshcatVisualizer
 
 
@@ -17,13 +17,13 @@ def XYZRPYtoSE3(xyzrpy):
 
 
 # Load the URDF model.
-pinocchio_model_dir = join(dirname(dirname(str(abspath(__file__)))), "models")
+pinocchio_model_dir = Path(__file__).parent.parent / "models"
 
-model_path = join(pinocchio_model_dir, "example-robot-data/robots")
+model_path = pinocchio_model_dir / "example-robot-data/robots"
 mesh_dir = pinocchio_model_dir
 
-urdf_path = join(model_path, "panda_description/urdf/panda.urdf")
-srdf_path = join(model_path, "panda_description/srdf/panda.srdf")
+urdf_path = model_path / "panda_description/urdf/panda.urdf"
+srdf_path = model_path / "panda_description/srdf/panda.srdf"
 
 robot, collision_model, visual_model = pin.buildModelsFromUrdf(urdf_path, mesh_dir)
 data = robot.createData()
@@ -73,7 +73,8 @@ try:
     viz.initViewer(open=True)
 except ImportError as err:
     print(
-        "Error while initializing the viewer. It seems you should install Python meshcat"
+        "Error while initializing the viewer. "
+        "It seems you should install Python meshcat"
     )
     print(err)
     sys.exit(0)
@@ -89,7 +90,8 @@ frame = robot.getFrameId(
 n_samples = 5
 facet_dims = 2
 
-# To have convex hull computation or just the points of the reachable workspace and then compute it with cgal
+# To have convex hull computation or just the points of the reachable workspace and then
+# compute it with cgal.
 convex = False
 
 if convex:
@@ -100,10 +102,10 @@ if convex:
 
 else:
     try:
-        from CGAL.CGAL_Alpha_wrap_3 import *
-        from CGAL.CGAL_Kernel import *
+        from CGAL.CGAL_Alpha_wrap_3 import *  # noqa: F403
+        from CGAL.CGAL_Kernel import *  # noqa: F403
+        from CGAL.CGAL_Mesh_3 import *  # noqa: F403
         from CGAL.CGAL_Polyhedron_3 import Polyhedron_3
-        from CGAL.CGAL_Mesh_3 import *
     except ModuleNotFoundError:
         print("To compute non convex Polytope CGAL library needs to be installed.")
         sys.exit(0)
@@ -127,7 +129,8 @@ else:
         Retrieved from http://blog.thehumangeo.com/2014/05/12/drawing-boundaries-in-python/
 
         :param coords : Coordinates of points
-        :param alpha: List of alpha values to influence the gooeyness of the border. Smaller numbers don't fall inward as much as larger numbers.
+        :param alpha: List of alpha values to influence the gooeyness of the border.
+        Smaller numbers don't fall inward as much as larger numbers.
         Too large, and you lose everything!
         :return: Shapely.MultiPolygons which is the hull of the input set of points
         """
@@ -137,10 +140,10 @@ else:
         else:
             alpha_value = np.mean(alpha)
         # Convert to CGAL point
-        points = [Point_3(pt[0], pt[1], pt[2]) for pt in coords]
+        points = [Point_3(pt[0], pt[1], pt[2]) for pt in coords]  # noqa: F405
         # Compute alpha shape
         Q = Polyhedron_3()
-        a = alpha_wrap_3(points, alpha_value, 0.01, Q)
+        _a = alpha_wrap_3(points, alpha_value, 0.01, Q)  # noqa: F405
         alpha_shape_vertices = np.array(
             [vertex_to_tuple(vertex.point()) for vertex in Q.vertices()]
         )

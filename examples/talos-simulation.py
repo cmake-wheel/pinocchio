@@ -1,14 +1,11 @@
-import numpy as np
-import hppfcl as fcl
-import pinocchio
-from example_robot_data import loadTalos
-from pinocchio.visualize import GepettoVisualizer
-from pinocchio import GeometryType
 from time import sleep
 
-from os.path import join, dirname, abspath
+import example_robot_data
+import numpy as np
+import pinocchio
+from pinocchio.visualize import GepettoVisualizer
 
-robot = loadTalos()
+robot = example_robot_data.load("talos")
 model = robot.model
 data = robot.data
 
@@ -39,6 +36,7 @@ constraint_models = []
 for j, frame_id in enumerate(foot_frame_ids):
     contact_model_lf1 = pinocchio.RigidConstraintModel(
         pinocchio.ContactType.CONTACT_6D,
+        robot.model,
         foot_joint_ids[j],
         robot.model.frames[frame_id].placement,
         0,
@@ -56,6 +54,7 @@ constraint_models[2].joint2_placement = pinocchio.SE3(
     pinocchio.rpy.rpyToMatrix(np.array([0, -np.pi / 2, 0.0])), np.array([0.6, 0.4, 1.0])
 )
 
+robot.setVisualizer(GepettoVisualizer())
 robot.initViewer()
 robot.loadViewerModel("pinocchio")
 gui = robot.viewer.gui
@@ -93,7 +92,7 @@ mass = data.mass[0]
 
 def squashing(model, data, q_in):
     q = q_in.copy()
-    y = np.ones((constraint_dim))
+    y = np.ones(constraint_dim)
 
     N_full = 200
 
@@ -103,9 +102,16 @@ def squashing(model, data, q_in):
     com_base = data.com[0].copy()
     kp = 1.0
     speed = 1.0
-    com_des = lambda k: com_base - np.array(
-        [0.0, 0.0, np.abs(com_drop_amp * np.sin(2.0 * np.pi * k * speed / (N_full)))]
-    )
+
+    def com_des(k):
+        return com_base - np.array(
+            [
+                0.0,
+                0.0,
+                np.abs(com_drop_amp * np.sin(2.0 * np.pi * k * speed / (N_full))),
+            ]
+        )
+
     for k in range(N):
         pinocchio.computeAllTerms(model, data, q, np.zeros(model.nv))
         pinocchio.computeJointJacobians(model, data, q)

@@ -15,6 +15,9 @@ set(PROJECT_USE_CMAKE_EXPORT TRUE)
 set(PROJECT_USE_KEYWORD_LINK_LIBRARIES TRUE)
 set(PROJECT_COMPATIBILITY_VERSION AnyNewerVersion)
 set(PINOCCHIO_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR})
+# To enable jrl-cmakemodules compatibility with workspace we must define the two following lines
+set(PROJECT_AUTO_RUN_FINALIZE FALSE)
+set(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 # Disable -Werror on Unix for now.
 set(CXX_DISABLE_WERROR True)
@@ -58,21 +61,44 @@ endif()
 set(DOXYGEN_USE_MATHJAX YES)
 set(DOXYGEN_USE_TEMPLATE_CSS YES)
 
+# ----------------------------------------------------
+# --- Policy -----------------------------------------
+# CMake Policy setup
+# ----------------------------------------------------
+# Policy can be removed when cmake_minimum_required is updated.
+
+# We also set CMAKE_POLICY_DEFAULT_CMPXXXX because CMake modules can reset policy and redefine some
+# macros like `find_dependency` that will not use our policy.
+
+# Use BoostConfig module distributed by boost library instead of using FindBoost module distributed
+# by CMake (to remove in 3.30). This policy is not working when using clang-cl.
+if(NOT WIN32 OR NOT ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+  if(POLICY CMP0167)
+    cmake_policy(SET CMP0167 NEW)
+    set(CMAKE_POLICY_DEFAULT_CMP0167 NEW)
+  endif()
+endif()
+# install() DESTINATION paths are normalized (to remove in 3.31).
+if(POLICY CMP0177)
+  cmake_policy(SET CMP0177 NEW)
+  set(CMAKE_POLICY_DEFAULT_CMP0177 NEW)
+endif()
 include("${JRL_CMAKE_MODULES}/base.cmake")
 
 compute_project_args(PROJECT_ARGS LANGUAGES CXX)
 project(${PROJECT_NAME} ${PROJECT_ARGS})
 
+include("${JRL_CMAKE_MODULES}/python.cmake")
 include("${JRL_CMAKE_MODULES}/boost.cmake")
 include("${JRL_CMAKE_MODULES}/ide.cmake")
 include("${JRL_CMAKE_MODULES}/apple.cmake")
 if(APPLE) # Use the handmade approach
   if(${CMAKE_VERSION} VERSION_LESS "3.18.0") # Need to find the right version
-    set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/find-external/OpenMP ${CMAKE_MODULE_PATH})
+    set(CMAKE_MODULE_PATH ${JRL_CMAKE_MODULES}/find-external/OpenMP ${CMAKE_MODULE_PATH})
   endif()
 elseif(UNIX)
   if(${CMAKE_VERSION} VERSION_EQUAL "3.20.0")
-    set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/find-external/OpenMP ${CMAKE_MODULE_PATH})
+    set(CMAKE_MODULE_PATH ${JRL_CMAKE_MODULES}/find-external/OpenMP ${CMAKE_MODULE_PATH})
   endif()
 endif()
 include(CMakeDependentOption)
@@ -123,9 +149,8 @@ cmake_dependent_option(
   BUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT
   "Build the Python interface with Boost.Multiprecision MPFR support" OFF BUILD_PYTHON_INTERFACE
   OFF)
-cmake_dependent_option(
-  BUILD_WITH_LIBPYTHON "Link to libpython to embed an interpreter for the python_parser feature" ON
-  "BUILD_PYTHON_INTERFACE" OFF)
+cmake_dependent_option(BUILD_WITH_LIBPYTHON "Build the library with Python format support" ON
+                       "BUILD_PYTHON_INTERFACE" OFF)
 if(APPLE)
   option(BUILD_WITH_ACCELERATE_SUPPORT "Build Pinocchio with the Accelerate support" OFF)
 else(APPLE)
@@ -152,6 +177,9 @@ if(BUILD_WITH_CODEGEN_SUPPORT)
 endif()
 if(BUILD_WITH_AUTODIFF_SUPPORT)
   set(BUILD_WITH_CPPAD_SUPPORT TRUE)
+endif()
+if(BUILD_WITH_LIBPYTHON)
+  set(BUILD_WITH_PYTHON_PARSER_SUPPORT TRUE)
 endif()
 
 if(BUILD_WITH_EXTRA_SUPPORT)
@@ -181,7 +209,7 @@ set(PINOCCHIO_MODEL_DIR "${PROJECT_SOURCE_DIR}/models")
 # ----------------------------------------------------
 # --- DEPENDENCIES -----------------------------------
 # ----------------------------------------------------
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/find-external/CppAD/" ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH "${JRL_CMAKE_MODULES}/find-external/CppAD/" ${CMAKE_MODULE_PATH})
 add_project_dependency(Eigen3 REQUIRED PKG_CONFIG_REQUIRES "eigen3 >= 3.0.5")
 
 if(BUILD_WITH_URDF_SUPPORT)
@@ -189,7 +217,6 @@ if(BUILD_WITH_URDF_SUPPORT)
   add_project_dependency(urdfdom REQUIRED PKG_CONFIG_REQUIRES "urdfdom >= 0.2.0")
   set(urdfdom_VERSION ${urdfdom_headers_VERSION})
   list(APPEND CFLAGS_DEPENDENCIES "-DPINOCCHIO_WITH_URDFDOM")
-  list(APPEND LIBRARIES_DEPENDENCIES "urdfdom_world")
 
   if(${urdfdom_VERSION} VERSION_GREATER "0.4.2")
     check_minimal_cxx_standard(11 ENFORCE)
@@ -197,8 +224,8 @@ if(BUILD_WITH_URDF_SUPPORT)
       STATUS
         "Since urdfdom >= 1.0.0, the default C++ standard is C++11. The project is then compiled with C++11 standard."
     )
-  endif(${urdfdom_VERSION} VERSION_GREATER "0.4.2")
-endif(BUILD_WITH_URDF_SUPPORT)
+  endif()
+endif()
 
 if(BUILD_WITH_SDF_SUPPORT)
   include(${CMAKE_CURRENT_LIST_DIR}/cmake/sdformat.cmake)
@@ -207,25 +234,34 @@ if(BUILD_WITH_SDF_SUPPORT)
     check_minimal_cxx_standard(11 REQUIRED)
     include_directories(${SDFormat_INCLUDE_DIRS})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SDFormat_CXX_FLAGS}")
-  endif(SDFormat_FOUND)
-endif(BUILD_WITH_SDF_SUPPORT)
+    list(APPEND CFLAGS_DEPENDENCIES "-DPINOCCHIO_WITH_SDFORMAT")
+  endif()
+endif()
 
 set(BUILD_WITH_PARSERS_SUPPORT BUILD_WITH_URDF_SUPPORT OR BUILD_WITH_SDF_SUPPORT)
+
+if(BUILD_WITH_PARSERS_SUPPORT)
+  list(APPEND LIBRARIES_DEPENDENCIES ${PROJECT_NAME}_parsers)
+endif()
 
 if(BUILD_WITH_AUTODIFF_SUPPORT)
   # Check first CppADCodeGen
   if(BUILD_WITH_CODEGEN_SUPPORT)
+    # No need to add cppadcg to pkg-config (no lib and header in the same directory than cppad)
     add_project_dependency(cppadcg 2.4.1 REQUIRED)
+    list(APPEND LIBRARIES_DEPENDENCIES ${PROJECT_NAME}_cppadcg)
   endif(BUILD_WITH_CODEGEN_SUPPORT)
 
   add_project_dependency(
     cppad 20180000.0 REQUIRED
     PKG_CONFIG_REQUIRES "cppad >= 20220624.0"
     FIND_EXTERNAL "CppAD")
+  list(APPEND LIBRARIES_DEPENDENCIES ${PROJECT_NAME}_cppad)
 endif(BUILD_WITH_AUTODIFF_SUPPORT)
 
 if(BUILD_WITH_CASADI_SUPPORT)
   add_project_dependency(casadi 3.4.5 REQUIRED PKG_CONFIG_REQUIRES "casadi >= 3.4.5")
+  list(APPEND LIBRARIES_DEPENDENCIES ${PROJECT_NAME}_casadi)
 endif(BUILD_WITH_CASADI_SUPPORT)
 
 if(BUILD_WITH_OPENMP_SUPPORT)
@@ -233,6 +269,7 @@ if(BUILD_WITH_OPENMP_SUPPORT)
 endif()
 
 if(BUILD_WITH_EXTRA_SUPPORT)
+  list(APPEND LIBRARIES_DEPENDENCIES ${PROJECT_NAME}_extra qhullcpp qhull_r)
   add_project_dependency(Qhull COMPONENTS qhullcpp qhull_r REQUIRED)
   message(STATUS "Found Qhull.")
 endif()
@@ -244,7 +281,7 @@ export_boost_default_options()
 add_project_dependency(Boost REQUIRED COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 if(Boost_VERSION_STRING VERSION_LESS 1.81)
-  if(BUILD_WITH_URDF_SUPPORT AND ${urdfdom_VERSION} VERSION_GREATER "0.4.2")
+  if(BUILD_WITH_URDF_SUPPORT AND "${urdfdom_VERSION}" VERSION_GREATER "0.4.2")
     check_minimal_cxx_standard(11 ENFORCE)
     message(
       STATUS
@@ -263,6 +300,7 @@ if(BUILD_PYTHON_INTERFACE)
   )
 
   set(PYTHON_COMPONENTS Interpreter Development.Module NumPy)
+  findpython(REQUIRED)
   add_project_dependency(eigenpy 2.7.10 REQUIRED)
 
   if(BUILD_WITH_URDF_SUPPORT)
@@ -280,36 +318,23 @@ if(BUILD_PYTHON_INTERFACE)
 
   message(STATUS "Python compiler: ${_python_implementation_value}")
   if(_python_implementation_value MATCHES "PyPy")
-    set(BUILD_PYTHON_INTERFACE_WITH_PYPY TRUE)
+    set(BUILD_WITH_PYTHON_PARSER_SUPPORT OFF)
+    message(
+      STATUS
+        "PyPy detected, therefore libpython is not available and BUILD_WITH_LIBPYTHON set to OFF.")
   endif()
-
-else(BUILD_PYTHON_INTERFACE)
+else()
   message(
     STATUS
       "Pinocchio won't be compiled with its Python bindings. If you want to enable this feature, please set the option BUILD_PYTHON_INTERFACE to ON."
   )
-endif(BUILD_PYTHON_INTERFACE)
+endif()
 
 if(BUILD_WITH_HPP_FCL_SUPPORT)
   list(APPEND CFLAGS_DEPENDENCIES "-DPINOCCHIO_WITH_HPP_FCL")
-  list(APPEND LIBRARIES_DEPENDENCIES "hpp-fcl")
+  list(APPEND LIBRARIES_DEPENDENCIES ${PROJECT_NAME}_collision)
   add_project_dependency(hpp-fcl 2.1.2 REQUIRED PKG_CONFIG_REQUIRES "hpp-fcl >= 2.1.2")
-  # Check whether hpp-fcl python bindings are available.
-  set(BUILD_WITH_HPP_FCL_PYTHON_BINDINGS FALSE)
-  if(BUILD_PYTHON_INTERFACE)
-    execute_process(
-      COMMAND ${PYTHON_EXECUTABLE} -c "import hppfcl"
-      RESULT_VARIABLE _hpp_fcl_python_bindings_not_found
-      OUTPUT_QUIET ERROR_QUIET)
-    if(_hpp_fcl_python_bindings_not_found EQUAL 0)
-      set(BUILD_WITH_HPP_FCL_PYTHON_BINDINGS TRUE)
-      message(STATUS "Found hpp-fcl Python bindings.")
-    else()
-      message(STATUS "hpp-fcl Python bindings NOT found.")
-    endif()
-    unset(_hpp_fcl_python_bindings_not_found)
-  endif(BUILD_PYTHON_INTERFACE)
-endif(BUILD_WITH_HPP_FCL_SUPPORT)
+endif()
 
 if(BUILD_WITH_ACCELERATE_SUPPORT)
   if(NOT ${Eigen3_VERSION} VERSION_GREATER_EQUAL "3.4.90")
@@ -355,15 +380,6 @@ if(BUILD_WITH_EXTRA_SUPPORT)
   list(APPEND ${PROJECT_NAME}_BINDINGS_PYTHON_SOURCES
        ${${PROJECT_NAME}_BINDINGS_PYTHON_EXTRA_SOURCES})
 endif()
-
-# LibPython sources
-if(BUILD_WITH_LIBPYTHON)
-  list(APPEND ${PROJECT_NAME}_CORE_PUBLIC_HEADERS ${${PROJECT_NAME}_LIBPYTHON_PUBLIC_HEADERS})
-  list(APPEND ${PROJECT_NAME}_BINDINGS_PYTHON_SOURCES
-       ${${PROJECT_NAME}_BINDINGS_PYTHON_LIBPYTHON_SOURCES})
-  list(APPEND ${PROJECT_NAME}_BINDINGS_PYTHON_PUBLIC_HEADERS
-       ${${PROJECT_NAME}_BINDINGS_PYTHON_LIBPYTHON_PUBLIC_HEADERS})
-endif(BUILD_WITH_LIBPYTHON)
 
 # HPP-FCL sources
 if(BUILD_WITH_HPP_FCL_SUPPORT)
@@ -491,6 +507,11 @@ if(BUILD_WITH_EXTRA_SUPPORT)
   export_variable(PINOCCHIO_USE_EXTRA ON)
   set(PACKAGE_EXTRA_MACROS "${PACKAGE_EXTRA_MACROS}\nset(PINOCCHIO_USE_EXTRA \"\")")
 endif()
+if(BUILD_WITH_PYTHON_PARSER_SUPPORT)
+  export_variable(PINOCCHIO_USE_PYTHON_PARSER ON)
+  set(PACKAGE_EXTRA_MACROS "${PACKAGE_EXTRA_MACROS}\nset(PINOCCHIO_USE_PYTHON_PARSER \"\")")
+endif()
+export_variable(pinocchio_VERSION ${pinocchio_VERSION})
 
 # Install catkin package.xml
 install(FILES package.xml DESTINATION share/${PROJECT_NAME})
@@ -506,3 +527,5 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/share/${PROJECT_NAME}/hook/python_path.ds
      "prepend-non-duplicate;PYTHONPATH;${PYTHON_SITELIB}")
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/share/${PROJECT_NAME}/hook/python_path.dsv
         DESTINATION share/${PROJECT_NAME}/hook)
+
+setup_project_finalize()

@@ -31,5 +31,11 @@ configure-args = [
   "-DSUFFIX_SO_VERSION=OFF"
 ]
 
+[tool.ruff]
+exclude = [ "cmake/*", "models/example-robot-data/*" ]
+
+[tool.ruff.lint]
+select = [ "E", "F", "I", "PTH", "RUF", "UP", "W" ]
+
 [tool.tomlsort]
 all = true

@@ -4,31 +4,28 @@
 
 from . import pinocchio_pywrap_default as pin
 from . import utils
-from .shortcuts import buildModelsFromUrdf, createDatas, buildModelsFromSdf
+from .shortcuts import (
+    buildModelsFromMJCF,
+    buildModelsFromSdf,
+    buildModelsFromUrdf,
+    createDatas,
+)
 
-import numpy as np
 
-
-class RobotWrapper(object):
+class RobotWrapper:
     @staticmethod
-    def BuildFromURDF(
-        filename, package_dirs=None, root_joint=None, verbose=False, meshLoader=None
-    ):
+    def BuildFromURDF(filename, *args, **kwargs):
         robot = RobotWrapper()
-        robot.initFromURDF(filename, package_dirs, root_joint, verbose, meshLoader)
+
+        robot.initFromURDF(filename, *args, **kwargs)
+
         return robot
 
-    def initFromURDF(
-        self,
-        filename,
-        package_dirs=None,
-        root_joint=None,
-        verbose=False,
-        meshLoader=None,
-    ):
+    def initFromURDF(self, filename, *args, **kwargs):
         model, collision_model, visual_model = buildModelsFromUrdf(
-            filename, package_dirs, root_joint, verbose, meshLoader
+            filename, *args, **kwargs
         )
+
         RobotWrapper.__init__(
             self,
             model=model,
@@ -37,46 +34,16 @@ class RobotWrapper(object):
         )
 
     @staticmethod
-    def BuildFromSDF(
-        filename,
-        package_dirs=None,
-        root_joint=None,
-        root_link_name="",
-        parent_guidance=[],
-        verbose=False,
-        meshLoader=None,
-    ):
+    def BuildFromSDF(filename, *args, **kwargs):
         robot = RobotWrapper()
-        robot.initFromSDF(
-            filename,
-            package_dirs,
-            root_joint,
-            root_link_name,
-            parent_guidance,
-            verbose,
-            meshLoader,
-        )
+        robot.initFromSDF(filename, *args, **kwargs)
         return robot
 
-    def initFromSDF(
-        self,
-        filename,
-        package_dirs=None,
-        root_joint=None,
-        root_link_name="",
-        parent_guidance=[],
-        verbose=False,
-        meshLoader=None,
-    ):
+    def initFromSDF(self, filename, *args, **kwargs):
         model, constraint_models, collision_model, visual_model = buildModelsFromSdf(
-            filename,
-            package_dirs,
-            root_joint,
-            root_link_name,
-            parent_guidance,
-            verbose,
-            meshLoader,
+            filename, *args, **kwargs
         )
+
         RobotWrapper.__init__(
             self,
             model=model,
@@ -84,6 +51,25 @@ class RobotWrapper(object):
             visual_model=visual_model,
         )
         self.constraint_models = constraint_models
+
+    @staticmethod
+    def BuildFromMJCF(filename, *args, **kwargs):
+        robot = RobotWrapper()
+        robot.initFromMJCF(filename, *args, **kwargs)
+
+        return robot
+
+    def initFromMJCF(self, filename, *args, **kwargs):
+        model, collision_model, visual_model = buildModelsFromMJCF(
+            filename, *args, **kwargs
+        )
+
+        RobotWrapper.__init__(
+            self,
+            model=model,
+            collision_model=collision_model,
+            visual_model=visual_model,
+        )
 
     def __init__(
         self, model=pin.Model(), collision_model=None, visual_model=None, verbose=False
@@ -134,13 +120,16 @@ class RobotWrapper(object):
 
     def centroidalMap(self, q):
         """
-        Computes the centroidal momentum matrix which maps from the joint velocity vector to the centroidal momentum expressed around the center of mass.
+        Computes the centroidal momentum matrix which maps from the joint velocity
+        vector to the centroidal momentum expressed around the center of mass.
         """
         return pin.computeCentroidalMap(self.model, self.data, q)
 
     def centroidal(self, q, v):
         """
-        Computes all the quantities related to the centroidal dynamics (hg, Ag and Ig), corresponding to the centroidal momentum, the centroidal map and the centroidal rigid inertia.
+        Computes all the quantities related to the centroidal dynamics (hg, Ag and Ig),
+        corresponding to the centroidal momentum, the centroidal map and the centroidal
+        rigid inertia.
         """
         pin.ccrba(self.model, self.data, q, v)
         return (self.data.hg, self.data.Ag, self.data.Ig)
@@ -324,15 +313,16 @@ class RobotWrapper(object):
 
     def getFrameJacobian(self, frame_id, rf_frame=pin.ReferenceFrame.LOCAL):
         """
-        It computes the Jacobian of frame given by its id (frame_id) either expressed in the
-        local coordinate frame or in the world coordinate frame.
+        It computes the Jacobian of frame given by its id (frame_id) either expressed in
+        the local coordinate frame or in the world coordinate frame.
         """
         return pin.getFrameJacobian(self.model, self.data, frame_id, rf_frame)
 
     def computeFrameJacobian(self, q, frame_id):
         """
         Similar to getFrameJacobian but does not need pin.computeJointJacobians and
-        pin.updateFramePlacements to update internal value of self.data related to frames.
+        pin.updateFramePlacements to update internal value of self.data related to
+        frames.
         """
         return pin.computeFrameJacobian(self.model, self.data, q, frame_id)
 
@@ -370,8 +360,10 @@ class RobotWrapper(object):
         return self.viz.viewer
 
     def setVisualizer(self, visualizer, init=True, copy_models=False):
-        """Set the visualizer. If init is True, the visualizer is initialized with this wrapper's models.
-        If copy_models is also True, the models are copied. Otherwise, they are simply kept as a reference.
+        """
+        Set the visualizer. If init is True, the visualizer is initialized with this
+        wrapper's models.  If copy_models is also True, the models are copied.
+        Otherwise, they are simply kept as a reference.
         """
         if init:
             visualizer.__init__(
@@ -380,21 +372,24 @@ class RobotWrapper(object):
         self.viz = visualizer
 
     def getViewerNodeName(self, geometry_object, geometry_type):
-        """For each geometry object, returns the corresponding name of the node in the display."""
+        """
+        For each geometry object, returns the corresponding name of the node in the
+        display.
+        """
         return self.viz.getViewerNodeName(geometry_object, geometry_type)
 
     def initViewer(self, share_data=True, *args, **kwargs):
         """Init the viewer"""
-        # Set viewer to use to gepetto-gui.
+        # Set viewer to use to MeshCat.
         if self.viz is None:
-            from .visualize import GepettoVisualizer
+            from .visualize import Visualizer
 
             data, collision_data, visual_data = None, None, None
             if share_data:
                 data = self.data
                 collision_data = self.collision_data
                 visual_data = self.visual_data
-            self.viz = GepettoVisualizer(
+            self.viz = Visualizer.default()(
                 self.model,
                 self.collision_model,
                 self.visual_model,
@@ -407,11 +402,13 @@ class RobotWrapper(object):
         self.viz.initViewer(*args, **kwargs)
 
     def loadViewerModel(self, *args, **kwargs):
-        """Create the scene displaying the robot meshes in gepetto-viewer"""
+        """Create the scene displaying the robot meshes in MeshCat"""
         self.viz.loadViewerModel(*args, **kwargs)
 
     def display(self, q):
-        """Display the robot at configuration q in the viewer by placing all the bodies."""
+        """
+        Display the robot at configuration q in the viewer by placing all the bodies.
+        """
         self.viz.display(q)
 
     def displayCollisions(self, visibility):

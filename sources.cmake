@@ -153,8 +153,6 @@ set(${PROJECT_NAME}_CORE_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/pinocchio/math/tensor.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/math/triangular-matrix.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/math/tridiagonal-matrix.hpp
-    ${PROJECT_SOURCE_DIR}/include/pinocchio/multibody/constraint-base.hpp
-    ${PROJECT_SOURCE_DIR}/include/pinocchio/multibody/constraint-generic.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/multibody/data.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/multibody/data.hxx
     ${PROJECT_SOURCE_DIR}/include/pinocchio/multibody/fcl.hpp
@@ -236,7 +234,6 @@ set(${PROJECT_NAME}_CORE_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/pinocchio/serialization/fwd.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/serialization/geometry.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/serialization/inertia.hpp
-    ${PROJECT_SOURCE_DIR}/include/pinocchio/serialization/joints-constraint.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/serialization/joints-data.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/serialization/joints.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/serialization/joints-model.hpp
@@ -338,6 +335,7 @@ set(${PROJECT_NAME}_PARSERS_SOURCES
     ${PROJECT_SOURCE_DIR}/src/parsers/mjcf/mjcf-graph-geom.cpp)
 
 set(${PROJECT_NAME}_PARSERS_PUBLIC_HEADERS
+    ${PROJECT_SOURCE_DIR}/include/pinocchio/parsers/meshloader-fwd.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/parsers/srdf.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/parsers/srdf.hxx
     ${PROJECT_SOURCE_DIR}/include/pinocchio/parsers/utils.hpp
@@ -368,8 +366,10 @@ set(${PROJECT_NAME}_SDF_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/pinocchio/parsers/sdf/model.hxx
     ${PROJECT_SOURCE_DIR}/include/pinocchio/parsers/sdf/geometry.hxx)
 
-set(${PROJECT_NAME}_LIBPYTHON_PUBLIC_HEADERS
+set(${PROJECT_NAME}_PYTHON_PARSER_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/pinocchio/parsers/python.hpp)
+
+set(${PROJECT_NAME}_PYTHON_PARSER_SOURCES ${PROJECT_SOURCE_DIR}/src/parsers/python/model.cpp)
 
 set(${PROJECT_NAME}_EXTRA_SOURCES ${PROJECT_SOURCE_DIR}/src/extra/reachable-workspace.cpp)
 
@@ -472,6 +472,7 @@ set(${PROJECT_NAME}_BINDINGS_PYTHON_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/pinocchio/bindings/python/utils/version.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/bindings/python/utils/pickle-vector.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/bindings/python/utils/macros.hpp
+    ${PROJECT_SOURCE_DIR}/include/pinocchio/bindings/python/utils/path.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/bindings/python/utils/std-vector.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/bindings/python/utils/printable.hpp
     ${PROJECT_SOURCE_DIR}/include/pinocchio/bindings/python/utils/dependencies.hpp
@@ -570,6 +571,7 @@ set(${PROJECT_NAME}_BINDINGS_PYTHON_SOURCES
     ${PROJECT_SOURCE_DIR}/bindings/python/utils/version.cpp
     ${PROJECT_SOURCE_DIR}/bindings/python/utils/dependencies.cpp
     ${PROJECT_SOURCE_DIR}/bindings/python/utils/conversions.cpp
+    ${PROJECT_SOURCE_DIR}/bindings/python/utils/path.cpp
     ${PROJECT_SOURCE_DIR}/bindings/python/math/expose-linalg.cpp
     ${PROJECT_SOURCE_DIR}/bindings/python/math/expose-tridiagonal-matrix.cpp
     ${PROJECT_SOURCE_DIR}/bindings/python/math/expose-lanczos-decomposition.cpp
@@ -593,12 +595,6 @@ set(${PROJECT_NAME}_BINDINGS_PYTHON_SOURCES
     ${PROJECT_SOURCE_DIR}/bindings/python/parsers/mjcf/model.cpp
     ${PROJECT_SOURCE_DIR}/bindings/python/parsers/mjcf/geometry.cpp
     ${PROJECT_SOURCE_DIR}/bindings/python/extra/expose-extras.cpp)
-
-set(${PROJECT_NAME}_BINDINGS_PYTHON_LIBPYTHON_SOURCES
-    ${PROJECT_SOURCE_DIR}/bindings/python/parsers/python/model.cpp)
-
-set(${PROJECT_NAME}_BINDINGS_PYTHON_LIBPYTHON_PUBLIC_HEADERS
-    ${PROJECT_SOURCE_DIR}/include/pinocchio/bindings/python/parsers/python.hpp)
 
 set(${PROJECT_NAME}_BINDINGS_PYTHON_HPP_FCL_SOURCES
     ${PROJECT_SOURCE_DIR}/bindings/python/collision/expose-broadphase.cpp

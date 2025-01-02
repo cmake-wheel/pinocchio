@@ -1,12 +1,8 @@
-import numpy as np
-import hppfcl as fcl
-import pinocchio
-from example_robot_data import load
-from pinocchio.visualize import GepettoVisualizer
-from pinocchio import GeometryType
 from time import sleep
 
-from os.path import join, dirname, abspath
+import numpy as np
+import pinocchio
+from example_robot_data import load
 
 robot = load("anymal")
 model = robot.model
@@ -34,6 +30,7 @@ constraint_models = []
 for j, frame_id in enumerate(foot_frame_ids):
     contact_model_lf1 = pinocchio.RigidConstraintModel(
         pinocchio.ContactType.CONTACT_3D,
+        robot.model,
         foot_joint_ids[j],
         robot.model.frames[frame_id].placement,
         0,
@@ -44,18 +41,6 @@ for j, frame_id in enumerate(foot_frame_ids):
 
 robot.initViewer()
 robot.loadViewerModel("pinocchio")
-gui = robot.viewer.gui
-robot.display(robot.q0)
-window_id = robot.viewer.gui.getWindowID("python-pinocchio")
-
-robot.viewer.gui.setBackgroundColor1(window_id, [1.0, 1.0, 1.0, 1.0])
-robot.viewer.gui.setBackgroundColor2(window_id, [1.0, 1.0, 1.0, 1.0])
-robot.viewer.gui.addFloor("hpp-gui/floor")
-
-robot.viewer.gui.setScale("hpp-gui/floor", [0.5, 0.5, 0.5])
-robot.viewer.gui.setColor("hpp-gui/floor", [0.7, 0.7, 0.7, 1.0])
-robot.viewer.gui.setLightingMode("hpp-gui/floor", "OFF")
-
 robot.display(robot.q0)
 
 constraint_datas = [cm.createData() for cm in constraint_models]
@@ -79,7 +64,7 @@ mass = data.mass[0]
 
 def squashing(model, data, q_in):
     q = q_in.copy()
-    y = np.ones((constraint_dim))
+    y = np.ones(constraint_dim)
 
     N_full = 200
 
@@ -89,9 +74,16 @@ def squashing(model, data, q_in):
     com_base = data.com[0].copy()
     kp = 1.0
     speed = 1.0
-    com_des = lambda k: com_base - np.array(
-        [0.0, 0.0, np.abs(com_drop_amp * np.sin(2.0 * np.pi * k * speed / (N_full)))]
-    )
+
+    def com_des(k):
+        return com_base - np.array(
+            [
+                0.0,
+                0.0,
+                np.abs(com_drop_amp * np.sin(2.0 * np.pi * k * speed / (N_full))),
+            ]
+        )
+
     for k in range(N):
         pinocchio.computeAllTerms(model, data, q, np.zeros(model.nv))
         pinocchio.computeJointJacobians(model, data, q)
@@ -102,7 +94,9 @@ def squashing(model, data, q_in):
         constraint_value = np.concatenate(
             [cd.c1Mc2.translation for cd in constraint_datas]
         )
-        # constraint_value = np.concatenate([pinocchio.log6(cd.c1Mc2) for cd in constraint_datas])
+        # constraint_value = np.concatenate(
+        # [pinocchio.log6(cd.c1Mc2) for cd in constraint_datas]
+        # )
         J = np.vstack(
             [
                 pinocchio.getFrameJacobian(

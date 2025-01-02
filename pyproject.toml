@@ -1,18 +1,18 @@
 [build-system]
 build-backend = "cmeel"
 requires = [
-  "cmeel-boost ~= 1.83.0",
+  "cmeel-boost ~= 1.87.0",
   "cmeel-urdfdom[build] >= 3.1.1.1, < 4",
   "cmeel[build]",
-  "hpp-fcl[build] >= 2.3.4, < 4",
+  "coal-library[build] >= 3, < 4",
   "scipy",
 ]
 
 [project]
 dependencies = [
-  "cmeel-boost ~= 1.83.0",
+  "cmeel-boost ~= 1.87.0",
   "cmeel-urdfdom >= 3.1.1.1, < 4",
-  "hpp-fcl >= 2.3.4, < 4"
+  "coal-library >= 3, < 4"
 ]
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
 license = "BSD-3-Clause"

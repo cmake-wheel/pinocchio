@@ -17,7 +17,7 @@ dependencies = [
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
 license = "BSD-3-Clause"
 name = "pin"
-version = "3.0.0"
+version = "3.3.1"
 
 [project.urls]
 changelog = "https://github.com/stack-of-tasks/pinocchio/blob/master/CHANGELOG.md"

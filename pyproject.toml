@@ -2,7 +2,7 @@
 build-backend = "cmeel"
 requires = [
   "cmeel-boost ~= 1.87.0",
-  "cmeel-urdfdom[build] >= 3.1.1.1, < 4",
+  "cmeel-urdfdom[build] >= 4",
   "cmeel[build]",
   "coal-library[build] >= 3, < 4",
   "scipy",
@@ -11,7 +11,7 @@ requires = [
 [project]
 dependencies = [
   "cmeel-boost ~= 1.87.0",
-  "cmeel-urdfdom >= 3.1.1.1, < 4",
+  "cmeel-urdfdom >= 4",
   "coal-library >= 3, < 4"
 ]
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
@@ -28,6 +28,7 @@ upstream = "https://github.com/stack-of-tasks/pinocchio"
 build-number = 1
 configure-args = [
   "-DBUILD_WITH_COLLISION_SUPPORT=ON",
+  "-DBUILD_WITH_OPENMP_SUPPORT=ON",
   "-DBUILD_WITH_LIBPYTHON=OFF",
   "-DSUFFIX_SO_VERSION=OFF"
 ]

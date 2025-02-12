@@ -1,6 +1,6 @@
 [project]
 name = "pinocchio"
-version = "3.3.1"
+version = "3.4.0"
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
 platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 channels = ["conda-forge"]
@@ -56,9 +56,9 @@ configure = { cmd = [
   "-DBUILD_WITH_SDF_SUPPORT=$PINOCCHIO_SDF_SUPPORT",
   "-DBUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT=$PINOCCHIO_MPFR_SUPPORT",
 ] }
-build = { cmd = "cmake --build build --target all", depends_on = ["configure"] }
+build = { cmd = "cmake --build build --target all", depends-on = ["configure"] }
 clean = { cmd = "rm -rf build" }
-test = { cmd = "ctest --test-dir build --output-on-failure", depends_on = [
+test = { cmd = "ctest --test-dir build --output-on-failure", depends-on = [
   "build",
 ] }
 

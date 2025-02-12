@@ -36,7 +36,7 @@ jobs:
       - run: cibuildwheel
         env:
           CIBW_BUILD: "${{ matrix.python }}-*"
-          CIBW_SKIP: "*-musllinux_aarch64 *i686"
+          CIBW_SKIP: "*-musllinux* *i686"
           CIBW_MANYLINUX_X86_64_IMAGE: "quay.io/pypa/manylinux_2_28_x86_64"
           CIBW_MANYLINUX_AARCH64_IMAGE: "quay.io/pypa/manylinux_2_28_aarch64"
           CIBW_REPAIR_WHEEL_COMMAND: ""

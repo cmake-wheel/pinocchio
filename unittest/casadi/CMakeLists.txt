@@ -9,7 +9,7 @@ macro(ADD_CASADI_UNIT_TEST name)
   add_dependencies(${PROJECT_NAME}-test-casadi ${TEST_NAME})
 endmacro()
 
-if(BUILD_WITH_CASADI_SUPPORT)
+if(BUILD_WITH_CASADI_SUPPORT AND NOT BUILD_STANDALONE_PYTHON_INTERFACE)
   add_custom_target(${PROJECT_NAME}-test-casadi)
   set_target_properties(${PROJECT_NAME}-test-casadi PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD True)
 

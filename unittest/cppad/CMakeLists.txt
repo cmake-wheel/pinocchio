@@ -10,7 +10,7 @@ macro(ADD_CPPAD_UNIT_TEST name)
   add_dependencies(${PROJECT_NAME}-test-cpp-cppad ${TEST_NAME})
 endmacro()
 
-if(BUILD_WITH_AUTODIFF_SUPPORT)
+if(BUILD_WITH_AUTODIFF_SUPPORT AND NOT BUILD_STANDALONE_PYTHON_INTERFACE)
   add_custom_target(${PROJECT_NAME}-test-cpp-cppad)
   set_target_properties(${PROJECT_NAME}-test-cpp-cppad PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD True)
 

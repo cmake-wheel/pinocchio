@@ -11,7 +11,9 @@ set(PROJECT_DESCRIPTION
 )
 set(PROJECT_URL "http://github.com/stack-of-tasks/pinocchio")
 set(PROJECT_CUSTOM_HEADER_EXTENSION "hpp")
-set(PROJECT_USE_CMAKE_EXPORT TRUE)
+if(NOT BUILD_STANDALONE_PYTHON_INTERFACE)
+  set(PROJECT_USE_CMAKE_EXPORT TRUE)
+endif()
 set(PROJECT_USE_KEYWORD_LINK_LIBRARIES TRUE)
 set(PROJECT_COMPATIBILITY_VERSION AnyNewerVersion)
 set(PINOCCHIO_PROJECT_SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR})
@@ -114,7 +116,6 @@ check_minimal_cxx_standard(11 ENFORCE)
 # --- OPTIONS ----------------------------------------
 option(BUILD_BENCHMARK "Build the benchmarks" OFF)
 option(BUILD_UTILS "Build the utils" OFF)
-option(BUILD_PYTHON_INTERFACE "Build the Python bindings" ON)
 option(GENERATE_PYTHON_STUBS "Generate the Python stubs associated to the Python library" OFF)
 option(BUILD_WITH_COMMIT_VERSION "Build libraries by setting specific commit version" OFF)
 
@@ -300,6 +301,9 @@ if(BUILD_PYTHON_INTERFACE)
   set(PYTHON_COMPONENTS Interpreter Development NumPy)
   findpython(REQUIRED)
   add_project_dependency(eigenpy 2.7.10 REQUIRED)
+  if(BUILD_STANDALONE_PYTHON_INTERFACE)
+    add_project_dependency(${PROJECT_NAME} REQUIRED CONFIG)
+  endif()
 
   if(BUILD_WITH_URDF_SUPPORT)
     # console_bridge is urdfdom dependency.
@@ -446,10 +450,14 @@ function(ADD_WINDOWS_DLL_PATH_TO_TEST TEST_NAME)
 endfunction()
 
 # --- MAIN LIBRARY -------------------------------------------------------------
-add_subdirectory(src)
+if(NOT BUILD_STANDALONE_PYTHON_INTERFACE)
+  add_subdirectory(src)
+endif()
 
 # --- BINDINGS -----------------------------------------------------------------
-add_subdirectory(bindings)
+if(BUILD_PYTHON_INTERFACE)
+  add_subdirectory(bindings)
+endif()
 
 # --- EXECUTABLES --------------------------------------------------------------
 add_subdirectory(utils)
@@ -461,7 +469,7 @@ add_subdirectory(unittest)
 add_subdirectory(examples)
 
 # --- BENCHMARKS ---------------------------------------------------------------
-if(BUILD_BENCHMARK)
+if(BUILD_BENCHMARK AND NOT BUILD_STANDALONE_PYTHON_INTERFACE)
   add_subdirectory(benchmark)
 endif()
 
@@ -521,8 +529,5 @@ foreach(boostlib ${BOOST_REQUIRED_COMPONENTS})
 endforeach()
 pkg_config_append_cflags("${CFLAGS_DEPENDENCIES}")
 pkg_config_append_cflags("${CFLAGS_OPTIONS}")
-
-# Install catkin package.xml
-install(FILES package.xml DESTINATION share/${PROJECT_NAME})
 
 setup_project_finalize()

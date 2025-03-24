@@ -4,7 +4,7 @@ requires = [
   "cmeel-boost ~= 1.87.0",
   "cmeel-urdfdom[build] >= 4",
   "cmeel[build]",
-  "coal-library[build] >= 3, < 4",
+  "coal[build] >= 3, < 4",
   "scipy",
 ]
 
@@ -12,7 +12,7 @@ requires = [
 dependencies = [
   "cmeel-boost ~= 1.87.0",
   "cmeel-urdfdom >= 4",
-  "coal-library >= 3, < 4"
+  "coal >= 3, < 4"
 ]
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
 license = "BSD-3-Clause"

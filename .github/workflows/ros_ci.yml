@@ -10,25 +10,21 @@ on:
       - doc/**
       - .gitlab-ci.yml
       - .gitignore
-      - '*.md'
+      - '**.md'
       - CITATION.*
       - COPYING.LESSER
       - colcon.pkg
       - .pre-commit-config.yaml
-      - CHANGELOG.md
-      - development/*.md
   pull_request:
     paths-ignore:
       - doc/**
       - .gitlab-ci.yml
       - .gitignore
-      - '*.md'
+      - '**.md'
       - CITATION.*
       - COPYING.LESSER
       - colcon.pkg
       - .pre-commit-config.yaml
-      - CHANGELOG.md
-      - development/*.md
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -38,10 +34,9 @@ jobs:
     strategy:
       matrix:
         env:
-          - {ROS_DISTRO: noetic, BUILDER: catkin_tools}
-          - {ROS_DISTRO: rolling}
-          - {ROS_DISTRO: iron}
           - {ROS_DISTRO: humble}
+          - {ROS_DISTRO: jazzy}
+          - {ROS_DISTRO: rolling}
     env:
       CCACHE_DIR: /github/home/.ccache             # Enable ccache
       # The following is a work-around for ROS1 tooling in conjunction with jrl-cmakemodules:
@@ -63,8 +58,8 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ${{ env.CCACHE_DIR }}
-          key: ccache-${{ matrix.env.ROS_DISTRO }}-${{ matrix.env.ROS_REPO }}-${{ github.sha }}
-          restore-keys: ccache-${{ matrix.env.ROS_DISTRO }}-${{ matrix.env.ROS_REPO }}-
+          key: ccache-${{ matrix.env.ROS_DISTRO }}-${{ github.sha }}
+          restore-keys: ccache-${{ matrix.env.ROS_DISTRO }}-
       # Run industrial_ci
-      - uses: ros-industrial/industrial_ci@8d0620b3c43fc3bb2599b6ede6e0a261a2eced02
+      - uses: 'ros-industrial/industrial_ci@16472786c1ffc53596007da4318db98d1f677933'
         env: ${{ matrix.env }}

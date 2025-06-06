@@ -15,6 +15,7 @@
 #include "pinocchio/bindings/python/utils/std-vector.hpp"
 #include "pinocchio/bindings/python/utils/comparable.hpp"
 #include "pinocchio/bindings/python/utils/copyable.hpp"
+#include "pinocchio/bindings/python/utils/model-checker.hpp"
 
 #include "pinocchio/bindings/python/algorithm/delassus-operator.hpp"
 
@@ -47,10 +48,13 @@ namespace pinocchio
       void visit(PyClass & cl) const
       {
         cl.def(bp::init<>(bp::arg("self"), "Default constructor."))
-          .def(bp::init<const Model &>(bp::args("self", "model"), "Constructor from a model."))
+          .def(bp::init<const Model &>(
+            bp::args("self", "model"),
+            "Constructor from a model.")[mimic_not_supported_function<>(1)])
           .def(bp::init<const Model &, const RigidConstraintModelVector &>(
             (bp::arg("self"), bp::arg("model"), bp::arg("contact_models")),
-            "Constructor from a model and a collection of RigidConstraintModels."))
+            "Constructor from a model and a collection of RigidConstraintModels.")
+                 [mimic_not_supported_function<>(1)])
 
           .PINOCCHIO_ADD_PROPERTY_READONLY_BYVALUE(Self, U, "")
           .PINOCCHIO_ADD_PROPERTY_READONLY_BYVALUE(Self, D, "")
@@ -79,7 +83,8 @@ namespace pinocchio
             "related to the system mass matrix and the Jacobians of the contact patches contained "
             "in\n"
             "the vector of RigidConstraintModel named contact_models. The decomposition is "
-            "regularized with a factor mu.")
+            "regularized with a factor mu.",
+            mimic_not_supported_function<>(1))
 
           .def(
             "compute",
@@ -92,7 +97,8 @@ namespace pinocchio
             "related to the system mass matrix and the Jacobians of the contact patches contained "
             "in\n"
             "the vector of RigidConstraintModel named contact_models. The decomposition is "
-            "regularized with a factor mu.")
+            "regularized with a factor mu.",
+            mimic_not_supported_function<>(1))
 
           .def(
             "updateDamping", (void(Self::*)(const Scalar &)) & Self::updateDamping,
@@ -182,11 +188,11 @@ namespace pinocchio
               "Returns the Constraint Cholesky decomposition associated to this "
               "DelassusCholeskyExpression.",
               bp::return_internal_reference<>())
-
             .def(DelassusOperatorBasePythonVisitor<DelassusCholeskyExpression>());
         }
 
         {
+#ifndef PINOCCHIO_PYTHON_SKIP_CASADI_UNSUPPORTED
           typedef DelassusOperatorDenseTpl<context::Scalar, context::Options> DelassusOperatorDense;
           bp::class_<DelassusOperatorDense>(
             "DelassusOperatorDense", "Delassus Cholesky dense operator from a dense matrix.",
@@ -195,9 +201,11 @@ namespace pinocchio
               bp::args("self", "matrix"), "Build from a given dense matrix"))
 
             .def(DelassusOperatorBasePythonVisitor<DelassusOperatorDense>());
+#endif // PINOCCHIO_PYTHON_SKIP_CASADI_UNSUPPORTED
         }
 
         {
+#ifndef PINOCCHIO_PYTHON_SKIP_CASADI_UNSUPPORTED
           typedef DelassusOperatorSparseTpl<context::Scalar, context::Options>
             DelassusOperatorSparse;
           bp::class_<DelassusOperatorSparse, boost::noncopyable>(
@@ -207,6 +215,7 @@ namespace pinocchio
               bp::args("self", "matrix"), "Build from a given sparse matrix"))
 
             .def(DelassusOperatorBasePythonVisitor<DelassusOperatorSparse>());
+#endif // PINOCCHIO_PYTHON_SKIP_CASADI_UNSUPPORTED
         }
 #ifdef PINOCCHIO_WITH_ACCELERATE_SUPPORT
         {

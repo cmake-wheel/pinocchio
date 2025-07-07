@@ -5,13 +5,14 @@ on:
     tags:
       - "v*"
     branches:
-      - cmeel
+      - cmeel-only-py
   pull_request:
     branches:
-      - cmeel
+      - cmeel-only-py
 
 env:
   CMEEL_LOG_LEVEL: DEBUG
+  DEPS: coal[build]==3.0.1.90 cmeel-urdfdom[build] scipy pin-cpp==3.7.0.90
 
 jobs:
   wheel:
@@ -40,13 +41,13 @@ jobs:
           CIBW_MANYLINUX_X86_64_IMAGE: "quay.io/pypa/manylinux_2_28_x86_64"
           CIBW_MANYLINUX_AARCH64_IMAGE: "quay.io/pypa/manylinux_2_28_aarch64"
           CIBW_REPAIR_WHEEL_COMMAND: ""
-          CIBW_ENVIRONMENT: CMEEL_LOG_LEVEL="DEBUG" CMEEL_JOBS="1" CMEEL_TEST_JOBS="1" CMEEL_RUN_TESTS="false" CMEEL_CMAKE_ARGS="-DBUILD_WITH_OPENMP_SUPPORT=$OPENMP"
+          CIBW_ENVIRONMENT: CMEEL_LOG_LEVEL="DEBUG" CMEEL_JOBS="1" CMEEL_TEST_JOBS="1" CMEEL_RUN_TESTS="false" CMEEL_CMAKE_ARGS="-DBUILD_WITH_OPENMP_SUPPORT=$OPENMP" PIP_EXTRA_INDEX_URL=https://test.pypi.org/simple/
       - uses: actions/upload-artifact@v4
         with:
           name: "artifact-${{ matrix.os }}-${{ matrix.python }}"
           path: wheelhouse
 
-  test:
+  test-wheel:
     needs: ["wheel"]
     name: "Test ${{ matrix.python }} ${{ matrix.os }}"
     runs-on: "${{ matrix.os }}"
@@ -72,9 +73,9 @@ jobs:
           python -m pip install wheel simple503
           python -m simple503 --base-url ${{ github.workspace }}/wheelhouse ${{ github.workspace }}/wheelhouse
       - name: install deps
-        run: python -m pip install build cmeel[build] coal[build] cmeel-urdfdom[build] scipy
+        run: python -m pip install --extra-index-url https://test.pypi.org/simple/ cmeel $DEPS
       - name: install wheel
-        run: python -m pip install -i "file://${{ github.workspace }}/wheelhouse" cmeel-boost
+        run: python -m pip install -i "file://${{ github.workspace }}/wheelhouse" pin
 
   sdist:
     runs-on: ubuntu-24.04
@@ -88,7 +89,7 @@ jobs:
       - name: setup
         run: |
           python -m pip install -U pip
-          python -m pip install build cmeel[build] coal[build] cmeel-urdfdom[build] scipy
+          python -m pip install build --extra-index-url https://test.pypi.org/simple/ cmeel[build] $DEPS
       - name: build sdist
         run: python -m build -nso dist .
       - uses: actions/upload-artifact@v4
@@ -96,8 +97,27 @@ jobs:
           name: artifact-sdist
           path: dist
 
+  test-sdist:
+    runs-on: ubuntu-24.04
+    needs: ["sdist"]
+    name: "Test sdist"
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: "artifact-sdist"
+          path: dist
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.13
+      - name: setup
+        run: |
+          python -m pip install -U pip
+          python -m pip install --extra-index-url https://test.pypi.org/simple/ build cmeel[build] $DEPS
+      - name: install sdist
+        run: python -m pip install --extra-index-url https://test.pypi.org/simple/ dist/pin*.tar.gz
+
   release:
-    needs: ["test", "sdist"]
+    needs: ["test-wheel", "test-sdist"]
     if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     runs-on: ubuntu-24.04
     environment: release
@@ -121,3 +141,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
+          repository-url: https://test.pypi.org/legacy/

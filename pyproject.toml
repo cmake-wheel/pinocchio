@@ -21,7 +21,7 @@ dependencies = [
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
 license = "BSD-3-Clause"
 name = "pin"
-version = "3.4.0"
+version = "3.7.0.90"
 
 [project.urls]
 changelog = "https://github.com/stack-of-tasks/pinocchio/blob/master/CHANGELOG.md"
@@ -35,6 +35,7 @@ configure-args = [
   "-DSUFFIX_SO_VERSION=OFF",
   "-DBUILD_STANDALONE_PYTHON_INTERFACE=ON",
 ]
+upstream-version = "3.7.0"
 
 [tool.ruff]
 exclude = [ "cmake/*", "models/example-robot-data/*" ]

@@ -298,7 +298,7 @@ if(BUILD_PYTHON_INTERFACE)
       "The Python bindings of Pinocchio will be compiled along the main library. If you want to disable this feature, please set the option BUILD_PYTHON_INTERFACE to OFF."
   )
 
-  set(PYTHON_COMPONENTS Interpreter Development NumPy)
+  set(PYTHON_COMPONENTS Interpreter Development.Module NumPy)
   findpython(REQUIRED)
   add_project_dependency(eigenpy 2.7.10 REQUIRED)
   if(BUILD_STANDALONE_PYTHON_INTERFACE)
@@ -521,13 +521,5 @@ if(BUILD_WITH_PYTHON_PARSER_SUPPORT)
   set(PACKAGE_EXTRA_MACROS "${PACKAGE_EXTRA_MACROS}\nset(PINOCCHIO_USE_PYTHON_PARSER \"\")")
 endif()
 export_variable(pinocchio_VERSION ${pinocchio_VERSION})
-
-# Setup pkg-configs flags and libs
-pkg_config_append_libs("${LIBRARIES_DEPENDENCIES}")
-foreach(boostlib ${BOOST_REQUIRED_COMPONENTS})
-  pkg_config_append_libs("boost_${boostlib}")
-endforeach()
-pkg_config_append_cflags("${CFLAGS_DEPENDENCIES}")
-pkg_config_append_cflags("${CFLAGS_OPTIONS}")
 
 setup_project_finalize()

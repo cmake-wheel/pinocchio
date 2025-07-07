@@ -1,5 +1,41 @@
+[build-system]
+build-backend = "cmeel"
+requires = [
+  "cmeel-boost ~= 1.87.0",
+  "cmeel-urdfdom[build] >= 4",
+  "cmeel[build]",
+  "coal[build] >= 3, < 4",
+  "scipy",
+]
+
+[project]
+dependencies = [
+  "cmeel-boost ~= 1.87.0",
+  "cmeel-urdfdom >= 4",
+  "coal >= 3, < 4"
+]
+description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
+license = "BSD-3-Clause"
+name = "pin"
+version = "3.4.0"
+
+[project.urls]
+changelog = "https://github.com/stack-of-tasks/pinocchio/blob/master/CHANGELOG.md"
+homepage = "https://github.com/cmake-wheel/pinocchio"
+upstream = "https://github.com/stack-of-tasks/pinocchio"
+
+[tool.cmeel]
+configure-args = [
+  "-DBUILD_WITH_COLLISION_SUPPORT=ON",
+  "-DBUILD_WITH_LIBPYTHON=OFF",
+  "-DSUFFIX_SO_VERSION=OFF"
+]
+
 [tool.ruff]
 exclude = [ "cmake/*", "models/example-robot-data/*" ]
 
 [tool.ruff.lint]
 select = [ "E", "F", "I", "PTH", "RUF", "UP", "W" ]
+
+[tool.tomlsort]
+all = true

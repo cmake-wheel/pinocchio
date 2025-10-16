@@ -187,9 +187,30 @@ namespace pinocchio
               damping << joint->dynamics->damping;
             }
 
-            model.addJointAndBody(
-              UrdfVisitorBase::CONTINUOUS, axis, parentFrameId, jointPlacement, joint->name, Y,
-              link->name, max_effort, max_velocity, min_config, max_config, friction, damping);
+            if (joint->mimic && mimic)
+            {
+              max_effort = Vector::Constant(0, infty);
+              max_velocity = Vector::Constant(0, infty);
+              min_config = Vector::Constant(0, -infty);
+              max_config = Vector::Constant(0, infty);
+
+              friction = Vector::Constant(0, 0.);
+              damping = Vector::Constant(0, 0.);
+
+              MimicInfo_ mimic_info(
+                joint->mimic->joint_name, joint->mimic->multiplier, joint->mimic->offset, axis,
+                UrdfVisitorBase::CONTINUOUS);
+
+              model.addJointAndBody(
+                UrdfVisitorBase::MIMIC, axis, parentFrameId, jointPlacement, joint->name, Y,
+                link->name, max_effort, max_velocity, min_config, max_config, friction, damping,
+                mimic_info);
+            }
+            else
+              model.addJointAndBody(
+                UrdfVisitorBase::CONTINUOUS, axis, parentFrameId, jointPlacement, joint->name, Y,
+                link->name, max_effort, max_velocity, min_config, max_config, friction, damping);
+
             break;
 
           case ::urdf::Joint::PRISMATIC:

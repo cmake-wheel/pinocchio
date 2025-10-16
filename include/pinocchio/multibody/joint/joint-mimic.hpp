@@ -606,9 +606,16 @@ namespace pinocchio
     , m_nqExtended(jmodel_mimicking.nq())
     , m_nvExtended(jmodel_mimicking.nvExtended())
     {
-      assert(jmodel_mimicking.nq() == jmodel_mimicked.nq());
-      assert(jmodel_mimicking.nv() == jmodel_mimicked.nv());
-      assert(jmodel_mimicking.nvExtended() == jmodel_mimicked.nvExtended());
+      // Throw in case nq and nv from mimicking and mimicked are different
+      PINOCCHIO_CHECK_ARGUMENT_SIZE(
+        jmodel_mimicking.nq(), jmodel_mimicked.nq(),
+        "Mimicking and mimicked configuration spaces have different sizes");
+      PINOCCHIO_CHECK_ARGUMENT_SIZE(
+        jmodel_mimicking.nv(), jmodel_mimicked.nv(),
+        "Mimicking and mimicked tangent spaces have different sizes");
+      PINOCCHIO_CHECK_ARGUMENT_SIZE(
+        jmodel_mimicking.nvExtended(), jmodel_mimicked.nvExtended(),
+        "Mimicking and mimicked extended tangent spaces have different sizes");
 
       setMimicIndexes(
         jmodel_mimicked.id(), jmodel_mimicked.idx_q(), jmodel_mimicked.idx_v(),
@@ -681,12 +688,12 @@ namespace pinocchio
 
     const std::vector<bool> hasConfigurationLimit() const
     {
-      return m_jmodel_mimicking.hasConfigurationLimit();
+      return {};
     }
 
     const std::vector<bool> hasConfigurationLimitInTangent() const
     {
-      return m_jmodel_mimicking.hasConfigurationLimitInTangent();
+      return {};
     }
 
     template<typename ConfigVector>

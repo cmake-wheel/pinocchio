@@ -8,12 +8,13 @@ endfunction()
 
 if(BUILD_WITH_CASADI_SUPPORT)
 
-  add_pinocchio_cpp_casadi_example(casadi-aba)
-  add_pinocchio_cpp_casadi_example(casadi-crba)
-  add_pinocchio_cpp_casadi_example(casadi-rnea)
+  if(NOT BUILD_STANDALONE_PYTHON_INTERFACE)
+    add_pinocchio_cpp_casadi_example(casadi-aba)
+    add_pinocchio_cpp_casadi_example(casadi-crba)
+    add_pinocchio_cpp_casadi_example(casadi-rnea)
+  endif()
 
   if(BUILD_PYTHON_INTERFACE)
-
     set(${PROJECT_NAME}_CASADI_PYTHON_EXAMPLES quadrotor-ocp)
     if(BUILD_WITH_COLLISION_SUPPORT)
       list(APPEND ${PROJECT_NAME}_CASADI_PYTHON_EXAMPLES cartpole)
@@ -22,6 +23,11 @@ if(BUILD_WITH_CASADI_SUPPORT)
     foreach(EXAMPLE ${${PROJECT_NAME}_CASADI_PYTHON_EXAMPLES})
       set(EXAMPLE_NAME "${PROJECT_NAME}-example-py-casadi-${EXAMPLE}")
       add_python_unit_test(${EXAMPLE_NAME} "examples/casadi/${EXAMPLE}.py" "bindings/python")
+      get_test_property(${EXAMPLE_NAME} ENVIRONMENT _ENVIRONMENT)
+      set_tests_properties(
+        "${EXAMPLE_NAME}"
+        PROPERTIES ENVIRONMENT
+                   "${_ENVIRONMENT};EXAMPLE_ROBOT_DATA_MODEL_DIR=${EXAMPLE_ROBOT_DATA_MODEL_DIR}")
       add_windows_dll_path_to_test(${EXAMPLE_NAME})
     endforeach()
   endif()

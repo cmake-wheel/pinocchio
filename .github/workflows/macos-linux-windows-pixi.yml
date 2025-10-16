@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '0 0 * * 1'
   push:
+    branches:
+      - devel
     paths-ignore:
       - doc/**
       - .gitlab-ci.yml
@@ -44,13 +46,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-13]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-13]
         environment: [all, all-py39]
         build_type: [Release, Debug]
 
         include:
           # Disable BUILD_ADVANCED_TESTING as the test can take many time to run
           - os: ubuntu-latest
+            BUILD_ADVANCED_TESTING: OFF
+          - os: ubuntu-24.04-arm
             BUILD_ADVANCED_TESTING: OFF
           - os: macos-latest
             BUILD_ADVANCED_TESTING: OFF
@@ -78,7 +82,7 @@ jobs:
             echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ env.BRANCH_NAME }}
           submodules: recursive
@@ -89,7 +93,7 @@ jobs:
           key: ccache-macos-linux-conda-${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.environment }}_${{ github.sha }}
           restore-keys: ccache-macos-linux-conda-${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.environment }}_
 
-      - uses: prefix-dev/setup-pixi@v0.8.8
+      - uses: prefix-dev/setup-pixi@v0.9.0
         with:
           cache: true
           environments: ${{ matrix.environment }}
@@ -102,7 +106,7 @@ jobs:
 
       - name: Get Compilation Flags
         id: get_labels
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           LABELS: ${{ env.LABELS }}
         with:
@@ -132,6 +136,45 @@ jobs:
         shell: bash -el {0}
         run: |
           pixi run -e ${{ matrix.environment }} cmake --build build --target uninstall
+
+      - name: Remove build directory to save disk space
+        if: contains(matrix.os, 'ubuntu') && contains(matrix.build_type, 'Debug')
+        run: |
+          # Remove build directory to save disk space
+          # This is only done on Ubuntu because this create some issues with clang and ccache on OSX
+          rm -rf build
+
+      # Following steps will modify the pixi environment
+      - name: Build Pinocchio cpp [MacOS/Linux/Windows]
+        shell: bash -el {0}
+        env:
+          CMAKE_BUILD_PARALLEL_LEVEL: 2
+          PINOCCHIO_BUILD_TYPE: ${{ matrix.build_type }}
+        run: |
+          pixi run -e ${{ matrix.environment }} configure \
+            -B build_cpp \
+            -DBUILD_PYTHON_INTERFACE=OFF \
+            -DBUILD_ADVANCED_TESTING=${{ env.BUILD_ADVANCED_TESTING }} \
+            ${{ steps.get_labels.outputs.cmakeFlags }}
+          pixi run -e ${{ matrix.environment }} cmake --build build_cpp --target all
+          pixi run -e ${{ matrix.environment }} cmake --install build_cpp
+          pixi run -e ${{ matrix.environment }} ctest --test-dir build_cpp --output-on-failure
+
+      - name: Build Pinocchio standalone python [MacOS/Linux/Windows]
+        shell: bash -el {0}
+        env:
+          CMAKE_BUILD_PARALLEL_LEVEL: 2
+          PINOCCHIO_BUILD_TYPE: ${{ matrix.build_type }}
+        run: |
+          pixi run -e ${{ matrix.environment }} configure \
+            -DBUILD_PYTHON_INTERFACE=ON \
+            -DBUILD_STANDALONE_PYTHON_INTERFACE=ON \
+            -B build_python \
+            -DBUILD_ADVANCED_TESTING=${{ env.BUILD_ADVANCED_TESTING }} \
+            ${{ steps.get_labels.outputs.cmakeFlags }}
+          pixi run -e ${{ matrix.environment }} cmake --build build_python --target all
+          pixi run -e ${{ matrix.environment }} cmake --install build_python
+          pixi run -e ${{ matrix.environment }} ctest --test-dir build_python --output-on-failure
 
       - name: Display ccache statistics
         shell: bash -el {0}

@@ -8,13 +8,15 @@
 # --- MACROS ------------------------------------------------------------------
 
 function(ADD_TEST_CFLAGS target)
-  get_cpp_test_name(${target} ${CMAKE_CURRENT_SOURCE_DIR} test_name)
-  foreach(ARG ${ARGN})
-    set_property(
-      TARGET ${test_name}
-      APPEND_STRING
-      PROPERTY COMPILE_FLAGS "${ARG} ")
-  endforeach()
+  if(NOT BUILD_STANDALONE_PYTHON_INTERFACE)
+    get_cpp_test_name(${target} ${CMAKE_CURRENT_SOURCE_DIR} test_name)
+    foreach(ARG ${ARGN})
+      set_property(
+        TARGET ${test_name}
+        APPEND_STRING
+        PROPERTY COMPILE_FLAGS "${ARG} ")
+    endforeach()
+  endif()
 endfunction()
 
 # Compute flags outside the macro to avoid recomputing it for each tests
@@ -32,97 +34,112 @@ endfunction()
 set(PINOCCHIO_UNIT_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 function(ADD_PINOCCHIO_UNIT_TEST name)
-  set(options
-      HEADER_ONLY
-      PARSERS
-      EXTRA
-      COLLISION
-      PARALLEL
-      VISUALIZERS
-      PYTHON_PARSER
-      PARSERS_OPTIONAL
-      EXTRA_OPTIONAL
-      COLLISION_OPTIONAL
-      PARALLEL_OPTIONAL)
-  set(oneValueArgs)
-  set(multiValueArgs PACKAGES)
-  cmake_parse_arguments(unit_test "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+  if(NOT BUILD_STANDALONE_PYTHON_INTERFACE)
+    set(options
+        HEADER_ONLY
+        PARSERS
+        EXTRA
+        COLLISION
+        PARALLEL
+        VISUALIZERS
+        PYTHON_PARSER
+        PARSERS_OPTIONAL
+        EXTRA_OPTIONAL
+        COLLISION_OPTIONAL
+        PARALLEL_OPTIONAL)
+    set(oneValueArgs)
+    set(multiValueArgs PACKAGES)
+    cmake_parse_arguments(unit_test "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-  set(PKGS ${unit_test_PACKAGES})
+    set(PKGS ${unit_test_PACKAGES})
 
-  get_cpp_test_name(${name} ${CMAKE_CURRENT_SOURCE_DIR} TEST_NAME)
-  add_unit_test(${TEST_NAME} ${name}.cpp)
+    get_cpp_test_name(${name} ${CMAKE_CURRENT_SOURCE_DIR} TEST_NAME)
+    add_unit_test(${TEST_NAME} ${name}.cpp)
 
-  set(MODULE_NAME "${NAME}Test")
-  string(REPLACE "-" "_" MODULE_NAME ${MODULE_NAME})
-  target_compile_definitions(
-    ${TEST_NAME}
-    PRIVATE ${TEST_PRIVATE_DEFINITIONS} BOOST_TEST_DYN_LINK BOOST_TEST_MODULE=${MODULE_NAME}
-            PINOCCHIO_MODEL_DIR=\"${PINOCCHIO_MODEL_DIR}\")
+    set(MODULE_NAME "${NAME}Test")
+    string(REPLACE "-" "_" MODULE_NAME ${MODULE_NAME})
+    target_compile_definitions(
+      ${TEST_NAME}
+      PRIVATE ${TEST_PRIVATE_DEFINITIONS} BOOST_TEST_DYN_LINK BOOST_TEST_MODULE=${MODULE_NAME}
+              PINOCCHIO_MODEL_DIR=\"${PINOCCHIO_MODEL_DIR}\" COAL_DISABLE_HPP_FCL_WARNINGS)
 
-  # There is no RPATH in Windows, then we must use the PATH to find the DLL
-  if(WIN32)
-    string(REPLACE ";" "\\\;" _PATH "$ENV{PATH}")
-    set(ENV_VARIABLES
-        "PATH=${_PATH}\\\;${PROJECT_BINARY_DIR}/src\\\;${PROJECT_BINARY_DIR}/bindings/python/pinocchio"
-    )
-    set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "${ENV_VARIABLES}")
-  endif()
-
-  set_target_properties(${TEST_NAME} PROPERTIES LINKER_LANGUAGE CXX)
-  target_include_directories(${TEST_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-
-  if(NOT unit_test_HEADER_ONLY)
-    target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_default)
-  endif()
-
-  if(unit_test_PARSERS OR (unit_test_PARSERS_OPTIONAL AND TARGET ${PROJECT_NAME}_parsers))
-    target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_parsers)
-  endif()
-
-  if(unit_test_PARALLEL OR (unit_test_PARALLEL_OPTIONAL AND TARGET ${PROJECT_NAME}_parallel))
-    target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_parallel)
-  endif()
-
-  if(unit_test_COLLISION OR (unit_test_COLLISION_OPTIONAL AND TARGET ${PROJECT_NAME}_collision))
-    target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_collision)
-    if(unit_test_PARALLE OR (unit_test_PARALLEL_OPTIONAL AND TARGET ${PROJECT_NAME}_parallel))
-      target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_collision_parallel)
-    endif()
-  endif()
-
-  if(unit_test_EXTRA OR (unit_test_EXTRA_OPTIONAL AND TARGET ${PROJECT_NAME}_extra))
-    target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_extra)
-  endif()
-
-  if(unit_test_VISUALIZERS)
-    target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_visualizers)
-  endif()
-
-  if(unit_test_PYTHON_PARSER)
-    target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_python_parser)
-    add_windows_dll_path_to_test(${TEST_NAME})
-    get_test_property(${TEST_NAME} ENVIRONMENT ENV_VARIABLES)
-    compute_pythonpath(PYTHON_ENV_VARIABLES "bindings/python")
-    list(APPEND ENV_VARIABLES ${PYTHON_ENV_VARIABLES})
+    # There is no RPATH in Windows, then we must use the PATH to find the DLL
     if(WIN32)
-      # This line is mandatory because of Github action. The test run well on Windows + Conda. This
-      # hide something wrong. Maybe the test is linking against the wrong Python library or call the
-      # wrong interpreter.
-      get_filename_component(_PYTHONHOME ${PYTHON_EXECUTABLE} PATH)
-      list(APPEND ENV_VARIABLES "PYTHONHOME=${_PYTHONHOME}")
+      string(REPLACE ";" "\\\;" _PATH "$ENV{PATH}")
+      set(ENV_VARIABLES
+          "PATH=${_PATH}\\\;${PROJECT_BINARY_DIR}/src\\\;${PROJECT_BINARY_DIR}/bindings/python/pinocchio"
+      )
+      set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "${ENV_VARIABLES}")
     endif()
-    set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "${ENV_VARIABLES}")
-  endif()
 
-  modernize_target_link_libraries(
-    ${TEST_NAME}
-    SCOPE PRIVATE
-    TARGETS Boost::unit_test_framework
-    LIBRARIES ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+    set_target_properties(${TEST_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+    target_include_directories(${TEST_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-  if(PKGS)
-    target_link_libraries(${TEST_NAME} PRIVATE ${PKGS})
+    if(NOT unit_test_HEADER_ONLY)
+      target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_default)
+    endif()
+
+    if(unit_test_PARSERS OR (unit_test_PARSERS_OPTIONAL AND TARGET ${PROJECT_NAME}_parsers))
+      target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_parsers)
+    endif()
+
+    if(unit_test_PARALLEL OR (unit_test_PARALLEL_OPTIONAL AND TARGET ${PROJECT_NAME}_parallel))
+      target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_parallel)
+    endif()
+
+    if(unit_test_COLLISION OR (unit_test_COLLISION_OPTIONAL AND TARGET ${PROJECT_NAME}_collision))
+      target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_collision)
+      if(unit_test_PARALLE OR (unit_test_PARALLEL_OPTIONAL AND TARGET ${PROJECT_NAME}_parallel))
+        target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_collision_parallel)
+      endif()
+    endif()
+
+    if(unit_test_EXTRA OR (unit_test_EXTRA_OPTIONAL AND TARGET ${PROJECT_NAME}_extra))
+      target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_extra)
+    endif()
+
+    if(unit_test_VISUALIZERS)
+      target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_visualizers)
+    endif()
+
+    if(unit_test_PYTHON_PARSER)
+      target_link_libraries(${TEST_NAME} PUBLIC ${PROJECT_NAME}_python_parser)
+      add_windows_dll_path_to_test(${TEST_NAME})
+      get_test_property(${TEST_NAME} ENVIRONMENT ENV_VARIABLES)
+      compute_pythonpath(PYTHON_ENV_VARIABLES "bindings/python")
+      list(APPEND ENV_VARIABLES ${PYTHON_ENV_VARIABLES})
+      if(WIN32)
+        # This line is mandatory because of Github action. The test run well on Windows + Conda.
+        # This hide something wrong. Maybe the test is linking against the wrong Python library or
+        # call the wrong interpreter.
+        get_filename_component(_PYTHONHOME ${PYTHON_EXECUTABLE} PATH)
+        list(APPEND ENV_VARIABLES "PYTHONHOME=${_PYTHONHOME}")
+      endif()
+      set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "${ENV_VARIABLES}")
+    endif()
+
+    modernize_target_link_libraries(
+      ${TEST_NAME}
+      SCOPE PRIVATE
+      TARGETS Boost::unit_test_framework
+      LIBRARIES ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+
+    modernize_target_link_libraries(
+      ${TEST_NAME}
+      SCOPE PRIVATE
+      TARGETS Boost::filesystem
+      LIBRARIES ${Boost_FILESYSTEM_LIBRARY}}
+      INCLUDE_DIRS ${Boost_INCLUDE_DIRS})
+
+    if(PKGS)
+      target_link_libraries(${TEST_NAME} PRIVATE ${PKGS})
+    endif()
+    if(TARGET example-robot-data::example-robot-data)
+      target_link_libraries(${TEST_NAME} PRIVATE example-robot-data::example-robot-data)
+    else()
+      target_compile_definitions(
+        ${TEST_NAME} PRIVATE "EXAMPLE_ROBOT_DATA_MODEL_DIR=\"${EXAMPLE_ROBOT_DATA_MODEL_DIR}\"")
+    endif()
   endif()
 endfunction()
 
@@ -282,6 +299,8 @@ add_pinocchio_unit_test(explog)
 add_pinocchio_unit_test(finite-differences)
 add_pinocchio_unit_test(visitor)
 add_pinocchio_unit_test(algo-check)
+add_pinocchio_unit_test(model-graph PARSERS)
+add_pinocchio_unit_test(model-configuration-converter PARSERS)
 
 # Warning ignore with pragma doesn't work for a part of this test, so we ignore two warning globally
 cxx_flags_by_compiler_frontend(

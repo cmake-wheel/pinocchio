@@ -6,6 +6,8 @@ name: CI - Linux via ROS
 # This determines when this workflow is run
 on:
   push:
+    branches:
+      - devel
     paths-ignore:
       - doc/**
       - .gitlab-ci.yml
@@ -32,10 +34,12 @@ concurrency:
 jobs:
   CI:
     strategy:
+      fail-fast: false
       matrix:
         env:
           - {ROS_DISTRO: humble}
           - {ROS_DISTRO: jazzy}
+          - {ROS_DISTRO: kilted}
           - {ROS_DISTRO: rolling}
     env:
       CCACHE_DIR: /github/home/.ccache             # Enable ccache
@@ -51,7 +55,7 @@ jobs:
       IMMEDIATE_TEST_OUTPUT: 1
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: recursive
       # This step will fetch/store the directory used by ccache before/after the ci run
@@ -61,5 +65,5 @@ jobs:
           key: ccache-${{ matrix.env.ROS_DISTRO }}-${{ github.sha }}
           restore-keys: ccache-${{ matrix.env.ROS_DISTRO }}-
       # Run industrial_ci
-      - uses: 'ros-industrial/industrial_ci@16472786c1ffc53596007da4318db98d1f677933'
+      - uses: 'ros-industrial/industrial_ci@eb3ea328ff056aa2435d5b3493e7e2929c310f8e'
         env: ${{ matrix.env }}

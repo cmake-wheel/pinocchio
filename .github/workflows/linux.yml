@@ -2,6 +2,8 @@ name: CI - Linux via APT
 
 on:
   push:
+    branches:
+      - devel
     paths-ignore:
       - doc/**
       - .gitlab-ci.yml
@@ -31,6 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     container: ${{ matrix.container }}
     strategy:
+      fail-fast: false
       matrix:
         container: ['ubuntu:22.04', 'ubuntu:24.04']
 
@@ -48,7 +51,7 @@ jobs:
           apt-get -qq update
           DEBIAN_FRONTEND="noninteractive" apt-get -qq install -y lsb-release gnupg2 cmake git python3
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           submodules: recursive
@@ -157,6 +160,7 @@ jobs:
           cd build
           export CMAKE_PREFIX_PATH=/usr/local
           # Test CMake module packaging
+          echo === Test CMake module packaging ===
           cmake .. \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DPYTHON_EXECUTABLE=$(which python3)
@@ -165,6 +169,7 @@ jobs:
           ./load_urdf
 
           # Test pkg-config packaging
+          echo === Test pkg-config packaging ===
           cd ../../pkgconfig
           mkdir build
           cd build
@@ -176,6 +181,7 @@ jobs:
           ./load_urdf
 
           # Test FetchContent packaging
+          echo === Test FetchContent packaging ===
           cd ../../external
           export PINOCCHIO_GIT_REPOSITORY="file://"$GITHUB_WORKSPACE
           #export PINOCCHIO_GIT_REPOSITORY=$(git remote get-url origin)
@@ -191,6 +197,7 @@ jobs:
           ./load_urdf
 
           # Test CMake module packaging and pinocchio_header target
+          echo === Test CMake module packaging and pinocchio_header target ===
           cd ../../pinocchio_header
           mkdir build
           cd build

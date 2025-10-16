@@ -15,8 +15,10 @@ if(cppadcg_FOUND
                                PUBLIC PINOCCHIO_CXX_COMPILER=\"${CMAKE_CXX_COMPILER}\")
   endfunction()
 
-  add_pinocchio_cpp_codegen_example(codegen-crba)
-  add_pinocchio_cpp_codegen_example(codegen-rnea)
+  if(NOT BUILD_STANDALONE_PYTHON_INTERFACE)
+    add_pinocchio_cpp_codegen_example(codegen-crba)
+    add_pinocchio_cpp_codegen_example(codegen-rnea)
+  endif()
 
   if(BUILD_PYTHON_INTERFACE)
     set(${PROJECT_NAME}_CODEGEN_PYTHON_EXAMPLES codegen-rnea)

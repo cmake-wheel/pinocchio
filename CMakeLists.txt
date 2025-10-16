@@ -216,7 +216,6 @@ if(ENABLE_TEMPLATE_INSTANTIATION)
 endif(ENABLE_TEMPLATE_INSTANTIATION)
 
 macro(TAG_LIBRARY_VERSION target)
-  set_target_properties(${target} PROPERTIES SOVERSION ${PROJECT_VERSION})
 endmacro(TAG_LIBRARY_VERSION)
 
 # ----------------------------------------------------

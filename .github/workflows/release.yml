@@ -12,7 +12,7 @@ on:
 
 env:
   CMEEL_LOG_LEVEL: DEBUG
-  DEPS: build cmeel[build] coal[build] cmeel-urdfdom[build] libpinocchio[build] scipy
+  DEPS: build cmeel[build] coal[build] cmeel-urdfdom[build] libpinocchio[build] scipy example-robot-data
   PROJECT: pin
 
 jobs:

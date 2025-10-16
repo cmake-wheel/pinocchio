@@ -1,18 +1,21 @@
 [build-system]
 build-backend = "cmeel"
 requires = [
-  "cmeel-boost ~= 1.87.0",
+  "cmeel-boost ~= 1.89.0",
   "cmeel-urdfdom[build] >= 4",
   "cmeel[build]",
-  "coal[build] >= 3, < 4",
+  "example-robot-data >= 4.4.0",
+  "coal[build] >= 3.0.2, < 4",
+  "libpinocchio == 3.8.0",
   "scipy",
 ]
 
 [project]
 dependencies = [
-  "cmeel-boost ~= 1.87.0",
+  "cmeel-boost ~= 1.89.0",
   "cmeel-urdfdom >= 4",
-  "coal >= 3, < 4"
+  "coal >= 3.0.2, < 4",
+  "libpinocchio == 3.8.0",
 ]
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
 license = "BSD-3-Clause"
@@ -26,9 +29,10 @@ upstream = "https://github.com/stack-of-tasks/pinocchio"
 
 [tool.cmeel]
 configure-args = [
+  "-DBUILD_PYTHON_INTERFACE=ON",
+  "-DBUILD_STANDALONE_PYTHON_INTERFACE=ON",
   "-DBUILD_WITH_COLLISION_SUPPORT=ON",
   "-DBUILD_WITH_LIBPYTHON=OFF",
-  "-DSUFFIX_SO_VERSION=OFF"
 ]
 
 [tool.ruff]

@@ -23,7 +23,7 @@ name = "pin"
 version = "3.8.0"
 
 [project.urls]
-changelog = "https://github.com/stack-of-tasks/pinocchio/blob/master/CHANGELOG.md"
+changelog = "https://github.com/stack-of-tasks/pinocchio/blob/devel/CHANGELOG.md"
 homepage = "https://github.com/cmake-wheel/pinocchio"
 upstream = "https://github.com/stack-of-tasks/pinocchio"
 

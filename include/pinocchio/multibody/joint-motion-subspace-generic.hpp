@@ -49,7 +49,7 @@ namespace pinocchio
   {
     typedef
       typename traits<JointMotionSubspaceTpl<Dim, Scalar, Options, MaxDim>>::DenseBase DenseBase;
-    typedef Eigen::Matrix<Scalar, Dim, Dim, Options, MaxDim, MaxDim> ReturnType;
+    typedef Eigen::Matrix<Scalar, Dim, 1, Options, MaxDim, 1> ReturnType;
   };
 
   template<int Dim, typename Scalar, int Options, int MaxDim, typename ForceSet>

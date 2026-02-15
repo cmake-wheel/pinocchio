@@ -163,6 +163,20 @@ struct init<pinocchio::JointModelHelicalTpl<Scalar, Options, axis>>
   }
 };
 
+template<typename Scalar, int Options>
+struct init<pinocchio::JointModelEllipsoidTpl<Scalar, Options>>
+{
+  typedef pinocchio::JointModelEllipsoidTpl<Scalar, Options> JointModel;
+
+  static JointModel run()
+  {
+    JointModel jmodel(Scalar(0.01), Scalar(0.02), Scalar(0.03));
+
+    jmodel.setIndexes(0, 0, 0);
+    return jmodel;
+  }
+};
+
 template<typename Scalar, int Options, template<typename, int> class JointCollection>
 struct init<pinocchio::JointModelTpl<Scalar, Options, JointCollection>>
 {

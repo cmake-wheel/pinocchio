@@ -1,5 +1,7 @@
 build*/
+install*/
 Xcode*
+.DS_store
 *~
 *.pyc
 **/.ipynb_checkpoints
@@ -14,3 +16,7 @@ coverage*
 
 # benchmark
 plot.html
+
+.cache/
+compile_commands.json
+.ruff_cache/

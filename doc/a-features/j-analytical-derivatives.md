@@ -1,4 +1,4 @@
-\page md_doc_a-features_j-analytical-derivatives Analytical derivatives
+# Analytical derivatives {#md_doc_a-features_j-analytical-derivatives}
 
 Beside proposing standard forward and inverse dynamics algorithms, Pinocchio
 also provides efficient implementations of their analytical derivatives. These

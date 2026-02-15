@@ -1,4 +1,4 @@
-\page md_doc_a-features_b-model-data Model and data
+# Model and data {#md_doc_a-features_b-model-data}
 
 A fundamental paradigm of Pinocchio is the strict separation between
 *model* and *data*. By *model*, we mean the physical description of the

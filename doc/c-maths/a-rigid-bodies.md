@@ -1,4 +1,4 @@
-# Rigid Bodies
+# Rigid Bodies {#md_doc_c-maths_a-rigid-bodies}
 
 ## Geometry
 

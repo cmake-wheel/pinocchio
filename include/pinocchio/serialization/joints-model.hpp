@@ -29,6 +29,7 @@ namespace pinocchio
 
       ar & make_nvp("joints", joint.joints);
       ar & make_nvp("jointPlacements", joint.jointPlacements);
+      ar & make_nvp("jointNames", joint.jointNames);
     }
   };
 } // namespace pinocchio
@@ -203,6 +204,19 @@ namespace boost
     {
       typedef pinocchio::JointModelSphericalZYXTpl<Scalar, Options> JointType;
       fix::serialize(ar, *static_cast<pinocchio::JointModelBase<JointType> *>(&joint), version);
+    }
+
+    template<class Archive, typename Scalar, int Options>
+    void serialize(
+      Archive & ar,
+      pinocchio::JointModelEllipsoidTpl<Scalar, Options> & joint,
+      const unsigned int version)
+    {
+      typedef pinocchio::JointModelEllipsoidTpl<Scalar, Options> JointType;
+      fix::serialize(ar, *static_cast<pinocchio::JointModelBase<JointType> *>(&joint), version);
+      ar & make_nvp("radius_x", joint.radius_x);
+      ar & make_nvp("radius_y", joint.radius_y);
+      ar & make_nvp("radius_z", joint.radius_z);
     }
 
     template<class Archive, typename Scalar, int Options>

@@ -1,4 +1,4 @@
-# CheatSheet: SE(3) operations
+# CheatSheet: SE(3) operations {#md_doc_c-maths_se3}
 
 <div class="center">
 

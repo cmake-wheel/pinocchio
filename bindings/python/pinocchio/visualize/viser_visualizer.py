@@ -1,4 +1,5 @@
 import time
+from pathlib import Path
 
 try:
     import hppfcl
@@ -218,10 +219,12 @@ class ViserVisualizer(BaseVisualizer):
         """
         Load a mesh from a file.
         """
-        mesh = trimesh.load_mesh(mesh_path)
-        if color is None:
+        extension = Path(mesh_path).suffix.lower()
+        if extension == ".dae" or color is None:
+            mesh = trimesh.load_scene(mesh_path)
             return self.viewer.scene.add_mesh_trimesh(name, mesh)
         else:
+            mesh = trimesh.load_mesh(mesh_path)
             return self.viewer.scene.add_mesh_simple(
                 name,
                 mesh.vertices,

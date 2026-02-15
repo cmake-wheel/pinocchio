@@ -70,13 +70,13 @@ namespace pinocchio
         parentFrame < model.frames.size(), std::invalid_argument,
         "parentFrame is greater than the size of the frames vector.");
 
-      const Frame & pframe = model.frames[parentFrame];
-      JointIndex jid = pframe.parentJoint;
+      const auto pframe_placement = model.frames[parentFrame].placement;
+      JointIndex jid = model.frames[parentFrame].parentJoint;
       assert(jid < model.joints.size());
 
       // If inertia is not NaN, add it.
       if (modelAB.inertias[0] == modelAB.inertias[0])
-        model.appendBodyToJoint(jid, modelAB.inertias[0], pframe.placement * pfMAB);
+        model.appendBodyToJoint(jid, modelAB.inertias[0], pframe_placement * pfMAB);
 
       // Add all frames whose parent is this joint.
       for (FrameIndex fid = 1; fid < modelAB.frames.size(); ++fid)
@@ -101,15 +101,10 @@ namespace pinocchio
           }
 
           // Modify frame placement
-          frame.placement = pframe.placement * pfMAB * frame.placement;
-          // Some frames may have some inertia attached to them. In this case, we need to remove it
-          // from the parent joint. To prevent introducing NaNs, we check if the frame inertia is
-          // not NaN and is not zero.
-          if (frame.inertia == frame.inertia && frame.inertia != Inertia::Zero())
-          {
-            model.inertias[frame.parentJoint] -= frame.inertia;
-          }
-          model.addFrame(frame);
+          frame.placement = pframe_placement * pfMAB * frame.placement;
+          // Inertias are already computed in model.appendBodyToJoint call.
+          // No need to append them again.
+          model.addFrame(frame, false);
         }
       }
 
@@ -130,7 +125,7 @@ namespace pinocchio
           {
             go.parentFrame = parentFrame;
           }
-          go.placement = (pframe.placement * pfMAB) * go.placement;
+          go.placement = (pframe_placement * pfMAB) * go.placement;
           geomModel.addGeometryObject(go);
         }
       }
@@ -248,14 +243,9 @@ namespace pinocchio
                 modelAB, model, modelAB.frames[frame.parentFrame].name,
                 modelAB.frames[frame.parentFrame].type);
             }
-            // Some frames may have some inertia attached to them. In this case, we need to remove
-            // it from the parent joint. To prevent introducing NaNs, we check if the frame inertia
-            // is not NaN and is not zero.
-            if (frame.inertia == frame.inertia && frame.inertia != Inertia::Zero())
-            {
-              model.inertias[frame.parentJoint] -= frame.inertia;
-            }
-            model.addFrame(frame);
+            // Inertias are already computed in modelAB.inertias[joint_id_in].
+            // No need to append them again.
+            model.addFrame(frame, false);
           }
         }
         // Add all geometries whose parent is this joint.

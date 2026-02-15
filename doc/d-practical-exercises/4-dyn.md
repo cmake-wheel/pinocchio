@@ -1,4 +1,4 @@
-# 4) Snap your fingers (aka direct and inverse dynamics)
+# 4) Snap your fingers (aka direct and inverse dynamics) {#md_doc_d-practical-exercises_4-dyn}
 
 ## Objectives
 

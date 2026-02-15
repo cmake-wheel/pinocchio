@@ -1,4 +1,4 @@
-# Update model after loading its URDF
+# Update model after loading its URDF {#md_doc_b-examples_f-update-model}
 
 This example shows how to update a robot model after loading it from a URDF description.
 

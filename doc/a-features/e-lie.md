@@ -1,4 +1,4 @@
-\page md_doc_a-features_e-lie Dealing with Lie-group geometry
+# Dealing with Lie-group geometry {#md_doc_a-features_e-lie}
 
 Pinocchio relies heavily on Lie groups and Lie algebras to handle motions and more specifically rotations.
 For this reason it supports the following special groups \\( SO(2), SO(3), SE(2), SE(3) \\) and implements their associated algebras
@@ -8,7 +8,7 @@ or the motion of the robot links. The later is particularly useful for collision
 It is also interesting to have general vector space over which a Lie algebra is defined.
 
 
-## Using \\( SE(2) \\) with pinocchio in C++
+## Using SE(2) with pinocchio in C++
 
 As a motivating example let us consider a mobile robot evolving in a plane \f$(\mathbb{R}^2 \times \mathbb{S}^1 \f$).
 ![SE2MotivatingExample](SE2MotivatingExample.svg)
@@ -72,7 +72,7 @@ The result is indeed:
 -1
 \endcode
 
-## Using \f$ SE(3) \f$ with pinocchio in C++
+## Using SE(3) with pinocchio in C++
 
 Our mobile robot is not in a plane but in a 3-dimensional space. So let's consider a object in our physical space. This is actually almost the same case, we want the object from one position to an other position. The difficulty lies in the fact that we now have three dimensions so the object has six degrees of freedom, three corresponding to its translation and three to its rotation.
 

@@ -85,6 +85,14 @@ namespace pinocchio
   struct JointDataSphericalZYXTpl;
   typedef JointDataSphericalZYXTpl<context::Scalar> JointDataSphericalZYX;
 
+  template<typename Scalar, int Options = context::Options>
+  struct JointModelEllipsoidTpl;
+  typedef JointModelEllipsoidTpl<context::Scalar> JointModelEllipsoid;
+
+  template<typename Scalar, int Options = context::Options>
+  struct JointDataEllipsoidTpl;
+  typedef JointDataEllipsoidTpl<context::Scalar> JointDataEllipsoid;
+
   template<typename Scalar, int Options, int axis>
   struct JointModelPrismaticTpl;
   template<typename Scalar, int Options, int axis>

@@ -1,4 +1,4 @@
-# 7) Learning to fly (aka policy learning)
+# 7) Learning to fly (aka policy learning) {#md_doc_d-practical-exercises_7-learn}
 
 ## Objective
 

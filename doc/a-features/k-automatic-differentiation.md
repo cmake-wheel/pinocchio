@@ -1,4 +1,4 @@
-\page md_doc_a-features_k-automatic-differentiation Automatic differentiation and source code generation
+# Automatic differentiation and source code generation {#md_doc_a-features_k-automatic-differentiation}
 
 In addition to analytical derivatives, Pinocchio supports automatic
 differentiation. This is made possible through the full *scalar*

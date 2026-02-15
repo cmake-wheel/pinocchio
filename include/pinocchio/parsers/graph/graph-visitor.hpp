@@ -113,6 +113,11 @@ namespace pinocchio
           return joint_calc(JointModelSphericalZYX());
         }
 
+        SE3 operator()(const JointEllipsoid &) const
+        {
+          return joint_calc(JointModelEllipsoid());
+        }
+
         SE3 operator()(const JointPlanar &) const
         {
           return joint_calc(JointModelPlanar());

@@ -10,6 +10,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-01-05
+
+### Added
+- Add pixi-build support ([#2802](https://github.com/stack-of-tasks/pinocchio/pull/2802))
+- Python: add overload of `BaseVisualizer::play()` to `VisualizerPythonVisitor` ([#2796](https://github.com/stack-of-tasks/pinocchio/pull/2796))
+- ROS: added jrl_cmakemodules dependency ([#2789](https://github.com/stack-of-tasks/pinocchio/pull/2789))
+- Add docker images ([#2776](https://github.com/stack-of-tasks/pinocchio/pull/2776))
+- Add names to joints that are inside a composite joint ([#2786](https://github.com/stack-of-tasks/pinocchio/pull/2786))
+- Add color support for robot meshes in Viser ([#2793](https://github.com/stack-of-tasks/pinocchio/pull/2793))
+- Add Realtime Sanitizer (RTSan) uniittest and CI to track dynamic allocations in main API ([#2809](https://github.com/stack-of-tasks/pinocchio/pull/2809))
+- Add Ellipsoid Joint (3-DOF surface constraint), get ready for biomechanics ([#2797](https://github.com/stack-of-tasks/pinocchio/pull/2797))
+
+### Changed
+- Python version update ([#2802](https://github.com/stack-of-tasks/pinocchio/pull/2802)):
+  - Project is now tested with Python 3.10 and 3.14
+  - Python 3.10 is the minimal supported Python version
+- Homogenize python viewers examples ([#2771](https://github.com/stack-of-tasks/pinocchio/pull/2771))
+
+### Fixed
+- Remove pixi 0.57 warnings ([#2802](https://github.com/stack-of-tasks/pinocchio/pull/2802))
+- CMake: use `sdformat.cmake` from `jrl-cmakemodules` ([#2800](https://github.com/stack-of-tasks/pinocchio/pull/2800))
+- Fix doxygen document hierarchy ([#2811](https://github.com/stack-of-tasks/pinocchio/pull/2811))
+- Fix `appendModel` issues ([#2807](https://github.com/stack-of-tasks/pinocchio/pull/2807)):
+  - Bad inertia transformation when multiple frame with inertia have non null placement
+  - Undefined behavior when more than two frame was attached to universe
+- Simplify and fix DAE loading in Viser visualizer ([#2830](https://github.com/stack-of-tasks/pinocchio/pull/2830))
+
+### Removed
+- Remove CMake < 3.22 details ([#2790](https://github.com/stack-of-tasks/pinocchio/pull/2790))
+
 ## [3.8.0] - 2025-09-17
 
 ### Added
@@ -1194,7 +1224,8 @@ The model can either be parsed from a URDF format or be created by appendending 
         • Fixed (concatenation of two consecutive bodies)
 
 
-[Unreleased]: https://github.com/stack-of-tasks/pinocchio/compare/v3.8.0...HEAD
+[Unreleased]: https://github.com/stack-of-tasks/pinocchio/compare/v3.9.0...HEAD
+[3.9.0]: https://github.com/stack-of-tasks/pinocchio/compare/v3.8.0...v3.9.0
 [3.8.0]: https://github.com/stack-of-tasks/pinocchio/compare/v3.7.0...v3.8.0
 [3.7.0]: https://github.com/stack-of-tasks/pinocchio/compare/v3.6.0...v3.7.0
 [3.6.0]: https://github.com/stack-of-tasks/pinocchio/compare/v3.5.0...v3.6.0

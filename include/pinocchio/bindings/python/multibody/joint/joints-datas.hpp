@@ -60,6 +60,13 @@ namespace pinocchio
     }
 
     template<>
+    inline bp::class_<JointDataEllipsoid> &
+    expose_joint_data<JointDataEllipsoid>(bp::class_<JointDataEllipsoid> & cl)
+    {
+      return cl.add_property("StU", &JointDataEllipsoid::StU);
+    }
+
+    template<>
     inline bp::class_<JointDataComposite> &
     expose_joint_data<JointDataComposite>(bp::class_<JointDataComposite> & cl)
     {

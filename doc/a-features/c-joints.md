@@ -1,4 +1,4 @@
-\page md_doc_a-features_c-joints Joints
+# Joints {#md_doc_a-features_c-joints}
 
 Within a model, a robot is represented as a kinematic tree, containing a
 collection of all the joints, information about their connectivity, and,
@@ -9,6 +9,12 @@ belongs to one of the following categories:
 - **Revolute** joints, rotating around a fixed axis, either one of \f$X,Y,Z\f$ or a custom one;
 - **Prismatic** joints, translating along any fixed axis, as in the revolute case;
 - **Spherical** joints, free rotations in the 3D space;
+- **Spherical ZYX** joints, free rotations parameterized by ZYX Euler angles;
+- **Ellipsoid** joints, constraining motion to an ellipsoid surface with 3-DOF (2 rotations + 1 spin),
+  useful for biomechanics. The translation follows the ellipsoid surface \f$\left(\frac{x}{a}\right)^2 + \left(\frac{y}{b}\right)^2 + \left(\frac{z}{c}\right)^2 = 1\f$,
+  while the rotational part uses the normal direction of an equivalent sphere.
+  This approximation is exact only when \f$a = b = c\f$ (spherical case).
+  See Seth et al., "Minimal formulation of joint motion for biomechanisms," Nonlinear Dynamics 62(1):291-303, 2010.
 - **Translation** joints, for free translations in the 3D space;
 - **Planar** joints, for free movements in the 2D space;
 - **Free-floating** joints, for free movements in the 3D space. Planar and free-floating joints are meant to be

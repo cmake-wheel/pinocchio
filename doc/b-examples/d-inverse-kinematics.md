@@ -1,4 +1,4 @@
-# Inverse kinematics (clik)
+# Inverse kinematics (clik) {#md_doc_b-examples_d-inverse-kinematics}
 
 This example shows how to position the end effector of a manipulator robot to a given pose (position and orientation).
 The example employs a simple Jacobian-based iterative algorithm, which is called closed-loop inverse kinematics (CLIK).

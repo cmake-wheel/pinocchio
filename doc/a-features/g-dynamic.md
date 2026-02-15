@@ -1,4 +1,4 @@
-\page md_doc_a-features_g-dynamic Dynamics algorithms
+# Dynamics algorithms {#md_doc_a-features_g-dynamic}
 
 ## Inverse dynamics
 

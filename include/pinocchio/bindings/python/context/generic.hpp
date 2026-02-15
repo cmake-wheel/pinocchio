@@ -99,6 +99,9 @@ namespace pinocchio
       typedef JointModelSphericalZYXTpl<Scalar> JointModelSphericalZYX;
       typedef JointDataSphericalZYXTpl<Scalar> JointDataSphericalZYX;
 
+      typedef JointModelEllipsoidTpl<Scalar, Options> JointModelEllipsoid;
+      typedef JointDataEllipsoidTpl<Scalar, Options> JointDataEllipsoid;
+
       typedef JointDataPrismaticTpl<Scalar, Options, 0> JointDataPX;
       typedef JointModelPrismaticTpl<Scalar, Options, 0> JointModelPX;
 

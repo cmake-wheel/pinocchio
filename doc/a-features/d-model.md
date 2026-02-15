@@ -1,4 +1,4 @@
-\page md_doc_a-features_d-model Geometric and collision models
+# Geometric and collision models {#md_doc_a-features_d-model}
 
 Aside from the kinematic model, Pinocchio defines a geometric model, i.e. the
 volumes attached to the kinematic tree. This model can be used for displaying

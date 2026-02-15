@@ -90,6 +90,9 @@ namespace pinocchio
         // Joint Spherical ZYX
         typedef typename JointCollectionDefault::JointModelSphericalZYX JointModelSphericalZYX;
 
+        // Joint Ellipsoid
+        typedef typename JointCollectionDefault::JointModelEllipsoid JointModelEllipsoid;
+
         // Joint Translation
         typedef typename JointCollectionDefault::JointModelTranslation JointModelTranslation;
 
@@ -221,6 +224,10 @@ namespace pinocchio
         {
           return JointModelSphericalZYX();
         }
+        ReturnType operator()(const JointEllipsoid & joint) const
+        {
+          return JointModelEllipsoid(joint.radius_x, joint.radius_y, joint.radius_z);
+        }
         ReturnType operator()(const JointUniversal & joint) const
         {
           return JointModelUniversal(joint.axis1, joint.axis2);
@@ -260,17 +267,9 @@ namespace pinocchio
         {
         }
 
-        template<typename JointGraph, typename FrameGraph>
-        void operator()(const JointGraph & /*joint*/, const FrameGraph & /*f_*/)
-        {
-          PINOCCHIO_THROW_PRETTY(
-            std::invalid_argument,
-            "Graph - Invalid joint between non body frames. Non body frames can "
-            "only be added with Fixed joint");
-        }
-
+        // Default implementation for adding a joint between two body frames
         template<typename JointGraph>
-        void operator()(const JointGraph & joint, const BodyFrame & b_f)
+        void addJointBetweenBodies(const JointGraph & joint, const BodyFrame & b_f)
         {
           if (boost::get<BodyFrame>(&source_vertex.frame) == nullptr)
           {
@@ -288,12 +287,28 @@ namespace pinocchio
             edge.jlimit.friction, edge.jlimit.damping);
 
           model.addJointFrame(j_id);
-          model.appendBodyToJoint(j_id, b_f.inertia); // check this
+          model.appendBodyToJoint(j_id, b_f.inertia);
           model.addBodyFrame(target_vertex.name, j_id, body_pose);
 
           // armature
           model.armature.segment(model.joints[j_id].idx_v(), model.joints[j_id].nv()) =
             edge.jlimit.armature;
+        }
+
+        template<typename JointGraph, typename FrameGraph>
+        void operator()(const JointGraph & /*joint*/, const FrameGraph & /*f_*/)
+        {
+          PINOCCHIO_THROW_PRETTY(
+            std::invalid_argument,
+            "Graph - Invalid joint between non body frames. Non body frames can "
+            "only be added with Fixed joint");
+        }
+
+        template<typename JointGraph>
+        void operator()(const JointGraph & joint, const BodyFrame & b_f)
+        {
+          // Call default implementation
+          addJointBetweenBodies(joint, b_f);
         }
 
         template<typename FrameGraph>
@@ -336,6 +351,18 @@ namespace pinocchio
           model.addJointFrame(j_id);
           model.appendBodyToJoint(j_id, b_f.inertia); // check this
           model.addBodyFrame(target_vertex.name, j_id, body_pose);
+        }
+
+        void operator()(const JointEllipsoid & joint, const BodyFrame & b_f)
+        {
+          if (!edge.forward)
+            PINOCCHIO_THROW_PRETTY(
+              std::invalid_argument, "Graph - JointEllipsoid cannot be reversed yet.");
+          // The ellipsoid joint cannot be reversed because of the way the motion subspace is
+          // defined. The motion subspace is defined in the parent frame, So reversing the joint
+          // would require to change the motion subspace accordingly.
+
+          addJointBetweenBodies(joint, b_f);
         }
 
         void operator()(const JointFixed & joint, const BodyFrame & b_f)

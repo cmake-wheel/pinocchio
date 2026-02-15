@@ -1,4 +1,4 @@
-# 2) Grasp an object (aka inverse Geometry)
+# 2) Grasp an object (aka inverse Geometry) {#md_doc_d-practical-exercises_2-invgeom}
 
 ## Objectives
 

@@ -1,4 +1,4 @@
-# Joint dynamics
+# Joint dynamics {#md_doc_c-maths_b-joints}
 
 ## Geometry
 

@@ -1,4 +1,4 @@
-# 6) Take a walk (aka optimal control)
+# 6) Take a walk (aka optimal control) {#md_doc_d-practical-exercises_6-wpg}
 
 ## Objective
 

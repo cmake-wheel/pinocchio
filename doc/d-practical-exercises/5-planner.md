@@ -1,4 +1,4 @@
-# 5) Look ahead (aka motion planning)
+# 5) Look ahead (aka motion planning) {#md_doc_d-practical-exercises_5-planner}
 
 ## Objective
 

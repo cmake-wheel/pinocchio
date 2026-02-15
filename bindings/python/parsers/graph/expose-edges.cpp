@@ -36,6 +36,9 @@ namespace pinocchio
     const int JointSphericalZYX::nq;
     const int JointSphericalZYX::nv;
 
+    const int JointEllipsoid::nq;
+    const int JointEllipsoid::nv;
+
     const int JointTranslation::nq;
     const int JointTranslation::nv;
 
@@ -110,6 +113,20 @@ namespace pinocchio
         bp::init<>(bp::args("self"), "Default constructor."))
         .def_readonly("nq", &JointSphericalZYX::nq, "Number of configuration variables.")
         .def_readonly("nv", &JointSphericalZYX::nv, "Number of tangent variables.");
+
+      bp::class_<JointEllipsoid>(
+        "JointEllipsoid", "Represents an ellipsoidal joint.",
+        bp::init<>(bp::args("self"), "Default constructor."))
+        .def(bp::init<double, double, double>(
+          bp::args("self", "radius_x", "radius_y", "radius_z"), "Constructor with radii."))
+        .def_readwrite(
+          "radius_x", &JointEllipsoid::radius_x, "Semi-axis length in the x direction.")
+        .def_readwrite(
+          "radius_y", &JointEllipsoid::radius_y, "Semi-axis length in the y direction.")
+        .def_readwrite(
+          "radius_z", &JointEllipsoid::radius_z, "Semi-axis length in the z direction.")
+        .def_readonly("nq", &JointEllipsoid::nq, "Number of configuration variables.")
+        .def_readonly("nv", &JointEllipsoid::nv, "Number of tangent variables.");
 
       bp::class_<JointTranslation>(
         "JointTranslation", "Represents a translation joint.",

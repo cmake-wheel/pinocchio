@@ -1,4 +1,4 @@
-\page md_doc_a-features_f-kinematic Kinematics algorithms
+# Kinematics algorithms {#md_doc_a-features_f-kinematic}
 
 ## Forward kinematics
 

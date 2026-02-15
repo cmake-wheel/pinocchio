@@ -1,4 +1,4 @@
-# 3) Drag and Drop (aka Inverse kinematics)
+# 3) Drag and Drop (aka Inverse kinematics) {#md_doc_d-practical-exercises_3-invkine}
 
 ## Objectives
 

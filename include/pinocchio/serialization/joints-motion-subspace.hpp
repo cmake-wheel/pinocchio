@@ -137,6 +137,15 @@ namespace boost
       ar & make_nvp("angularSubspace", S.angularSubspace());
     }
 
+    template<class Archive, typename Scalar, int Options>
+    void serialize(
+      Archive & ar,
+      pinocchio::JointMotionSubspaceEllipsoidTpl<Scalar, Options> & S,
+      const unsigned int /*version*/)
+    {
+      ar & make_nvp("S", S.S);
+    }
+
   } // namespace serialization
 } // namespace boost
 

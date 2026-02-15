@@ -57,6 +57,7 @@ namespace pinocchio
             "\n\t- JointModelPrismaticUnaligned: Prismatic joint, with translation axis not "
             "aligned with X, Y, nor Z"
             "\n\t- JointModelSphericalZYX: Spherical joint (3D rotation)"
+            "\n\t- JointModelEllipsoid: Ellipsoidal joint (3D rotation with coupled translations)"
             "\n\t- JointModelTranslation: Translation joint (3D translation)"
             "\n\t- JointModelFreeFlyer: Joint enabling 3D rotation and translations.")
 

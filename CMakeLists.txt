@@ -86,22 +86,10 @@ include("${JRL_CMAKE_MODULES}/python.cmake")
 include("${JRL_CMAKE_MODULES}/boost.cmake")
 include("${JRL_CMAKE_MODULES}/ide.cmake")
 include("${JRL_CMAKE_MODULES}/apple.cmake")
-if(APPLE) # Use the handmade approach
-  if(${CMAKE_VERSION} VERSION_LESS "3.18.0") # Need to find the right version
-    set(CMAKE_MODULE_PATH ${JRL_CMAKE_MODULES}/find-external/OpenMP ${CMAKE_MODULE_PATH})
-  endif()
-elseif(UNIX)
-  if(${CMAKE_VERSION} VERSION_EQUAL "3.20.0")
-    set(CMAKE_MODULE_PATH ${JRL_CMAKE_MODULES}/find-external/OpenMP ${CMAKE_MODULE_PATH})
-  endif()
-endif()
 include(CMakeDependentOption)
 
 # If needed, set CMake policy for APPLE systems
 apply_default_apple_configuration()
-if(CMAKE_VERSION VERSION_GREATER "3.12")
-  cmake_policy(SET CMP0074 NEW)
-endif()
 
 # Force C++ standard to be C++11 at least
 check_minimal_cxx_standard(11 ENFORCE)
@@ -155,6 +143,8 @@ option(INITIALIZE_WITH_NAN "Initialize Eigen entries with NaN" OFF)
 option(CHECK_RUNTIME_MALLOC "Check if some memory allocations are performed at runtime" OFF)
 
 option(ENABLE_TEMPLATE_INSTANTIATION "Template instantiation of the main library" ON)
+
+option(BUILD_WITH_RTSAN "Build with the Realtime Sanitizer (clang >=20, linux/mac only)" OFF)
 
 set(PINOCCHIO_MODEL_DIR "${PROJECT_SOURCE_DIR}/models")
 
@@ -240,7 +230,7 @@ if(BUILD_WITH_URDF_SUPPORT)
 endif()
 
 if(BUILD_WITH_SDF_SUPPORT)
-  include(${CMAKE_CURRENT_LIST_DIR}/cmake/sdformat.cmake)
+  include(${JRL_CMAKE_MODULES}/sdformat.cmake)
   search_for_sdformat(REQUIRED)
   if(SDFormat_FOUND)
     check_minimal_cxx_standard(11 REQUIRED)

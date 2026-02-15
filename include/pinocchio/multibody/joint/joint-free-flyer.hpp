@@ -256,6 +256,7 @@ namespace pinocchio
 
   }; // struct JointDataFreeFlyerTpl
 
+  PINOCCHIO_JOINT_CAST_TYPE_SPECIALIZATION(JointModelFreeFlyerTpl);
   /// @brief Free-flyer joint in \f$SE(3)\f$.
   ///
   /// A free-flyer joint adds seven coordinates to the configuration space.
@@ -280,7 +281,6 @@ namespace pinocchio
   ///   corresponding to the angular velocity from the child frame to the
   ///   parent frame, expressed in the child frame (body angular velocity of the
   ///   child frame).
-  PINOCCHIO_JOINT_CAST_TYPE_SPECIALIZATION(JointModelFreeFlyerTpl);
   template<typename _Scalar, int _Options>
   struct JointModelFreeFlyerTpl : public JointModelBase<JointModelFreeFlyerTpl<_Scalar, _Options>>
   {

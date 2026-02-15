@@ -39,6 +39,7 @@ namespace pinocchio {
         - \subpage md_doc_b-examples_c-collisions
         - \subpage md_doc_b-examples_d-inverse-kinematics
         - \subpage md_doc_b-examples_e-reduced-model
+        - \subpage md_doc_b-examples_f-update-model
   */
 
   /** \page md_doc_b-examples_b-display
@@ -48,14 +49,8 @@ namespace pinocchio {
   */
 
   /** \page md_doc_c-maths_intro Mathematical Formulation
-        - \subpage md_doc_c-maths_a-overview
-        - \subpage md_doc_c-maths_b-rigid-bodies
-        - \subpage md_doc_c-maths_c-joints
-        - \subpage md_doc_c-maths_d-articulated
-        - \subpage md_doc_c-maths_dynamics
-        - \subpage md_doc_c-maths_e-collisions
-        - \subpage md_doc_c-maths_e-miscs
-        - \subpage md_doc_c-maths_f-algorithms
+        - \subpage md_doc_c-maths_a-rigid-bodies
+        - \subpage md_doc_c-maths_b-joints
         - \subpage md_doc_c-maths_se3
   */
 
@@ -67,6 +62,10 @@ namespace pinocchio {
        - \subpage md_doc_d-practical-exercises_5-planner
        - \subpage md_doc_d-practical-exercises_6-wpg
        - \subpage md_doc_d-practical-exercises_7-learn
+  */
+
+  /** \page md_doc_e-dev_intro Development
+       - \subpage md_doc_e-dev_impl-new-joint
   */
 
   //
@@ -105,7 +104,4 @@ namespace pinocchio {
 
   /// \namespace pinocchio::srdf
   /// \brief SRDF parsing
-
-  /// \namespace pinocchio::lua
-  /// \brief Lua parsing
 }

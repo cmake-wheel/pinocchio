@@ -2,7 +2,7 @@ name: CI - MacOS/Linux/Windows via Pixi
 
 on:
   schedule:
-    - cron: '0 0 * * 1'
+    - cron: "0 0 * * 1"
   push:
     branches:
       - devel
@@ -10,7 +10,7 @@ on:
       - doc/**
       - .gitlab-ci.yml
       - .gitignore
-      - '**.md'
+      - "**.md"
       - CITATION.*
       - COPYING.LESSER
       - colcon.pkg
@@ -20,7 +20,7 @@ on:
       - doc/**
       - .gitlab-ci.yml
       - .gitignore
-      - '**.md'
+      - "**.md"
       - CITATION.*
       - COPYING.LESSER
       - colcon.pkg
@@ -29,9 +29,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # This is needed on Windows because ellipsoid-joint-kinematics.py output
+  # some utf8 char.
+  # More detail here: https://gist.github.com/NodeJSmith/e7e37f2d3f162456869f015f842bcf15
+  PYTHONIOENCODING: "utf8"
+
 jobs:
   pinocchio-pixi:
-    name: ${{ matrix.os }} - Env ${{ matrix.environment }} ${{ matrix.build_type }} ${{ matrix.compiler }}
+    name: Standard - ${{ matrix.os }} - Env ${{ matrix.environment }} ${{ matrix.build_type }} ${{ matrix.compiler }}
     runs-on: ${{ matrix.os }}
     env:
       CCACHE_BASEDIR: ${GITHUB_WORKSPACE}
@@ -46,8 +52,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-13]
-        environment: [all, all-py39]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel]
+        environment: [all, all-python-oldest]
         build_type: [Release, Debug]
 
         include:
@@ -58,7 +64,7 @@ jobs:
             BUILD_ADVANCED_TESTING: OFF
           - os: macos-latest
             BUILD_ADVANCED_TESTING: OFF
-          - os: macos-13
+          - os: macos-15-intel
             BUILD_ADVANCED_TESTING: OFF
           - os: windows-latest
             environment: all
@@ -68,7 +74,6 @@ jobs:
             environment: all-clang-cl
             build_type: Release
             BUILD_ADVANCED_TESTING: OFF
-
 
     steps:
       # extract branch name or checkout devel branch for scheduled events
@@ -82,18 +87,18 @@ jobs:
             echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ env.BRANCH_NAME }}
           submodules: recursive
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: .ccache
           key: ccache-macos-linux-conda-${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.environment }}_${{ github.sha }}
           restore-keys: ccache-macos-linux-conda-${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.environment }}_
 
-      - uses: prefix-dev/setup-pixi@v0.9.0
+      - uses: prefix-dev/setup-pixi@v0.9.3
         with:
           cache: true
           environments: ${{ matrix.environment }}
@@ -115,15 +120,16 @@ jobs:
             await script({github, context, core})
           result-encoding: string
 
+      - name: Clear ccache statistics [MacOS/Linux/Windows]
+        run: |
+          pixi run -e ${{ matrix.environment }} ccache -z
+
       - name: Build Pinocchio [MacOS/Linux/Windows]
         shell: bash -el {0}
         env:
           CMAKE_BUILD_PARALLEL_LEVEL: 2
           PINOCCHIO_BUILD_TYPE: ${{ matrix.build_type }}
         run: |
-          # Clear ccache statistics
-          pixi run -e ${{ matrix.environment }} ccache -z
-
           # Launch configure but overwrite default options
           pixi run -e ${{ matrix.environment }} configure \
             -DBUILD_ADVANCED_TESTING=${{ env.BUILD_ADVANCED_TESTING }} \
@@ -137,12 +143,71 @@ jobs:
         run: |
           pixi run -e ${{ matrix.environment }} cmake --build build --target uninstall
 
-      - name: Remove build directory to save disk space
-        if: contains(matrix.os, 'ubuntu') && contains(matrix.build_type, 'Debug')
+      - name: Display ccache statistics
+        shell: bash -el {0}
         run: |
-          # Remove build directory to save disk space
-          # This is only done on Ubuntu because this create some issues with clang and ccache on OSX
-          rm -rf build
+          pixi run -e ${{ matrix.environment }} ccache -sv
+
+  pinocchio-python-standalone-pixi:
+    name: Python standalone - ${{ matrix.os }} - Env ${{ matrix.environment }}
+    runs-on: ${{ matrix.os }}
+    env:
+      CCACHE_BASEDIR: "${GITHUB_WORKSPACE}"
+      CCACHE_DIR: "${GITHUB_WORKSPACE}/.ccache"
+      CCACHE_COMPRESS: true
+      CCACHE_COMPRESSLEVEL: 6
+      # Since pixi will install a compiler, the compiler mtime will be changed.
+      # This can invalidate the cache (https://ccache.dev/manual/latest.html#config_compiler_check)
+      CCACHE_COMPILERCHECK: content
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel, windows-latest]
+        environment: [all]
+
+    steps:
+      # extract branch name or checkout devel branch for scheduled events
+      - name: Get branch name or checkout devel
+        shell: bash -el {0}
+        run: |
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "BRANCH_NAME=devel" >> $GITHUB_ENV
+            echo "LABELS=build_all" >> $GITHUB_ENV
+          else
+            echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
+          fi
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.BRANCH_NAME }}
+          submodules: recursive
+
+      - uses: actions/cache@v5
+        with:
+          path: .ccache
+          key: ccache-python-standalone-macos-linux-conda-${{ matrix.os }}-${{ matrix.environment }}_${{ github.sha }}
+          restore-keys: ccache-python-standalone-macos-linux-conda-${{ matrix.os }}-${{ matrix.environment }}_
+
+      - uses: prefix-dev/setup-pixi@v0.9.3
+        with:
+          cache: true
+          environments: ${{ matrix.environment }}
+
+      - name: Get Compilation Flags
+        id: get_labels
+        uses: actions/github-script@v8
+        env:
+          LABELS: ${{ env.LABELS }}
+        with:
+          script: |
+            const script = require('./.github/workflows/scripts/get_compilation_flags.js');
+            await script({github, context, core})
+          result-encoding: string
+
+      - name: Clear ccache statistics [MacOS/Linux/Windows]
+        run: |
+          pixi run -e ${{ matrix.environment }} ccache -z
 
       # Following steps will modify the pixi environment
       - name: Build Pinocchio cpp [MacOS/Linux/Windows]
@@ -154,7 +219,6 @@ jobs:
           pixi run -e ${{ matrix.environment }} configure \
             -B build_cpp \
             -DBUILD_PYTHON_INTERFACE=OFF \
-            -DBUILD_ADVANCED_TESTING=${{ env.BUILD_ADVANCED_TESTING }} \
             ${{ steps.get_labels.outputs.cmakeFlags }}
           pixi run -e ${{ matrix.environment }} cmake --build build_cpp --target all
           pixi run -e ${{ matrix.environment }} cmake --install build_cpp
@@ -170,7 +234,6 @@ jobs:
             -DBUILD_PYTHON_INTERFACE=ON \
             -DBUILD_STANDALONE_PYTHON_INTERFACE=ON \
             -B build_python \
-            -DBUILD_ADVANCED_TESTING=${{ env.BUILD_ADVANCED_TESTING }} \
             ${{ steps.get_labels.outputs.cmakeFlags }}
           pixi run -e ${{ matrix.environment }} cmake --build build_python --target all
           pixi run -e ${{ matrix.environment }} cmake --install build_python
@@ -181,12 +244,70 @@ jobs:
         run: |
           pixi run -e ${{ matrix.environment }} ccache -sv
 
+  pinocchio-pixi-build:
+    name: Pixi build - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, macos-15-intel, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - uses: prefix-dev/setup-pixi@v0.9.3
+        env:
+          CMAKE_BUILD_PARALLEL_LEVEL: 2
+        with:
+          cache: true
+          environments: test-pixi-build
+
+      - name: Test package [MacOS/Linux/Windows]
+        run: |
+          pixi run -e test-pixi-build test
+
+  pinocchio-rtsan-build:
+    name: RTSan build - ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: Ubuntu (x86_64)
+          # FIXME: Disabling aarch64 RTSan build
+          # as static local variables uses pthread_mutex_lock()
+          # - os: macos-latest
+          #   name: MacOS (ARM64)
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - uses: prefix-dev/setup-pixi@v0.9.3
+        with:
+          cache: true
+
+      - name: Build with RTSan
+        run: pixi run -e sanitizers build
+
+      - name: Test with RTSan
+        run: pixi run -e sanitizers test
+
   check:
     if: always()
     name: check-macos-linux-windows-pixi
 
     needs:
       - pinocchio-pixi
+      - pinocchio-python-standalone-pixi
+      - pinocchio-pixi-build
+      - pinocchio-rtsan-build
 
     runs-on: Ubuntu-latest
 

@@ -25,18 +25,8 @@ then
   # (https://ccache.dev/manual/latest.html#config_compiler_type)
   export CCACHE_COMPILERTYPE=gcc
 fi
-
-# Setup ccache
-export CMAKE_CXX_COMPILER_LAUNCHER=ccache
-
-# Create compile_commands.json for language server
-export CMAKE_EXPORT_COMPILE_COMMANDS=1
-
-# Activate color output with Ninja
-export CMAKE_COLOR_DIAGNOSTICS=1
-
-# Help ccache manage generated files and PCH (https://ccache.dev/manual/latest.html#_precompiled_headers)
-export CCACHE_SLOPPINESS=include_file_ctime,include_file_mtime,pch_defines,time_macros
+# Without -isystem, some LSP can't find headers
+export PINOCCHIO_CXX_FLAGS="$CXXFLAGS $PINOCCHIO_CXX_FLAGS -isystem $CONDA_PREFIX/include"
 
 # Set default build value only if not previously set
 export PINOCCHIO_BUILD_TYPE=${PINOCCHIO_BUILD_TYPE:=Release}

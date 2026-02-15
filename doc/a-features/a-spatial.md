@@ -1,4 +1,4 @@
-\page md_doc_a-features_a-spatial Spatial algebra
+# Spatial algebra  {#md_doc_a-features_a-spatial}
 
 Spatial algebra is a mathematical notation commonly employed in rigid body
 dynamics to represent and manipulate physical quantities such as velocities,

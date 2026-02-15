@@ -6,7 +6,7 @@ requires = [
   "cmeel[build]",
   "example-robot-data >= 4.4.0",
   "coal[build] >= 3.0.2, < 4",
-  "libpinocchio == 3.8.0",
+  "libpinocchio == 3.9.0",
   "scipy",
 ]
 
@@ -15,12 +15,12 @@ dependencies = [
   "cmeel-boost ~= 1.89.0",
   "cmeel-urdfdom >= 4",
   "coal >= 3.0.2, < 4",
-  "libpinocchio == 3.8.0",
+  "libpinocchio == 3.9.0",
 ]
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
 license = "BSD-3-Clause"
 name = "pin"
-version = "3.8.0"
+version = "3.9.0"
 
 [project.urls]
 changelog = "https://github.com/stack-of-tasks/pinocchio/blob/devel/CHANGELOG.md"

@@ -39,7 +39,7 @@ namespace pinocchio
     /// \param[in] pool_size total size of the pool.
     ///
     explicit ModelPoolTpl(
-      const Model & model, const size_t pool_size = (size_t)omp_get_max_threads())
+      const Model & model, const size_t pool_size = (size_t)getOpenMPNumThreadsEnv())
     : m_models(pool_size, model)
     , m_datas(pool_size, Data(model))
     {

@@ -42,7 +42,7 @@ namespace pinocchio
     GeometryPoolTpl(
       const Model & model,
       const GeometryModel & geometry_model,
-      const size_t pool_size = (size_t)omp_get_max_threads())
+      const size_t pool_size = (size_t)getOpenMPNumThreadsEnv())
     : Base(model, pool_size)
     {
       m_geometry_models.reserve(pool_size);

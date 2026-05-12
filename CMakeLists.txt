@@ -206,6 +206,7 @@ if(ENABLE_TEMPLATE_INSTANTIATION)
 endif(ENABLE_TEMPLATE_INSTANTIATION)
 
 macro(TAG_LIBRARY_VERSION target)
+
 endmacro(TAG_LIBRARY_VERSION)
 
 # ----------------------------------------------------

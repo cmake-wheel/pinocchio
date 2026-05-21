@@ -2,11 +2,15 @@
 // Copyright (c) 2022 INRIA
 //
 
-#ifndef __pinocchio_collision_broadphase_manager_base_hpp__
-#define __pinocchio_collision_broadphase_manager_base_hpp__
+#pragma once
+// IWYU pragma: begin_keep
 
-#include "pinocchio/multibody/geometry.hpp"
+#include "pinocchio/macros.hpp"
+
+#include "pinocchio/multibody.hpp"
+
 #include "pinocchio/collision/broadphase-callbacks.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -73,7 +77,7 @@ namespace pinocchio
     }
 
     ///
-    /// @brief Update the manager from the current geometry positions and update the underlying FCL
+    /// @brief Update the manager from the current geometry positions and update the underlying coal
     /// broad phase manager.
     ///
     /// @param[in] compute_local_aabb whether to recompute the local AABB of the collision
@@ -160,5 +164,3 @@ namespace pinocchio
   }; // struct BroadPhaseManagerBase<Derived>
 
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_collision_broadphase_manager_base_hpp__

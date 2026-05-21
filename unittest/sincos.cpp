@@ -2,14 +2,9 @@
 // Copyright (c) 2018-2019 INRIA
 //
 
-#include "pinocchio/fwd.hpp"
-#include "pinocchio/math/sincos.hpp"
-#include <cstdlib>
-
-#include "utils/macros.hpp"
+#include "pinocchio/math.hpp"
 
 #include <boost/test/unit_test.hpp>
-#include <boost/utility/binary.hpp>
 
 namespace
 {

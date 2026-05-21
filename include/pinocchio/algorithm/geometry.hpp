@@ -2,14 +2,27 @@
 // Copyright (c) 2015-2022 CNRS INRIA
 //
 
-#ifndef __pinocchio_algo_geometry_hpp__
-#define __pinocchio_algo_geometry_hpp__
+#pragma once
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
-#include "pinocchio/multibody/geometry.hpp"
+// IWYU pragma: begin_keep
+#include <Eigen/Core>
 
+#include <cassert>
+#include <sstream>
+#include <vector>
+
+#include <boost/fusion/container/vector.hpp>
+#include <boost/foreach.hpp>
+//
+#include "pinocchio/macros.hpp"
+#include "pinocchio/spatial.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/geometry.hpp"
+
+#include "pinocchio/algorithm/check.hpp"
 #include "pinocchio/algorithm/kinematics.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -79,16 +92,12 @@ namespace pinocchio
 } // namespace pinocchio
 
 /* --- Details -------------------------------------------------------------------- */
-#include "pinocchio/algorithm/geometry.hxx"
-
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/algorithm/geometry.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/geometry.hxx"
+// IWYU pragma: end_exports
 
 // In Pinocchio 2, this header declare computeCollision and computeDistances
-#if defined(PINOCCHIO_WITH_HPP_FCL) && defined(PINOCCHIO_ENABLE_COMPATIBILITY_WITH_VERSION_2)
+#if defined(PINOCCHIO_WITH_COLLISION) && defined(PINOCCHIO_ENABLE_COMPATIBILITY_WITH_VERSION_2)
   #include "pinocchio/collision/collision.hpp"
   #include "pinocchio/collision/distance.hpp"
 #endif // PINOCCHIO_ENABLE_COMPATIBILITY_WITH_VERSION_2
-
-#endif // ifndef __pinocchio_algo_geometry_hpp__

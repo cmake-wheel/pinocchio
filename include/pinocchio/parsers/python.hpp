@@ -2,11 +2,10 @@
 // Copyright (c) 2015-2023 CNRS INRIA
 //
 
-#ifndef __pinocchio_parser_python_hpp__
-#define __pinocchio_parser_python_hpp__
+#pragma once
 
 #include "pinocchio/python_parser/config.hpp"
-#include "pinocchio/multibody/model.hpp"
+#include "pinocchio/multibody.hpp"
 
 namespace pinocchio
 {
@@ -28,5 +27,3 @@ namespace pinocchio
   } // namespace python
 
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_parser_python_hpp__

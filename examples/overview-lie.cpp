@@ -1,15 +1,19 @@
+#include <Eigen/Core>
+
+#include <cmath>
 #include <iostream>
-#include "pinocchio/multibody/liegroup/liegroup.hpp"
+
+#include "pinocchio/math.hpp"
+#include "pinocchio/multibody/liegroup.hpp"
+#include "pinocchio/utils/check.hpp"
+#include "pinocchio/utils/static-if.hpp"
 
 using namespace pinocchio;
 
 int main()
 {
   typedef double Scalar;
-  enum
-  {
-    Options = 0
-  };
+  static constexpr int Options = 0;
 
   typedef SpecialEuclideanOperationTpl<2, Scalar, Options> SE2Operation;
   SE2Operation aSE2;

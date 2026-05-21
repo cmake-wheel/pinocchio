@@ -1,27 +1,17 @@
 //
-// Copyright (c) 2021 INRIA
+// Copyright (c) 2026 INRIA
 //
+#pragma once
 
-#ifndef __pinocchio_utils_openmp_hpp__
-#define __pinocchio_utils_openmp_hpp__
-
+// IWYU pragma: begin_keep
 #include <cstdlib>
+#include <exception>
+#include <mutex>
+#include <omp.h>
 
-namespace pinocchio
-{
+#include "pinocchio/deprecated.hpp"
+// IWYU pragma: end_keep
 
-  /// \brief Returns the number of thread defined by the environment variable OMP_NUM_THREADS.
-  ///        If this variable is not defined, this simply returns the default value 1.
-  ///
-  inline int getOpenMPNumThreadsEnv()
-  {
-    int num_threads = 1;
-
-    if (const char * env_p = std::getenv("OMP_NUM_THREADS"))
-      num_threads = atoi(env_p);
-
-    return num_threads;
-  }
-} // namespace pinocchio
-
-#endif // ifndef __pinocchio_utils_openmp_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/utils/openmp.hxx"
+// IWYU pragma: end_exports

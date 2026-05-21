@@ -2,8 +2,7 @@
 // Copyright (c) 2024 CNRS
 //
 
-#ifndef __pinocchio_python_utils_path_hpp__
-#define __pinocchio_python_utils_path_hpp__
+#pragma once
 
 #include "pinocchio/bindings/python/fwd.hpp"
 
@@ -25,5 +24,3 @@ namespace pinocchio
     std::vector<std::string> pathList(const bp::object & path_list);
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_utils_path_hpp__

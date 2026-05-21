@@ -4,24 +4,14 @@
 
 #include "model-fixture.hpp"
 
-#include "pinocchio/algorithm/joint-configuration.hpp"
-#include "pinocchio/algorithm/kinematics.hpp"
-#include "pinocchio/algorithm/kinematics-derivatives.hpp"
-#include "pinocchio/algorithm/rnea-derivatives.hpp"
-#include "pinocchio/algorithm/aba-derivatives.hpp"
-#include "pinocchio/algorithm/aba.hpp"
-#include "pinocchio/algorithm/rnea.hpp"
-#include "pinocchio/algorithm/crba.hpp"
 #include "pinocchio/algorithm/contact-dynamics.hpp"
-#include "pinocchio/algorithm/constrained-dynamics.hpp"
 #include "pinocchio/algorithm/cholesky.hpp"
-#include "pinocchio/parsers/urdf.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
 #include "pinocchio/algorithm/delassus.hpp"
+#include "pinocchio/algorithm/delassus-operator.hpp"
+#include "pinocchio/algorithm/proximal.hpp"
+#include "pinocchio/algorithm/jacobian.hpp"
 
 #include <benchmark/benchmark.h>
-
-#include <iostream>
 
 struct DelassusFixture : ModelFixture
 {
@@ -47,7 +37,7 @@ struct DelassusFixture : ModelFixture
     contact_data_6D6D.push_back(pinocchio::RigidConstraintData(*ci_RF_6D));
     contact_data_6D6D.push_back(pinocchio::RigidConstraintData(*ci_LF_6D));
 
-    contact_chol_6D6D = pinocchio::ContactCholeskyDecomposition(model, contact_models_6D6D);
+    constraint_chol_6D6D = pinocchio::ConstraintCholeskyDecomposition(model, data);
 
     prox_settings.max_iter = 10;
     prox_settings.mu = 1e8;
@@ -66,10 +56,10 @@ struct DelassusFixture : ModelFixture
   std::unique_ptr<pinocchio::RigidConstraintModel> ci_RF_6D;
   std::unique_ptr<pinocchio::RigidConstraintModel> ci_LF_6D;
 
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) contact_models_6D6D;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintData) contact_data_6D6D;
+  std::vector<pinocchio::RigidConstraintModel> contact_models_6D6D;
+  std::vector<pinocchio::RigidConstraintData> contact_data_6D6D;
 
-  pinocchio::ContactCholeskyDecomposition contact_chol_6D6D;
+  pinocchio::ConstraintCholeskyDecomposition constraint_chol_6D6D;
 
   pinocchio::ProximalSettings prox_settings;
 
@@ -83,93 +73,98 @@ static void CustomArguments(benchmark::internal::Benchmark * b)
   b->MinWarmUpTime(3.);
 }
 
-// CONTACT_CHOLESKY_DECOMPOSITION_COMPUTE
+// CONSTRAINT_CHOLESKY_DECOMPOSITION_COMPUTE
 
-PINOCCHIO_DONT_INLINE static void contactCholeskyDecompositionComputeCall(
-  pinocchio::ContactCholeskyDecomposition & contact,
+PINOCCHIO_DONT_INLINE static void constraintCholeskyDecompositionComputeCall(
+  pinocchio::ConstraintCholeskyDecomposition & contact,
   const pinocchio::Model & model,
   pinocchio::Data & data,
-  const PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel)
-    & contact_models_6D6D,
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintData) & contact_data_6D6D)
+  const std::vector<pinocchio::RigidConstraintModel> & contact_models_6D6D,
+  std::vector<pinocchio::RigidConstraintData> & contact_data_6D6D)
 {
   contact.compute(model, data, contact_models_6D6D, contact_data_6D6D);
 }
 
-BENCHMARK_DEFINE_F(DelassusFixture, CONTACT_CHOLESKY_DECOMPOSITION_COMPUTE)(benchmark::State & st)
+BENCHMARK_DEFINE_F(DelassusFixture, CONSTRAINT_CHOLESKY_DECOMPOSITION_COMPUTE)(
+  benchmark::State & st)
 {
   pinocchio::computeAllTerms(model, data, q, v);
+  constraint_chol_6D6D.allocate(model, data, contact_models_6D6D, contact_data_6D6D);
   for (auto _ : st)
   {
-    contactCholeskyDecompositionComputeCall(
-      contact_chol_6D6D, model, data, contact_models_6D6D, contact_data_6D6D);
+    constraintCholeskyDecompositionComputeCall(
+      constraint_chol_6D6D, model, data, contact_models_6D6D, contact_data_6D6D);
   }
 }
-BENCHMARK_REGISTER_F(DelassusFixture, CONTACT_CHOLESKY_DECOMPOSITION_COMPUTE)
+BENCHMARK_REGISTER_F(DelassusFixture, CONSTRAINT_CHOLESKY_DECOMPOSITION_COMPUTE)
   ->Apply(CustomArguments);
 
-// CONTACT_CHOLESKY_DECOMPOSITION_INVERSE
+// CONSTRAINT_CHOLESKY_DECOMPOSITION_INVERSE
 
-PINOCCHIO_DONT_INLINE static void contactCholeskyDecompositionInverseCall(
-  pinocchio::ContactCholeskyDecomposition & contact, Eigen::MatrixXd & H_inverse)
+PINOCCHIO_DONT_INLINE static void constraintCholeskyDecompositionInverseCall(
+  pinocchio::ConstraintCholeskyDecomposition & contact, Eigen::MatrixXd & H_inverse)
 {
   contact.inverse(H_inverse);
 }
 
-BENCHMARK_DEFINE_F(DelassusFixture, CONTACT_CHOLESKY_DECOMPOSITION_INVERSE)(benchmark::State & st)
-{
-  pinocchio::computeAllTerms(model, data, q, v);
-  contact_chol_6D6D.compute(model, data, contact_models_6D6D, contact_data_6D6D);
-  Eigen::MatrixXd H_inverse(contact_chol_6D6D.size(), contact_chol_6D6D.size());
-  for (auto _ : st)
-  {
-    contactCholeskyDecompositionInverseCall(contact_chol_6D6D, H_inverse);
-  }
-}
-BENCHMARK_REGISTER_F(DelassusFixture, CONTACT_CHOLESKY_DECOMPOSITION_INVERSE)
-  ->Apply(CustomArguments);
-
-// CONTACT_CHOLESKY_DECOMPOSITION_UPDATE_DAMPING
-
-PINOCCHIO_DONT_INLINE static void contactCholeskyDecompositionUpdateDampingCall(
-  pinocchio::ContactCholeskyDecomposition & contact, double damping)
-{
-  contact.getDelassusCholeskyExpression().updateDamping(damping);
-}
-
-BENCHMARK_DEFINE_F(DelassusFixture, CONTACT_CHOLESKY_DECOMPOSITION_UPDATE_DAMPING)(
+BENCHMARK_DEFINE_F(DelassusFixture, CONSTRAINT_CHOLESKY_DECOMPOSITION_INVERSE)(
   benchmark::State & st)
 {
   pinocchio::computeAllTerms(model, data, q, v);
-  contact_chol_6D6D.compute(model, data, contact_models_6D6D, contact_data_6D6D);
+  constraint_chol_6D6D.allocate(model, data, contact_models_6D6D, contact_data_6D6D);
+  constraint_chol_6D6D.compute(model, data, contact_models_6D6D, contact_data_6D6D);
+  Eigen::MatrixXd H_inverse(constraint_chol_6D6D.size(), constraint_chol_6D6D.size());
   for (auto _ : st)
   {
-    contactCholeskyDecompositionUpdateDampingCall(contact_chol_6D6D, 1.);
+    constraintCholeskyDecompositionInverseCall(constraint_chol_6D6D, H_inverse);
   }
 }
-BENCHMARK_REGISTER_F(DelassusFixture, CONTACT_CHOLESKY_DECOMPOSITION_UPDATE_DAMPING)
+BENCHMARK_REGISTER_F(DelassusFixture, CONSTRAINT_CHOLESKY_DECOMPOSITION_INVERSE)
   ->Apply(CustomArguments);
 
-// CONTACT_CHOLESKY_DECOMPOSITION_SOLVE_IN_PLACE
+// CONSTRAINT_CHOLESKY_DECOMPOSITION_UPDATE_DAMPING
 
-PINOCCHIO_DONT_INLINE static void contactCholeskyDecompositionSolveInPlaceCall(
-  pinocchio::ContactCholeskyDecomposition & contact, const Eigen::VectorXd & rhs_vector)
+PINOCCHIO_DONT_INLINE static void constraintCholeskyDecompositionUpdateDampingCall(
+  pinocchio::ConstraintCholeskyDecomposition & contact, double damping)
 {
-  contact.getDelassusCholeskyExpression().solveInPlace(rhs_vector);
+  contact.getDelassusOperatorCholeskyExpression().updateDamping(damping);
 }
 
-BENCHMARK_DEFINE_F(DelassusFixture, CONTACT_CHOLESKY_DECOMPOSITION_SOLVE_IN_PLACE)(
+BENCHMARK_DEFINE_F(DelassusFixture, CONSTRAINT_CHOLESKY_DECOMPOSITION_UPDATE_DAMPING)(
   benchmark::State & st)
 {
   pinocchio::computeAllTerms(model, data, q, v);
-  contact_chol_6D6D.compute(model, data, contact_models_6D6D, contact_data_6D6D);
+  constraint_chol_6D6D.allocate(model, data, contact_models_6D6D, contact_data_6D6D);
+  constraint_chol_6D6D.compute(model, data, contact_models_6D6D, contact_data_6D6D);
+  for (auto _ : st)
+  {
+    constraintCholeskyDecompositionUpdateDampingCall(constraint_chol_6D6D, 1.);
+  }
+}
+BENCHMARK_REGISTER_F(DelassusFixture, CONSTRAINT_CHOLESKY_DECOMPOSITION_UPDATE_DAMPING)
+  ->Apply(CustomArguments);
+
+// CONSTRAINT_CHOLESKY_DECOMPOSITION_SOLVE_IN_PLACE
+
+PINOCCHIO_DONT_INLINE static void constraintCholeskyDecompositionSolveInPlaceCall(
+  pinocchio::ConstraintCholeskyDecomposition & contact, const Eigen::VectorXd & rhs_vector)
+{
+  contact.getDelassusOperatorCholeskyExpression().solveInPlace(rhs_vector);
+}
+
+BENCHMARK_DEFINE_F(DelassusFixture, CONSTRAINT_CHOLESKY_DECOMPOSITION_SOLVE_IN_PLACE)(
+  benchmark::State & st)
+{
+  pinocchio::computeAllTerms(model, data, q, v);
+  constraint_chol_6D6D.allocate(model, data, contact_models_6D6D, contact_data_6D6D);
+  constraint_chol_6D6D.compute(model, data, contact_models_6D6D, contact_data_6D6D);
   Eigen::VectorXd rhs_vector = Eigen::VectorXd::Random(num_constraints);
   for (auto _ : st)
   {
-    contactCholeskyDecompositionSolveInPlaceCall(contact_chol_6D6D, rhs_vector);
+    constraintCholeskyDecompositionSolveInPlaceCall(constraint_chol_6D6D, rhs_vector);
   }
 }
-BENCHMARK_REGISTER_F(DelassusFixture, CONTACT_CHOLESKY_DECOMPOSITION_SOLVE_IN_PLACE)
+BENCHMARK_REGISTER_F(DelassusFixture, CONSTRAINT_CHOLESKY_DECOMPOSITION_SOLVE_IN_PLACE)
   ->Apply(CustomArguments);
 
 // COLUMN_MAJOR_LLT_COMPUTE
@@ -224,17 +219,19 @@ PINOCCHIO_DONT_INLINE static void getKKTContactDynamicMatrixInverseCall(
 
 BENCHMARK_DEFINE_F(DelassusFixture, GET_KKT_CONTACT_DYNAMIC_MATRIX_INVERSE)(benchmark::State & st)
 {
-  Eigen::MatrixXd J(contact_chol_6D6D.constraintDim(), model.nv);
+  pinocchio::computeAllTerms(model, data, q, v);
+  constraint_chol_6D6D.allocate(model, data, contact_models_6D6D, contact_data_6D6D);
+  Eigen::MatrixXd J(constraint_chol_6D6D.constraintDim(), model.nv);
   J.setZero();
 
   Eigen::MatrixXd MJtJ_inv(
-    model.nv + contact_chol_6D6D.constraintDim(), model.nv + contact_chol_6D6D.constraintDim());
+    model.nv + constraint_chol_6D6D.constraintDim(),
+    model.nv + constraint_chol_6D6D.constraintDim());
   MJtJ_inv.setZero();
 
-  Eigen::VectorXd gamma(contact_chol_6D6D.constraintDim());
+  Eigen::VectorXd gamma(constraint_chol_6D6D.constraintDim());
   gamma.setZero();
 
-  computeAllTerms(model, data, q, v);
   getJointJacobian(model, data, ci_RF_6D->joint1_id, ci_RF_6D->reference_frame, J.middleRows<6>(0));
   getJointJacobian(model, data, ci_LF_6D->joint1_id, ci_LF_6D->reference_frame, J.middleRows<6>(6));
   forwardDynamics(model, data, q, v, tau, J, gamma);
@@ -253,8 +250,8 @@ PINOCCHIO_DONT_INLINE static void computeDampedDelassusMatrixInverseCall(
   const pinocchio::Model & model,
   pinocchio::Data & data,
   const Eigen::VectorXd & q,
-  const PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) & contact_models,
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintData) & contact_data,
+  const std::vector<pinocchio::RigidConstraintModel> & contact_models,
+  std::vector<pinocchio::RigidConstraintData> & contact_data,
   const Eigen::MatrixXd & damped_delassus_inverse)
 {
   pinocchio::computeDampedDelassusMatrixInverse(
@@ -263,15 +260,15 @@ PINOCCHIO_DONT_INLINE static void computeDampedDelassusMatrixInverseCall(
 
 BENCHMARK_DEFINE_F(DelassusFixture, COMPUTE_DAMPED_DELASSUS_MATRIX_INVERSE)(benchmark::State & st)
 {
-  Eigen::MatrixXd H_inverse(contact_chol_6D6D.size(), contact_chol_6D6D.size());
-
   computeAllTerms(model, data, q, v);
-  contact_chol_6D6D.compute(model, data, contact_models_6D6D, contact_data_6D6D, 1e-6);
-  contact_chol_6D6D.inverse(H_inverse);
+  constraint_chol_6D6D.allocate(model, data, contact_models_6D6D, contact_data_6D6D);
+  constraint_chol_6D6D.compute(model, data, contact_models_6D6D, contact_data_6D6D, 1e-6);
+  Eigen::MatrixXd H_inverse(constraint_chol_6D6D.size(), constraint_chol_6D6D.size());
+  constraint_chol_6D6D.inverse(H_inverse);
 
   Eigen::MatrixXd damped_delassus_inverse;
   damped_delassus_inverse.resize(
-    contact_chol_6D6D.constraintDim(), contact_chol_6D6D.constraintDim());
+    constraint_chol_6D6D.constraintDim(), constraint_chol_6D6D.constraintDim());
 
   initPvDelassus(model, data, contact_models_6D6D); // Allocate memory
 
@@ -290,8 +287,8 @@ PINOCCHIO_DONT_INLINE static void computeDampedDelassusMatrixInverseNoScaleNoPvC
   const pinocchio::Model & model,
   pinocchio::Data & data,
   const Eigen::VectorXd & q,
-  const PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) & contact_models,
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintData) & contact_data,
+  const std::vector<pinocchio::RigidConstraintModel> & contact_models,
+  std::vector<pinocchio::RigidConstraintData> & contact_data,
   const Eigen::MatrixXd & damped_delassus_inverse)
 {
   pinocchio::computeDampedDelassusMatrixInverse(
@@ -301,15 +298,15 @@ PINOCCHIO_DONT_INLINE static void computeDampedDelassusMatrixInverseNoScaleNoPvC
 BENCHMARK_DEFINE_F(DelassusFixture, COMPUTE_DAMPED_DELASSUS_MATRIX_INVERSE_NO_SCALE_NO_PV)(
   benchmark::State & st)
 {
-  Eigen::MatrixXd H_inverse(contact_chol_6D6D.size(), contact_chol_6D6D.size());
-
   computeAllTerms(model, data, q, v);
-  contact_chol_6D6D.compute(model, data, contact_models_6D6D, contact_data_6D6D, 1e-6);
-  contact_chol_6D6D.inverse(H_inverse);
+  constraint_chol_6D6D.allocate(model, data, contact_models_6D6D, contact_data_6D6D);
+  constraint_chol_6D6D.compute(model, data, contact_models_6D6D, contact_data_6D6D, 1e-6);
+  Eigen::MatrixXd H_inverse(constraint_chol_6D6D.size(), constraint_chol_6D6D.size());
+  constraint_chol_6D6D.inverse(H_inverse);
 
   Eigen::MatrixXd damped_delassus_inverse;
   damped_delassus_inverse.resize(
-    contact_chol_6D6D.constraintDim(), contact_chol_6D6D.constraintDim());
+    constraint_chol_6D6D.constraintDim(), constraint_chol_6D6D.constraintDim());
 
   initPvDelassus(model, data, contact_models_6D6D); // Allocate memory
 

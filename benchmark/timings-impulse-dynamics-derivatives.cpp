@@ -4,16 +4,10 @@
 
 #include "model-fixture.hpp"
 
-#include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/algorithm/impulse-dynamics.hpp"
 #include "pinocchio/algorithm/impulse-dynamics-derivatives.hpp"
-#include "pinocchio/algorithm/cholesky.hpp"
-#include "pinocchio/parsers/urdf.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
 
 #include <benchmark/benchmark.h>
-
-#include <iostream>
 
 struct ContactFixture : ModelFixture
 {
@@ -31,7 +25,8 @@ struct ContactFixture : ModelFixture
     ci_LF_6D = std::make_unique<pinocchio::RigidConstraintModel>(
       pinocchio::CONTACT_6D, model, LF_id, pinocchio::LOCAL);
 
-    contact_chol_empty = pinocchio::ContactCholeskyDecomposition(model, contact_models_empty);
+    constraint_chol_empty = pinocchio::ConstraintCholeskyDecomposition(
+      model, data, contact_models_empty, contact_data_empty);
 
     contact_models_6D.clear();
     contact_models_6D.push_back(*ci_RF_6D);
@@ -39,7 +34,8 @@ struct ContactFixture : ModelFixture
     contact_data_6D.clear();
     contact_data_6D.push_back(pinocchio::RigidConstraintData(*ci_RF_6D));
 
-    contact_chol_6D = pinocchio::ContactCholeskyDecomposition(model, contact_models_6D);
+    constraint_chol_6D =
+      pinocchio::ConstraintCholeskyDecomposition(model, data, contact_models_6D, contact_data_6D);
 
     contact_models_6D6D.clear();
     contact_models_6D6D.push_back(*ci_RF_6D);
@@ -49,7 +45,8 @@ struct ContactFixture : ModelFixture
     contact_data_6D6D.push_back(pinocchio::RigidConstraintData(*ci_RF_6D));
     contact_data_6D6D.push_back(pinocchio::RigidConstraintData(*ci_LF_6D));
 
-    contact_chol_6D6D = pinocchio::ContactCholeskyDecomposition(model, contact_models_6D6D);
+    constraint_chol_6D6D = pinocchio::ConstraintCholeskyDecomposition(
+      model, data, contact_models_6D6D, contact_data_6D6D);
 
     r_coeff = (Eigen::ArrayXd::Random(1)[0] + 1.) / 2.;
 
@@ -65,16 +62,16 @@ struct ContactFixture : ModelFixture
   std::unique_ptr<pinocchio::RigidConstraintModel> ci_RF_6D;
   std::unique_ptr<pinocchio::RigidConstraintModel> ci_LF_6D;
 
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) contact_models_empty;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintData) contact_data_empty;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) contact_models_6D;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintData) contact_data_6D;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) contact_models_6D6D;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintData) contact_data_6D6D;
+  std::vector<pinocchio::RigidConstraintModel> contact_models_empty;
+  std::vector<pinocchio::RigidConstraintData> contact_data_empty;
+  std::vector<pinocchio::RigidConstraintModel> contact_models_6D;
+  std::vector<pinocchio::RigidConstraintData> contact_data_6D;
+  std::vector<pinocchio::RigidConstraintModel> contact_models_6D6D;
+  std::vector<pinocchio::RigidConstraintData> contact_data_6D6D;
 
-  pinocchio::ContactCholeskyDecomposition contact_chol_empty;
-  pinocchio::ContactCholeskyDecomposition contact_chol_6D;
-  pinocchio::ContactCholeskyDecomposition contact_chol_6D6D;
+  pinocchio::ConstraintCholeskyDecomposition constraint_chol_empty;
+  pinocchio::ConstraintCholeskyDecomposition constraint_chol_6D;
+  pinocchio::ConstraintCholeskyDecomposition constraint_chol_6D6D;
 
   double r_coeff;
 
@@ -91,8 +88,8 @@ static void CustomArguments(benchmark::internal::Benchmark * b)
 PINOCCHIO_DONT_INLINE static void impulseDynamicsDerivativesCall(
   const pinocchio::Model & model,
   pinocchio::Data & data,
-  const PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) & contact_models,
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintData) & contact_data,
+  const std::vector<pinocchio::RigidConstraintModel> & contact_models,
+  std::vector<pinocchio::RigidConstraintData> & contact_data,
   double r_coeff,
   const pinocchio::ProximalSettings & prox_settings)
 {
@@ -101,7 +98,7 @@ PINOCCHIO_DONT_INLINE static void impulseDynamicsDerivativesCall(
 }
 BENCHMARK_DEFINE_F(ContactFixture, IMPULSE_DYNAMICS_DERIVATIVES_EMPTY)(benchmark::State & st)
 {
-  pinocchio::initConstraintDynamics(model, data, contact_models_empty);
+  pinocchio::initConstraintDynamics(model, data, contact_models_empty, contact_data_empty);
   pinocchio::impulseDynamics(
     model, data, q, v, contact_models_empty, contact_data_empty, r_coeff, prox_settings);
   for (auto _ : st)
@@ -116,7 +113,7 @@ BENCHMARK_REGISTER_F(ContactFixture, IMPULSE_DYNAMICS_DERIVATIVES_EMPTY)->Apply(
 
 BENCHMARK_DEFINE_F(ContactFixture, IMPULSE_DYNAMICS_DERIVATIVES_6D)(benchmark::State & st)
 {
-  pinocchio::initConstraintDynamics(model, data, contact_models_6D);
+  pinocchio::initConstraintDynamics(model, data, contact_models_6D, contact_data_6D);
   pinocchio::impulseDynamics(
     model, data, q, v, contact_models_6D, contact_data_6D, r_coeff, prox_settings);
   for (auto _ : st)
@@ -131,7 +128,7 @@ BENCHMARK_REGISTER_F(ContactFixture, IMPULSE_DYNAMICS_DERIVATIVES_6D)->Apply(Cus
 
 BENCHMARK_DEFINE_F(ContactFixture, IMPULSE_DYNAMICS_DERIVATIVES_6D6D)(benchmark::State & st)
 {
-  pinocchio::initConstraintDynamics(model, data, contact_models_6D6D);
+  pinocchio::initConstraintDynamics(model, data, contact_models_6D6D, contact_data_6D6D);
   pinocchio::impulseDynamics(
     model, data, q, v, contact_models_6D6D, contact_data_6D6D, r_coeff, prox_settings);
   for (auto _ : st)

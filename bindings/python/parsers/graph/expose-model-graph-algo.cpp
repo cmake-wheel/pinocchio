@@ -7,8 +7,7 @@
 
 #include "pinocchio/bindings/python/parsers/model-graph.hpp"
 #include "pinocchio/bindings/python/utils/std-vector.hpp"
-#include "pinocchio/parsers/graph/model-graph.hpp"
-#include "pinocchio/parsers/graph/model-graph-algo.hpp"
+#include "pinocchio/parsers/graph.hpp"
 
 namespace pinocchio
 {

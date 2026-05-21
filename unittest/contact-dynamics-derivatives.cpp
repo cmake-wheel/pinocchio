@@ -1,22 +1,21 @@
 //
-// Copyright (c) 2020-2022 CNRS INRIA
+// Copyright (c) 2020-2025 INRIA
 //
 
-#include <iostream>
+#include "pinocchio/spatial.hpp"
 
-#include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/frames.hpp"
 #include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/crba.hpp"
-#include "pinocchio/parsers/srdf.hpp"
 #include "pinocchio/algorithm/aba-derivatives.hpp"
 #include "pinocchio/algorithm/kinematics-derivatives.hpp"
 #include "pinocchio/algorithm/frames-derivatives.hpp"
+#include "pinocchio/constraints.hpp"
+#include "pinocchio/algorithm/constraint-cholesky.hpp"
 #include "pinocchio/algorithm/constrained-dynamics.hpp"
 #include "pinocchio/algorithm/constrained-dynamics-derivatives.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/multibody/sample-models.hpp"
-#include "pinocchio/spatial/classic-acceleration.hpp"
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
@@ -27,8 +26,8 @@
 
 #endif // PINOCCHIO_WITH_SDFORMAT
 
-#define KP 10
-#define KD 10
+#define KP 10.
+#define KD 2 * math::sqrt(KP)
 
 BOOST_AUTO_TEST_SUITE(BOOST_TEST_MODULE)
 
@@ -52,13 +51,13 @@ BOOST_AUTO_TEST_CASE(test_sparse_constraint_dynamics_derivatives_no_contact)
   VectorXd tau = VectorXd::Random(model.nv);
 
   // Contact models and data
-  const PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) empty_constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) empty_constraint_data;
+  const std::vector<RigidConstraintModel> empty_constraint_models;
+  std::vector<RigidConstraintData> empty_constraint_data;
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
 
-  initConstraintDynamics(model, data, empty_constraint_models);
+  initConstraintDynamics(model, data, empty_constraint_models, empty_constraint_data);
   constraintDynamics(
     model, data, q, v, tau, empty_constraint_models, empty_constraint_data, prox_settings);
   data.M.triangularView<Eigen::StrictlyLower>() =
@@ -117,8 +116,8 @@ BOOST_AUTO_TEST_CASE(test_sparse_constraint_dynamics_derivatives)
   const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_data;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data;
 
   RigidConstraintModel ci_LF(CONTACT_6D, model, LF_id, LOCAL);
   ci_LF.joint1_placement.setRandom();
@@ -130,14 +129,14 @@ BOOST_AUTO_TEST_CASE(test_sparse_constraint_dynamics_derivatives)
   constraint_models.push_back(ci_RF);
   constraint_data.push_back(RigidConstraintData(ci_RF));
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
   data.M.triangularView<Eigen::StrictlyLower>() =
     data.M.transpose().triangularView<Eigen::StrictlyLower>();
@@ -148,7 +147,7 @@ BOOST_AUTO_TEST_CASE(test_sparse_constraint_dynamics_derivatives)
   crba(model, data_ref, q, Convention::WORLD);
   data_ref.M.triangularView<Eigen::StrictlyLower>() =
     data_ref.M.transpose().triangularView<Eigen::StrictlyLower>();
-  container::aligned_vector<Force> fext((size_t)model.njoints, Force::Zero());
+  std::vector<Force> fext((size_t)model.njoints, Force::Zero());
   for (size_t k = 0; k < constraint_models.size(); ++k)
   {
     const RigidConstraintModel & cmodel = constraint_models[k];
@@ -182,17 +181,17 @@ BOOST_AUTO_TEST_CASE(test_sparse_constraint_dynamics_derivatives)
     model, data_ref, RF_id, ci_RF.joint1_placement, LOCAL, vRF_partial_dq, aRF_partial_dq,
     aRF_partial_dv, aRF_partial_da);
 
-  MatrixXd Jc(constraint_dim, model.nv);
+  MatrixXd Jc(constraint_size, model.nv);
   Jc << aLF_partial_da, aRF_partial_da.topRows<3>();
 
-  MatrixXd K(model.nv + constraint_dim, model.nv + constraint_dim);
-  K << data_ref.M, Jc.transpose(), Jc, MatrixXd::Zero(constraint_dim, constraint_dim);
+  MatrixXd K(model.nv + constraint_size, model.nv + constraint_size);
+  K << data_ref.M, Jc.transpose(), Jc, MatrixXd::Zero(constraint_size, constraint_size);
   const MatrixXd Kinv = K.inverse();
 
   MatrixXd osim((Jc * data_ref.M.inverse() * Jc.transpose()).inverse());
   BOOST_CHECK(data.osim.isApprox(osim));
 
-  MatrixXd ac_partial_dq(constraint_dim, model.nv);
+  MatrixXd ac_partial_dq(constraint_size, model.nv);
 
   BOOST_CHECK(data.ov[RF_id].isApprox(data_ref.oMi[RF_id].act(data_ref.v[RF_id])));
   aRF_partial_dq.topRows<3>() +=
@@ -207,10 +206,10 @@ BOOST_AUTO_TEST_CASE(test_sparse_constraint_dynamics_derivatives)
   MatrixXd dac_dq = ac_partial_dq; // - Jc * data_ref.Minv*data_ref.dtau_dq;
 
   BOOST_CHECK(data.dac_dq.isApprox(dac_dq, 1e-8));
-  BOOST_CHECK(Kinv.bottomLeftCorner(constraint_dim, model.nv).isApprox(osim * Jc * data_ref.Minv));
+  BOOST_CHECK(Kinv.bottomLeftCorner(constraint_size, model.nv).isApprox(osim * Jc * data_ref.Minv));
 
-  MatrixXd df_dq = Kinv.bottomLeftCorner(constraint_dim, model.nv) * data_ref.dtau_dq
-                   + Kinv.bottomRightCorner(constraint_dim, constraint_dim) * ac_partial_dq;
+  MatrixXd df_dq = Kinv.bottomLeftCorner(constraint_size, model.nv) * data_ref.dtau_dq
+                   + Kinv.bottomRightCorner(constraint_size, constraint_size) * ac_partial_dq;
 
   MatrixXd ddq_dq = data_ref.Minv * (-data_ref.dtau_dq + Jc.transpose() * df_dq);
 
@@ -308,32 +307,33 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_fd)
   const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_data;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data;
 
   RigidConstraintModel ci_LF(CONTACT_6D, model, LF_id, LOCAL);
   ci_LF.joint1_placement.setRandom();
-  ci_LF.corrector.Kp.array() = KP;
-  ci_LF.corrector.Kd.array() = KD;
+  ci_LF.m_baumgarte_parameters.Kp = KP;
+  ci_LF.m_baumgarte_parameters.Kd = KD;
 
   constraint_models.push_back(ci_LF);
   constraint_data.push_back(RigidConstraintData(ci_LF));
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
   const Data::TangentVectorType a = data.ddq;
   computeConstraintDynamicsDerivatives(
     model, data, constraint_models, constraint_data, prox_settings);
 
   // Data_fd
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
 
   MatrixXd ddq_partial_dq_fd(model.nv, model.nv);
   ddq_partial_dq_fd.setZero();
@@ -342,11 +342,11 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_fd)
   MatrixXd ddq_partial_dtau_fd(model.nv, model.nv);
   ddq_partial_dtau_fd.setZero();
 
-  MatrixXd lambda_partial_dtau_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dtau_fd(constraint_size, model.nv);
   lambda_partial_dtau_fd.setZero();
-  MatrixXd lambda_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dq_fd(constraint_size, model.nv);
   lambda_partial_dq_fd.setZero();
-  MatrixXd lambda_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dv_fd(constraint_size, model.nv);
   lambda_partial_dv_fd.setZero();
 
   const VectorXd ddq0 = constraintDynamics(
@@ -356,7 +356,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_fd)
   VectorXd q_plus(model.nq);
   VectorXd ddq_plus(model.nv);
 
-  VectorXd lambda_plus(constraint_dim);
+  VectorXd lambda_plus(constraint_size);
 
   const double alpha = 1e-8;
   forwardKinematics(model, data, q, v, a);
@@ -374,6 +374,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_fd)
 
   BOOST_CHECK(ddq_partial_dq_fd.isApprox(data.ddq_dq, sqrt(alpha)));
   BOOST_CHECK(lambda_partial_dq_fd.isApprox(data.dlambda_dq, sqrt(alpha)));
+  // std::cout << "lambda_partial_dq_fd:\n" << lambda_partial_dq_fd << std::endl;
+  // std::cout << "data.dlambda_dq:\n" << data.dlambda_dq << std::endl;
 
   VectorXd v_plus(v);
   for (int k = 0; k < model.nv; ++k)
@@ -404,12 +406,10 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_fd)
   BOOST_CHECK(ddq_partial_dtau_fd.isApprox(data.ddq_dtau, sqrt(alpha)));
 }
 
-PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintData)
-createData(
-  const PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel)
-  & constraint_models)
+std::vector<pinocchio::RigidConstraintData>
+createData(const std::vector<pinocchio::RigidConstraintModel> & constraint_models)
 {
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintData) constraint_datas;
+  std::vector<pinocchio::RigidConstraintData> constraint_datas;
   for (size_t k = 0; k < constraint_models.size(); ++k)
     constraint_datas.push_back(pinocchio::RigidConstraintData(constraint_models[k]));
 
@@ -440,36 +440,35 @@ BOOST_AUTO_TEST_CASE(test_correction_6D)
   const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
+  std::vector<RigidConstraintModel> constraint_models;
 
   RigidConstraintModel ci_RF(CONTACT_6D, model, RF_id, LOCAL);
   ci_RF.joint1_placement.setRandom();
   ci_RF.joint2_placement.setRandom();
-  ci_RF.corrector.Kp.array() = KP;
-  ci_RF.corrector.Kd.array() = KD;
+  ci_RF.m_baumgarte_parameters.Kp = KP;
+  ci_RF.m_baumgarte_parameters.Kd = KD;
   constraint_models.push_back(ci_RF);
 
   RigidConstraintModel ci_LF(CONTACT_3D, model, LF_id, LOCAL);
   ci_LF.joint1_placement.setRandom();
   ci_LF.joint2_placement.setRandom();
-  ci_LF.corrector.Kp.array() = KP;
-  ci_LF.corrector.Kd.array() = KD;
+  ci_LF.m_baumgarte_parameters.Kp = KP;
+  ci_LF.m_baumgarte_parameters.Kd = KD;
   constraint_models.push_back(ci_LF);
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData)
-  constraint_datas = createData(constraint_models);
-  initConstraintDynamics(model, data, constraint_models);
+  std::vector<RigidConstraintData> constraint_datas = createData(constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_datas);
   const Eigen::VectorXd ddq0 =
     constraintDynamics(model, data, q, v, tau, constraint_models, constraint_datas, prox_settings);
 
   Eigen::MatrixXd ddq_dq(model.nv, model.nv), ddq_dv(model.nv, model.nv),
     ddq_dtau(model.nv, model.nv);
-  Eigen::MatrixXd dlambda_dq(constraint_dim, model.nv), dlambda_dv(constraint_dim, model.nv),
-    dlambda_dtau(constraint_dim, model.nv);
+  Eigen::MatrixXd dlambda_dq(constraint_size, model.nv), dlambda_dv(constraint_size, model.nv),
+    dlambda_dtau(constraint_size, model.nv);
 
   computeConstraintDynamicsDerivatives(
     model, data, constraint_models, constraint_datas, prox_settings, ddq_dq, ddq_dv, ddq_dtau,
@@ -500,41 +499,40 @@ BOOST_AUTO_TEST_CASE(test_correction_6D)
 
   {
     const SE3::Matrix6 Jlog = Jlog6(constraint_datas[0].c1Mc2.inverse());
-    dacc_corrector_RF_dq = -(ci_RF.corrector.Kp.asDiagonal() * Jlog * dv_RF_dv_L);
-    dacc_corrector_RF_dq -= ci_RF.corrector.Kd.asDiagonal() * dv_RF_dq_L;
+    dacc_corrector_RF_dq = -(ci_RF.m_baumgarte_parameters.Kp * Jlog * dv_RF_dv_L);
+    dacc_corrector_RF_dq -= ci_RF.m_baumgarte_parameters.Kd * dv_RF_dq_L;
 
-    dacc_corrector_RF_dv = -(ci_RF.corrector.Kd.asDiagonal() * dv_RF_dv_L);
-    BOOST_CHECK(dv_RF_dv_L.isApprox(data.contact_chol.matrix().topRightCorner(6, model.nv)));
+    dacc_corrector_RF_dv = -(ci_RF.m_baumgarte_parameters.Kd * dv_RF_dv_L);
+    BOOST_CHECK(dv_RF_dv_L.isApprox(data.constraint_chol.matrix().topRightCorner(6, model.nv)));
   }
 
   {
-    dacc_corrector_LF_dq = -(ci_LF.corrector.Kp.asDiagonal() * dv_LF_dv_L.topRows<3>());
-    dacc_corrector_LF_dq -= ci_LF.corrector.Kd.asDiagonal() * dv_LF_dq_L.topRows<3>();
-    for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+    dacc_corrector_LF_dq = -(ci_LF.m_baumgarte_parameters.Kp * dv_LF_dv_L.topRows<3>());
+    dacc_corrector_LF_dq -= ci_LF.m_baumgarte_parameters.Kd * dv_LF_dq_L.topRows<3>();
+    for (Eigen::Index k = 0; k < model.nv; ++k)
     {
       dacc_corrector_LF_dq.col(k) +=
-        ci_LF.corrector.Kp.asDiagonal()
+        ci_LF.m_baumgarte_parameters.Kp
         * dv_LF_dv_L.col(k).tail<3>().cross(constraint_datas[1].contact_placement_error.linear());
     }
 
-    dacc_corrector_LF_dv = -(ci_LF.corrector.Kd.asDiagonal() * dv_LF_dv_L.topRows<3>());
+    dacc_corrector_LF_dv = -(ci_LF.m_baumgarte_parameters.Kd * dv_LF_dv_L.topRows<3>());
     BOOST_CHECK(dv_LF_dv_L.topRows<3>().isApprox(
-      data.contact_chol.matrix().topRightCorner(9, model.nv).bottomRows<3>()));
+      data.constraint_chol.matrix().topRightCorner(9, model.nv).bottomRows<3>()));
   }
 
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData)
-  constraint_datas_fd = createData(constraint_models);
-  initConstraintDynamics(model, data_fd, constraint_models);
+  std::vector<RigidConstraintData> constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
 
   Data::Matrix6x dacc_corrector_RF_dq_fd(6, model.nv);
   Data::Matrix3x dacc_corrector_LF_dq_fd(3, model.nv);
 
   Eigen::MatrixXd ddq_dq_fd(model.nv, model.nv), ddq_dv_fd(model.nv, model.nv),
     ddq_dtau_fd(model.nv, model.nv);
-  Eigen::MatrixXd dlambda_dq_fd(constraint_dim, model.nv), dlambda_dv_fd(constraint_dim, model.nv),
-    dlambda_dtau_fd(constraint_dim, model.nv);
+  Eigen::MatrixXd dlambda_dq_fd(constraint_size, model.nv),
+    dlambda_dv_fd(constraint_size, model.nv), dlambda_dtau_fd(constraint_size, model.nv);
 
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     Eigen::VectorXd v_eps = Eigen::VectorXd::Zero(model.nv);
     v_eps[k] = eps;
@@ -563,7 +561,7 @@ BOOST_AUTO_TEST_CASE(test_correction_6D)
 
   Data::Matrix6x dacc_corrector_RF_dv_fd(6, model.nv);
   Data::Matrix3x dacc_corrector_LF_dv_fd(3, model.nv);
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     Eigen::VectorXd v_plus(v);
     v_plus[k] += eps;
@@ -586,7 +584,7 @@ BOOST_AUTO_TEST_CASE(test_correction_6D)
 
   Data::Matrix6x dacc_corrector_RF_dtau_fd(6, model.nv);
   Data::Matrix3x dacc_corrector_LF_dtau_fd(3, model.nv);
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     Eigen::VectorXd tau_plus(tau);
     tau_plus[k] += eps;
@@ -630,24 +628,24 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_fd)
   //  const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_data;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data;
 
   RigidConstraintModel ci_RF(CONTACT_3D, model, RF_id, LOCAL);
   ci_RF.joint1_placement.setRandom();
-  ci_RF.corrector.Kp.array() = KP;
-  ci_RF.corrector.Kd.array() = KD;
+  ci_RF.m_baumgarte_parameters.Kp = KP;
+  ci_RF.m_baumgarte_parameters.Kd = KD;
   constraint_models.push_back(ci_RF);
   constraint_data.push_back(RigidConstraintData(ci_RF));
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
   const Data::TangentVectorType a = data.ddq;
   data.M.triangularView<Eigen::StrictlyLower>() =
@@ -656,7 +654,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_fd)
     model, data, constraint_models, constraint_data, prox_settings);
 
   // Data_fd
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
 
   MatrixXd ddq_partial_dq_fd(model.nv, model.nv);
   ddq_partial_dq_fd.setZero();
@@ -665,11 +664,11 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_fd)
   MatrixXd ddq_partial_dtau_fd(model.nv, model.nv);
   ddq_partial_dtau_fd.setZero();
 
-  MatrixXd lambda_partial_dtau_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dtau_fd(constraint_size, model.nv);
   lambda_partial_dtau_fd.setZero();
-  MatrixXd lambda_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dq_fd(constraint_size, model.nv);
   lambda_partial_dq_fd.setZero();
-  MatrixXd lambda_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dv_fd(constraint_size, model.nv);
   lambda_partial_dv_fd.setZero();
 
   const VectorXd ddq0 = constraintDynamics(
@@ -679,7 +678,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_fd)
   VectorXd q_plus(model.nq);
   VectorXd ddq_plus(model.nv);
 
-  VectorXd lambda_plus(constraint_dim);
+  VectorXd lambda_plus(constraint_size);
 
   const double alpha = 1e-8;
   forwardKinematics(model, data, q, v, a);
@@ -749,24 +748,24 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_fd_prox)
   //  const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_data;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data;
 
   RigidConstraintModel ci_RF(CONTACT_3D, model, RF_id, LOCAL);
   ci_RF.joint1_placement.setRandom();
-  ci_RF.corrector.Kp.array() = KP;
-  ci_RF.corrector.Kd.array() = KD;
+  ci_RF.m_baumgarte_parameters.Kp = KP;
+  ci_RF.m_baumgarte_parameters.Kd = KD;
   constraint_models.push_back(ci_RF);
   constraint_data.push_back(RigidConstraintData(ci_RF));
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 1e-4;
   ProximalSettings prox_settings(1e-12, mu0, 20);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   VectorXd a_res =
     constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
   BOOST_CHECK(prox_settings.iter > 1 && prox_settings.iter <= prox_settings.max_iter);
@@ -778,7 +777,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_fd_prox)
 
   ProximalSettings prox_settings_fd(1e-12, mu0, 20);
   // Data_fd
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
 
   MatrixXd ddq_partial_dq_fd(model.nv, model.nv);
   ddq_partial_dq_fd.setZero();
@@ -787,11 +787,11 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_fd_prox)
   MatrixXd ddq_partial_dtau_fd(model.nv, model.nv);
   ddq_partial_dtau_fd.setZero();
 
-  MatrixXd lambda_partial_dtau_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dtau_fd(constraint_size, model.nv);
   lambda_partial_dtau_fd.setZero();
-  MatrixXd lambda_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dq_fd(constraint_size, model.nv);
   lambda_partial_dq_fd.setZero();
-  MatrixXd lambda_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dv_fd(constraint_size, model.nv);
   lambda_partial_dv_fd.setZero();
 
   const VectorXd ddq0 = constraintDynamics(
@@ -807,7 +807,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_fd_prox)
   VectorXd q_plus(model.nq);
   VectorXd ddq_plus(model.nv);
 
-  VectorXd lambda_plus(constraint_dim);
+  VectorXd lambda_plus(constraint_size);
 
   const double alpha = 1e-8;
   forwardKinematics(model, data, q, v, a);
@@ -877,12 +877,12 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_loop_closure_3D_
   const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_data;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data;
 
   RigidConstraintModel ci_RF(CONTACT_3D, model, RF_id, LF_id, LOCAL);
-  ci_RF.corrector.Kp.array() = KP;
-  ci_RF.corrector.Kd.array() = KD;
+  ci_RF.m_baumgarte_parameters.Kp = KP;
+  ci_RF.m_baumgarte_parameters.Kd = KD;
   ci_RF.joint1_placement.setRandom();
   forwardKinematics(model, data, q);
   // data.oMi[LF_id] * ci_RF.joint2_placement = data.oMi[RF_id] * ci_RF.joint1_placement;
@@ -891,14 +891,14 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_loop_closure_3D_
   constraint_models.push_back(ci_RF);
   constraint_data.push_back(RigidConstraintData(ci_RF));
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 1e-4;
   ProximalSettings prox_settings(1e-12, mu0, 20);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   VectorXd a_res =
     constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
   BOOST_CHECK(prox_settings.iter > 1 && prox_settings.iter <= prox_settings.max_iter);
@@ -910,7 +910,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_loop_closure_3D_
 
   ProximalSettings prox_settings_fd(1e-12, mu0, 20);
   // Data_fd
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
 
   MatrixXd ddq_partial_dq_fd(model.nv, model.nv);
   ddq_partial_dq_fd.setZero();
@@ -919,11 +920,11 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_loop_closure_3D_
   MatrixXd ddq_partial_dtau_fd(model.nv, model.nv);
   ddq_partial_dtau_fd.setZero();
 
-  MatrixXd lambda_partial_dtau_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dtau_fd(constraint_size, model.nv);
   lambda_partial_dtau_fd.setZero();
-  MatrixXd lambda_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dq_fd(constraint_size, model.nv);
   lambda_partial_dq_fd.setZero();
-  MatrixXd lambda_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dv_fd(constraint_size, model.nv);
   lambda_partial_dv_fd.setZero();
 
   const VectorXd ddq0 = constraintDynamics(
@@ -939,7 +940,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_loop_closure_3D_
   VectorXd q_plus(model.nq);
   VectorXd ddq_plus(model.nv);
 
-  VectorXd lambda_plus(constraint_dim);
+  VectorXd lambda_plus(constraint_size);
 
   const double alpha = 1e-8;
   forwardKinematics(model, data, q, v, a);
@@ -1009,8 +1010,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_loop_closure_
   //  const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_data;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data;
 
   // Add Loop Closure Constraint
 
@@ -1021,20 +1022,20 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_loop_closure_
 
   RigidConstraintModel ci_closure(
     CONTACT_3D, model, 0, SE3::Identity(), RA_id, SE3::Random(), LOCAL);
-  ci_closure.corrector.Kp.array() = KP;
-  ci_closure.corrector.Kd.array() = KD;
+  ci_closure.m_baumgarte_parameters.Kp = KP;
+  ci_closure.m_baumgarte_parameters.Kd = KD;
   constraint_models.push_back(ci_closure);
   constraint_data.push_back(RigidConstraintData(ci_closure));
   // End of Loopo Closure Constraint
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
   const Data::TangentVectorType a = data.ddq;
   data.M.triangularView<Eigen::StrictlyLower>() =
@@ -1043,7 +1044,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_loop_closure_
     model, data, constraint_models, constraint_data, prox_settings);
 
   // Data_fd
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
 
   MatrixXd ddq_partial_dq_fd(model.nv, model.nv);
   ddq_partial_dq_fd.setZero();
@@ -1052,11 +1054,11 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_loop_closure_
   MatrixXd ddq_partial_dtau_fd(model.nv, model.nv);
   ddq_partial_dtau_fd.setZero();
 
-  MatrixXd lambda_partial_dtau_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dtau_fd(constraint_size, model.nv);
   lambda_partial_dtau_fd.setZero();
-  MatrixXd lambda_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dq_fd(constraint_size, model.nv);
   lambda_partial_dq_fd.setZero();
-  MatrixXd lambda_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dv_fd(constraint_size, model.nv);
   lambda_partial_dv_fd.setZero();
 
   const VectorXd ddq0 = constraintDynamics(
@@ -1066,7 +1068,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_loop_closure_
   VectorXd q_plus(model.nq);
   VectorXd ddq_plus(model.nv);
 
-  VectorXd lambda_plus(constraint_dim);
+  VectorXd lambda_plus(constraint_size);
 
   const double alpha = 1e-8;
   forwardKinematics(model, data, q, v, a);
@@ -1114,6 +1116,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_loop_closure_
   BOOST_CHECK(ddq_partial_dtau_fd.isApprox(data.ddq_dtau, sqrt(alpha)));
 }
 
+typedef typename Model::Scalar Scalar;
+
 void computeVelocityAndAccelerationErrors(
   const Model & model,
   const RigidConstraintModel & cmodel,
@@ -1122,8 +1126,8 @@ void computeVelocityAndAccelerationErrors(
   const VectorXd & a,
   Motion & v_error,
   Motion & a_error,
-  const VectorXd & Kp,
-  const VectorXd & Kd)
+  const Scalar & Kp,
+  const Scalar & Kd)
 {
   Data data(model);
   forwardKinematics(model, data, q, v, a);
@@ -1141,8 +1145,7 @@ void computeVelocityAndAccelerationErrors(
 
   v_error = v1 - c1Mc2.act(v2);
   a_error = a1 - c1Mc2.act(a2) + v_error.cross(c1Mc2.act(v2));
-  a_error.toVector() +=
-    Kd.asDiagonal() * v_error.toVector() + Kp.asDiagonal() * (-log6(c1Mc2).toVector());
+  a_error.toVector() += Kd * v_error.toVector() + Kp * (-log6(c1Mc2).toVector());
 }
 
 BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_j2_fd)
@@ -1162,9 +1165,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
   VectorXd tau = VectorXd::Random(model.nv);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData)
-  constraint_data, constraint_data_fd;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data, constraint_data_fd;
 
   // Add loop closure constraint
   const std::string RA = "rarm5_joint";
@@ -1172,20 +1174,20 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
 
   RigidConstraintModel ci_closure(
     CONTACT_6D, model, 0, SE3::Identity(), RA_id, SE3::Identity(), LOCAL);
-  ci_closure.corrector.Kp.array() = KP;
-  ci_closure.corrector.Kd.array() = KD;
+  ci_closure.m_baumgarte_parameters.Kp = KP;
+  ci_closure.m_baumgarte_parameters.Kd = KD;
   constraint_models.push_back(ci_closure);
   constraint_data.push_back(RigidConstraintData(ci_closure));
   constraint_data_fd.push_back(RigidConstraintData(ci_closure));
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 100);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   const VectorXd ddq0 =
     constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
   BOOST_CHECK(
@@ -1201,12 +1203,12 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
 
   Motion v_error, a_error;
   computeVelocityAndAccelerationErrors(
-    model, ci_closure, q, v, ddq0, v_error, a_error, ci_closure.corrector.Kp,
-    ci_closure.corrector.Kd);
+    model, ci_closure, q, v, ddq0, v_error, a_error, ci_closure.m_baumgarte_parameters.Kp,
+    ci_closure.m_baumgarte_parameters.Kd);
   BOOST_CHECK(a_error.isZero());
 
   const Motion constraint_velocity_error = constraint_data[0].contact_velocity_error;
-  const VectorXd constraint_acceleration_error = -data.primal_rhs_contact.head(constraint_dim);
+  const VectorXd constraint_acceleration_error = -data.primal_rhs_contact.head(constraint_size);
   BOOST_CHECK(constraint_velocity_error.isApprox(v_error));
   BOOST_CHECK(constraint_acceleration_error.isApprox(a_error.toVector() - data.dac_da * ddq0));
 
@@ -1220,7 +1222,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
   // d./dq
   MatrixXd ddq_partial_dq_fd(model.nv, model.nv);
   ddq_partial_dq_fd.setZero();
-  MatrixXd lambda_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dq_fd(constraint_size, model.nv);
   lambda_partial_dq_fd.setZero();
   MatrixXd dconstraint_velocity_error_dq_fd(6, model.nv);
   dconstraint_velocity_error_dq_fd.setZero();
@@ -1229,7 +1231,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
   MatrixXd dconstraint_acceleration_error_dq_fd(6, model.nv);
   dconstraint_acceleration_error_dq_fd.setZero();
 
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
   for (int k = 0; k < model.nv; ++k)
   {
     v_eps[k] += alpha;
@@ -1242,12 +1245,12 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
 
     Motion v_error_plus, a_error_plus;
     computeVelocityAndAccelerationErrors(
-      model, ci_closure, q_plus, v, ddq0, v_error_plus, a_error_plus, ci_closure.corrector.Kp,
-      ci_closure.corrector.Kd);
+      model, ci_closure, q_plus, v, ddq0, v_error_plus, a_error_plus,
+      ci_closure.m_baumgarte_parameters.Kp, ci_closure.m_baumgarte_parameters.Kd);
 
     const Motion & constraint_velocity_error_plus = constraint_data_fd[0].contact_velocity_error;
     const VectorXd constraint_acceleration_error_plus =
-      -data_fd.primal_rhs_contact.head(constraint_dim);
+      -data_fd.primal_rhs_contact.head(constraint_size);
     dconstraint_velocity_error_dq_fd.col(k) =
       (constraint_velocity_error_plus - constraint_velocity_error).toVector() / alpha;
     dconstraint_velocity_error_dq2_fd.col(k) = (v_error_plus - v_error).toVector() / alpha;
@@ -1264,7 +1267,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
   // d./dv
   MatrixXd ddq_partial_dv_fd(model.nv, model.nv);
   ddq_partial_dv_fd.setZero();
-  MatrixXd lambda_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dv_fd(constraint_size, model.nv);
   lambda_partial_dv_fd.setZero();
   MatrixXd dconstraint_velocity_error_dv_fd(6, model.nv);
   dconstraint_velocity_error_dv_fd.setZero();
@@ -1283,8 +1286,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
 
     Motion v_error_plus, a_error_plus;
     computeVelocityAndAccelerationErrors(
-      model, ci_closure, q, v_plus, ddq0, v_error_plus, a_error_plus, ci_closure.corrector.Kp,
-      ci_closure.corrector.Kd);
+      model, ci_closure, q, v_plus, ddq0, v_error_plus, a_error_plus,
+      ci_closure.m_baumgarte_parameters.Kp, ci_closure.m_baumgarte_parameters.Kd);
 
     const Motion & constraint_velocity_error_plus = constraint_data_fd[0].contact_velocity_error;
     dconstraint_velocity_error_dv_fd.col(k) =
@@ -1302,7 +1305,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
   // d./dtau
   MatrixXd ddq_partial_dtau_fd(model.nv, model.nv);
   ddq_partial_dtau_fd.setZero();
-  MatrixXd lambda_partial_dtau_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dtau_fd(constraint_size, model.nv);
   lambda_partial_dtau_fd.setZero();
 
   VectorXd tau_plus(tau);
@@ -1340,9 +1343,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
   const std::string LF = "lleg6_joint";
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData)
-  constraint_data, constraint_data_fd;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data, constraint_data_fd;
 
   const std::string RA = "rarm5_joint";
   const Model::JointIndex RA_id = model.getJointId(RA);
@@ -1352,21 +1354,21 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
   // Add loop closure constraint
   RigidConstraintModel ci_closure(
     CONTACT_6D, model, LA_id, SE3::Random(), RA_id, SE3::Random(), LOCAL);
-  ci_closure.corrector.Kp.array() = KP;
-  ci_closure.corrector.Kd.array() = KD;
+  ci_closure.m_baumgarte_parameters.Kp = KP;
+  ci_closure.m_baumgarte_parameters.Kd = KD;
 
   constraint_models.push_back(ci_closure);
   constraint_data.push_back(RigidConstraintData(ci_closure));
   constraint_data_fd.push_back(RigidConstraintData(ci_closure));
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 100);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   const VectorXd ddq0 =
     constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
   const VectorXd lambda0 = data.lambda_c;
@@ -1376,30 +1378,31 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
 
   Motion v_error, a_error;
   computeVelocityAndAccelerationErrors(
-    model, ci_closure, q, v, ddq0, v_error, a_error, ci_closure.corrector.Kp,
-    ci_closure.corrector.Kd);
+    model, ci_closure, q, v, ddq0, v_error, a_error, ci_closure.m_baumgarte_parameters.Kp,
+    ci_closure.m_baumgarte_parameters.Kd);
   BOOST_CHECK(a_error.isZero());
 
   const Motion constraint_velocity_error = constraint_data[0].contact_velocity_error;
-  const VectorXd constraint_acceleration_error = -data.primal_rhs_contact.head(constraint_dim);
+  const VectorXd constraint_acceleration_error = -data.primal_rhs_contact.head(constraint_size);
   BOOST_CHECK(constraint_velocity_error.isApprox(v_error));
   BOOST_CHECK(constraint_acceleration_error.isApprox(a_error.toVector() - data.dac_da * ddq0));
 
   // Data_fd
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
 
   VectorXd v_eps(VectorXd::Zero(model.nv));
   VectorXd q_plus(model.nq);
   VectorXd ddq_plus(model.nv);
 
-  VectorXd lambda_plus(constraint_dim);
+  VectorXd lambda_plus(constraint_size);
 
   const double alpha = 1e-8;
 
   // d./dq
   MatrixXd ddq_partial_dq_fd(model.nv, model.nv);
   ddq_partial_dq_fd.setZero();
-  MatrixXd lambda_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dq_fd(constraint_size, model.nv);
   lambda_partial_dq_fd.setZero();
   MatrixXd dconstraint_velocity_error_dq_fd(6, model.nv);
   dconstraint_velocity_error_dq_fd.setZero();
@@ -1418,12 +1421,12 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
 
     Motion v_error_plus, a_error_plus;
     computeVelocityAndAccelerationErrors(
-      model, ci_closure, q_plus, v, ddq0, v_error_plus, a_error_plus, ci_closure.corrector.Kp,
-      ci_closure.corrector.Kd);
+      model, ci_closure, q_plus, v, ddq0, v_error_plus, a_error_plus,
+      ci_closure.m_baumgarte_parameters.Kp, ci_closure.m_baumgarte_parameters.Kd);
 
     const Motion & constraint_velocity_error_plus = constraint_data_fd[0].contact_velocity_error;
     const VectorXd constraint_acceleration_error_plus =
-      -data_fd.primal_rhs_contact.head(constraint_dim);
+      -data_fd.primal_rhs_contact.head(constraint_size);
     dconstraint_velocity_error_dq_fd.col(k) =
       (constraint_velocity_error_plus - constraint_velocity_error).toVector() / alpha;
     dconstraint_acceleration_error_dq_fd.col(k) = (a_error_plus - a_error).toVector() / alpha;
@@ -1440,7 +1443,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
   // d./dv
   MatrixXd ddq_partial_dv_fd(model.nv, model.nv);
   ddq_partial_dv_fd.setZero();
-  MatrixXd lambda_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dv_fd(constraint_size, model.nv);
   lambda_partial_dv_fd.setZero();
   MatrixXd dconstraint_velocity_error_dv_fd(6, model.nv);
   dconstraint_velocity_error_dv_fd.setZero();
@@ -1459,8 +1462,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
 
     Motion v_error_plus, a_error_plus;
     computeVelocityAndAccelerationErrors(
-      model, ci_closure, q, v_plus, ddq0, v_error_plus, a_error_plus, ci_closure.corrector.Kp,
-      ci_closure.corrector.Kd);
+      model, ci_closure, q, v_plus, ddq0, v_error_plus, a_error_plus,
+      ci_closure.m_baumgarte_parameters.Kp, ci_closure.m_baumgarte_parameters.Kd);
 
     const Motion & constraint_velocity_error_plus = constraint_data_fd[0].contact_velocity_error;
     dconstraint_velocity_error_dv_fd.col(k) =
@@ -1479,7 +1482,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_6D_loop_closure_
   // d./dtau
   MatrixXd ddq_partial_dtau_fd(model.nv, model.nv);
   ddq_partial_dtau_fd.setZero();
-  MatrixXd lambda_partial_dtau_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dtau_fd(constraint_size, model.nv);
   lambda_partial_dtau_fd.setZero();
 
   VectorXd tau_plus(tau);
@@ -1520,8 +1523,8 @@ BOOST_AUTO_TEST_CASE(
   //  const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_data;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data;
 
   // Add Loop Closure Constraint
 
@@ -1532,21 +1535,21 @@ BOOST_AUTO_TEST_CASE(
 
   RigidConstraintModel ci_closure(
     CONTACT_6D, model, LA_id, SE3::Random(), RA_id, SE3::Random(), LOCAL_WORLD_ALIGNED);
-  ci_closure.corrector.Kp.array() = 0.;
-  ci_closure.corrector.Kd.array() = 0;
+  ci_closure.m_baumgarte_parameters.Kp = 0.;
+  ci_closure.m_baumgarte_parameters.Kd = 0;
 
   constraint_models.push_back(ci_closure);
   constraint_data.push_back(RigidConstraintData(ci_closure));
   // End of Loopo Closure Constraint
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
   const Data::TangentVectorType a = data.ddq;
   data.M.triangularView<Eigen::StrictlyLower>() =
@@ -1555,7 +1558,8 @@ BOOST_AUTO_TEST_CASE(
     model, data, constraint_models, constraint_data, prox_settings);
 
   // Data_fd
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
 
   MatrixXd ddq_partial_dq_fd(model.nv, model.nv);
   ddq_partial_dq_fd.setZero();
@@ -1564,11 +1568,11 @@ BOOST_AUTO_TEST_CASE(
   MatrixXd ddq_partial_dtau_fd(model.nv, model.nv);
   ddq_partial_dtau_fd.setZero();
 
-  MatrixXd lambda_partial_dtau_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dtau_fd(constraint_size, model.nv);
   lambda_partial_dtau_fd.setZero();
-  MatrixXd lambda_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dq_fd(constraint_size, model.nv);
   lambda_partial_dq_fd.setZero();
-  MatrixXd lambda_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dv_fd(constraint_size, model.nv);
   lambda_partial_dv_fd.setZero();
 
   const VectorXd ddq0 = constraintDynamics(
@@ -1578,7 +1582,7 @@ BOOST_AUTO_TEST_CASE(
   VectorXd q_plus(model.nq);
   VectorXd ddq_plus(model.nv);
 
-  VectorXd lambda_plus(constraint_dim);
+  VectorXd lambda_plus(constraint_size);
 
   const double alpha = 1e-8;
   forwardKinematics(model, data, q, v, a);
@@ -1648,8 +1652,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_loop_closure_
   //  const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_data;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data;
 
   // Add Loop Closure Constraint
 
@@ -1660,20 +1664,20 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_loop_closure_
 
   RigidConstraintModel ci_closure(
     CONTACT_3D, model, LA_id, SE3::Random(), RA_id, SE3::Random(), LOCAL);
-  ci_closure.corrector.Kp.array() = KP;
-  ci_closure.corrector.Kd.array() = KD;
+  ci_closure.m_baumgarte_parameters.Kp = KP;
+  ci_closure.m_baumgarte_parameters.Kd = KD;
   constraint_models.push_back(ci_closure);
   constraint_data.push_back(RigidConstraintData(ci_closure));
   // End of Loopo Closure Constraint
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
   const Data::TangentVectorType a = data.ddq;
   data.M.triangularView<Eigen::StrictlyLower>() =
@@ -1682,7 +1686,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_loop_closure_
     model, data, constraint_models, constraint_data, prox_settings);
 
   // Data_fd
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
 
   MatrixXd ddq_partial_dq_fd(model.nv, model.nv);
   ddq_partial_dq_fd.setZero();
@@ -1691,11 +1696,11 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_loop_closure_
   MatrixXd ddq_partial_dtau_fd(model.nv, model.nv);
   ddq_partial_dtau_fd.setZero();
 
-  MatrixXd lambda_partial_dtau_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dtau_fd(constraint_size, model.nv);
   lambda_partial_dtau_fd.setZero();
-  MatrixXd lambda_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dq_fd(constraint_size, model.nv);
   lambda_partial_dq_fd.setZero();
-  MatrixXd lambda_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dv_fd(constraint_size, model.nv);
   lambda_partial_dv_fd.setZero();
 
   const VectorXd ddq0 = constraintDynamics(
@@ -1705,7 +1710,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_3D_loop_closure_
   VectorXd q_plus(model.nq);
   VectorXd ddq_plus(model.nv);
 
-  VectorXd lambda_plus(constraint_dim);
+  VectorXd lambda_plus(constraint_size);
 
   const double alpha = 1e-8;
   forwardKinematics(model, data, q, v, a);
@@ -1775,8 +1780,8 @@ BOOST_AUTO_TEST_CASE(
   //  const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_data;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data;
 
   // Add Loop Closure Constraint
 
@@ -1788,21 +1793,21 @@ BOOST_AUTO_TEST_CASE(
   RigidConstraintModel ci_closure(
     CONTACT_3D, model, LA_id, SE3::Random(), RA_id, SE3::Random(), LOCAL_WORLD_ALIGNED);
 
-  ci_closure.corrector.Kp.array() = KP;
-  ci_closure.corrector.Kd.array() = KD;
+  ci_closure.m_baumgarte_parameters.Kp = KP;
+  ci_closure.m_baumgarte_parameters.Kd = KD;
 
   constraint_models.push_back(ci_closure);
   constraint_data.push_back(RigidConstraintData(ci_closure));
   // End of Loopo Closure Constraint
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
   const Data::TangentVectorType a = data.ddq;
   data.M.triangularView<Eigen::StrictlyLower>() =
@@ -1811,7 +1816,8 @@ BOOST_AUTO_TEST_CASE(
     model, data, constraint_models, constraint_data, prox_settings);
 
   // Data_fd
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
 
   MatrixXd ddq_partial_dq_fd(model.nv, model.nv);
   ddq_partial_dq_fd.setZero();
@@ -1820,11 +1826,11 @@ BOOST_AUTO_TEST_CASE(
   MatrixXd ddq_partial_dtau_fd(model.nv, model.nv);
   ddq_partial_dtau_fd.setZero();
 
-  MatrixXd lambda_partial_dtau_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dtau_fd(constraint_size, model.nv);
   lambda_partial_dtau_fd.setZero();
-  MatrixXd lambda_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dq_fd(constraint_size, model.nv);
   lambda_partial_dq_fd.setZero();
-  MatrixXd lambda_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dv_fd(constraint_size, model.nv);
   lambda_partial_dv_fd.setZero();
 
   const VectorXd ddq0 = constraintDynamics(
@@ -1834,7 +1840,7 @@ BOOST_AUTO_TEST_CASE(
   VectorXd q_plus(model.nq);
   VectorXd ddq_plus(model.nv);
 
-  VectorXd lambda_plus(constraint_dim);
+  VectorXd lambda_plus(constraint_size);
 
   const double alpha = 1e-8;
   forwardKinematics(model, data, q, v, a);
@@ -1904,25 +1910,25 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_WORLD_ALIGNED_6D
   const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_data;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data;
 
   RigidConstraintModel ci_LF(CONTACT_6D, model, LF_id, LOCAL_WORLD_ALIGNED);
-  ci_LF.corrector.Kp.array() = 0; // TODO: Add support for KP >0
-  ci_LF.corrector.Kd.array() = KD;
+  ci_LF.m_baumgarte_parameters.Kp = 0; // TODO: Add support for KP >0
+  ci_LF.m_baumgarte_parameters.Kd = KD;
 
   ci_LF.joint1_placement.setRandom();
   constraint_models.push_back(ci_LF);
   constraint_data.push_back(RigidConstraintData(ci_LF));
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
 
   data.M.triangularView<Eigen::StrictlyLower>() =
@@ -1931,7 +1937,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_WORLD_ALIGNED_6D
     model, data, constraint_models, constraint_data, prox_settings);
 
   // Data_fd
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
 
   MatrixXd ddq_partial_dq_fd(model.nv, model.nv);
   ddq_partial_dq_fd.setZero();
@@ -1940,11 +1947,11 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_WORLD_ALIGNED_6D
   MatrixXd ddq_partial_dtau_fd(model.nv, model.nv);
   ddq_partial_dtau_fd.setZero();
 
-  MatrixXd lambda_partial_dtau_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dtau_fd(constraint_size, model.nv);
   lambda_partial_dtau_fd.setZero();
-  MatrixXd lambda_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dq_fd(constraint_size, model.nv);
   lambda_partial_dq_fd.setZero();
-  MatrixXd lambda_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dv_fd(constraint_size, model.nv);
   lambda_partial_dv_fd.setZero();
 
   const VectorXd ddq0 = constraintDynamics(
@@ -1954,7 +1961,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_WORLD_ALIGNED_6D
   VectorXd q_plus(model.nq);
   VectorXd ddq_plus(model.nv);
 
-  VectorXd lambda_plus(constraint_dim);
+  VectorXd lambda_plus(constraint_size);
 
   const double alpha = 1e-8;
   for (int k = 0; k < model.nv; ++k)
@@ -2022,24 +2029,24 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_WORLD_ALIGNED_3D
   //  const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_data;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data;
 
   RigidConstraintModel ci_RF(CONTACT_3D, model, RF_id, LOCAL_WORLD_ALIGNED);
-  ci_RF.corrector.Kp.array() = KP;
-  ci_RF.corrector.Kd.array() = KD;
+  ci_RF.m_baumgarte_parameters.Kp = KP;
+  ci_RF.m_baumgarte_parameters.Kd = KD;
   ci_RF.joint1_placement.setRandom();
   constraint_models.push_back(ci_RF);
   constraint_data.push_back(RigidConstraintData(ci_RF));
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
 
   data.M.triangularView<Eigen::StrictlyLower>() =
@@ -2048,7 +2055,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_WORLD_ALIGNED_3D
     model, data, constraint_models, constraint_data, prox_settings);
 
   // Data_fd
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
 
   MatrixXd ddq_partial_dq_fd(model.nv, model.nv);
   ddq_partial_dq_fd.setZero();
@@ -2057,11 +2065,11 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_WORLD_ALIGNED_3D
   MatrixXd ddq_partial_dtau_fd(model.nv, model.nv);
   ddq_partial_dtau_fd.setZero();
 
-  MatrixXd lambda_partial_dtau_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dtau_fd(constraint_size, model.nv);
   lambda_partial_dtau_fd.setZero();
-  MatrixXd lambda_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dq_fd(constraint_size, model.nv);
   lambda_partial_dq_fd.setZero();
-  MatrixXd lambda_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dv_fd(constraint_size, model.nv);
   lambda_partial_dv_fd.setZero();
 
   const VectorXd ddq0 = constraintDynamics(
@@ -2071,7 +2079,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_LOCAL_WORLD_ALIGNED_3D
   VectorXd q_plus(model.nq);
   VectorXd ddq_plus(model.nv);
 
-  VectorXd lambda_plus(constraint_dim);
+  VectorXd lambda_plus(constraint_size);
 
   const double alpha = 1e-8;
   for (int k = 0; k < model.nv; ++k)
@@ -2143,43 +2151,43 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_mix_fd)
   const Model::JointIndex LH_id = model.getJointId(LH);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_data;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data;
 
   RigidConstraintModel ci_LF(CONTACT_6D, model, LF_id, LOCAL_WORLD_ALIGNED);
-  ci_LF.corrector.Kp.array() = 0; // TODO: fix local_world_aligned for 6d with kp non-zero
-  ci_LF.corrector.Kd.array() = KD;
+  ci_LF.m_baumgarte_parameters.Kp = 0; // TODO: fix local_world_aligned for 6d with kp non-zero
+  ci_LF.m_baumgarte_parameters.Kd = KD;
   ci_LF.joint1_placement.setRandom();
   constraint_models.push_back(ci_LF);
   constraint_data.push_back(RigidConstraintData(ci_LF));
   RigidConstraintModel ci_RF(CONTACT_6D, model, RF_id, LOCAL);
-  ci_RF.corrector.Kp.array() = KP;
-  ci_RF.corrector.Kd.array() = KD;
+  ci_RF.m_baumgarte_parameters.Kp = KP;
+  ci_RF.m_baumgarte_parameters.Kd = KD;
   ci_RF.joint1_placement.setRandom();
   constraint_models.push_back(ci_RF);
   constraint_data.push_back(RigidConstraintData(ci_RF));
 
   RigidConstraintModel ci_LH(CONTACT_3D, model, LH_id, LOCAL_WORLD_ALIGNED);
-  ci_LH.corrector.Kp.array() = KP;
-  ci_LH.corrector.Kd.array() = KD;
+  ci_LH.m_baumgarte_parameters.Kp = KP;
+  ci_LH.m_baumgarte_parameters.Kd = KD;
   ci_LH.joint1_placement.setRandom();
   constraint_models.push_back(ci_LH);
   constraint_data.push_back(RigidConstraintData(ci_LH));
   RigidConstraintModel ci_RH(CONTACT_3D, model, RH_id, LOCAL);
-  ci_RH.corrector.Kp.array() = KP;
-  ci_RH.corrector.Kd.array() = KD;
+  ci_RH.m_baumgarte_parameters.Kp = KP;
+  ci_RH.m_baumgarte_parameters.Kd = KD;
   ci_RH.joint1_placement.setRandom();
   constraint_models.push_back(ci_RH);
   constraint_data.push_back(RigidConstraintData(ci_RH));
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
   const Data::TangentVectorType a = data.ddq;
   data.M.triangularView<Eigen::StrictlyLower>() =
@@ -2188,7 +2196,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_mix_fd)
     model, data, constraint_models, constraint_data, prox_settings);
 
   // Data_fd
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
 
   MatrixXd ddq_partial_dq_fd(model.nv, model.nv);
   ddq_partial_dq_fd.setZero();
@@ -2197,11 +2206,11 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_mix_fd)
   MatrixXd ddq_partial_dtau_fd(model.nv, model.nv);
   ddq_partial_dtau_fd.setZero();
 
-  MatrixXd lambda_partial_dtau_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dtau_fd(constraint_size, model.nv);
   lambda_partial_dtau_fd.setZero();
-  MatrixXd lambda_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dq_fd(constraint_size, model.nv);
   lambda_partial_dq_fd.setZero();
-  MatrixXd lambda_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dv_fd(constraint_size, model.nv);
   lambda_partial_dv_fd.setZero();
 
   const VectorXd ddq0 = constraintDynamics(
@@ -2211,31 +2220,31 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_mix_fd)
   VectorXd q_plus(model.nq);
   VectorXd ddq_plus(model.nv);
 
-  VectorXd lambda_plus(constraint_dim);
+  VectorXd lambda_plus(constraint_size);
 
   const double alpha = 1e-8;
   forwardKinematics(model, data, q, v, a);
 
   const Eigen::MatrixXd Jc = data.dac_da;
   const Eigen::MatrixXd Jc_ref =
-    data.contact_chol.matrix().topRightCorner(constraint_dim, model.nv);
+    data.constraint_chol.matrix().topRightCorner(constraint_size, model.nv);
 
   BOOST_CHECK(Jc.isApprox(Jc_ref));
 
   const Eigen::MatrixXd JMinv = Jc * data.Minv;
   const Eigen::MatrixXd dac_dq = data.dac_dq;
 
-  Eigen::MatrixXd dac_dq_fd(constraint_dim, model.nv);
+  Eigen::MatrixXd dac_dq_fd(constraint_size, model.nv);
 
-  Eigen::VectorXd contact_acc0(constraint_dim);
-  Eigen::DenseIndex row_id = 0;
+  Eigen::VectorXd contact_acc0(constraint_size);
+  Eigen::Index row_id = 0;
 
   forwardKinematics(model, data, q, v, data.ddq);
   for (size_t k = 0; k < constraint_models.size(); ++k)
   {
     const RigidConstraintModel & cmodel = constraint_models[k];
     const RigidConstraintData & cdata = constraint_data[k];
-    const Eigen::DenseIndex size = cmodel.size();
+    const Eigen::Index size = cmodel.residualSize();
 
     const Motion contact_acc = getContactAcceleration(model, data, cmodel);
 
@@ -2259,14 +2268,14 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_mix_fd)
     ddq_partial_dq_fd.col(k) = (ddq_plus - ddq0) / alpha;
     lambda_partial_dq_fd.col(k) = (data_fd.lambda_c - lambda0) / alpha;
 
-    Eigen::VectorXd contact_acc_plus(constraint_dim);
-    Eigen::DenseIndex row_id = 0;
+    Eigen::VectorXd contact_acc_plus(constraint_size);
+    Eigen::Index row_id = 0;
     forwardKinematics(model, data_fd, q_plus, v, data.ddq);
     for (size_t k = 0; k < constraint_models.size(); ++k)
     {
       const RigidConstraintModel & cmodel = constraint_models[k];
       const RigidConstraintData & cdata = constraint_data[k];
-      const Eigen::DenseIndex size = cmodel.size();
+      const Eigen::Index size = cmodel.residualSize();
 
       const Motion contact_acc = getContactAcceleration(model, data_fd, cmodel);
 
@@ -2341,24 +2350,24 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_loop_closure_kinematic
   const Model::JointIndex LH_id = model.getJointId(LH);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_data;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data;
 
   RigidConstraintModel ci_RH(CONTACT_6D, model, RH_id, SE3::Random(), LH_id, SE3::Random(), LOCAL);
-  ci_RH.corrector.Kp.array() = 0;
-  ci_RH.corrector.Kd.array() = 0;
+  ci_RH.m_baumgarte_parameters.Kp = 0;
+  ci_RH.m_baumgarte_parameters.Kd = 0;
 
   constraint_models.push_back(ci_RH);
   constraint_data.push_back(RigidConstraintData(ci_RH));
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_data);
   constraintDynamics(model, data, q, v, tau, constraint_models, constraint_data, prox_settings);
   const Data::TangentVectorType a = data.ddq;
   data.M.triangularView<Eigen::StrictlyLower>() =
@@ -2367,7 +2376,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_loop_closure_kinematic
     model, data, constraint_models, constraint_data, prox_settings);
 
   // Data_fd
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
   const VectorXd ddq0 = constraintDynamics(
     model, data_fd, q, v, tau, constraint_models, constraint_data, prox_settings);
   const VectorXd lambda0 = data_fd.lambda_c;
@@ -2375,30 +2385,30 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_loop_closure_kinematic
   VectorXd q_plus(model.nq);
   VectorXd ddq_plus(model.nv);
 
-  VectorXd lambda_plus(constraint_dim);
+  VectorXd lambda_plus(constraint_size);
 
   const double alpha = 1e-8;
   forwardKinematics(model, data, q, v, a);
 
   const Eigen::MatrixXd Jc = data.dac_da;
   const Eigen::MatrixXd Jc_ref =
-    data.contact_chol.matrix().topRightCorner(constraint_dim, model.nv);
+    data.constraint_chol.matrix().topRightCorner(constraint_size, model.nv);
 
   BOOST_CHECK(Jc.isApprox(Jc_ref));
 
   const Eigen::MatrixXd JMinv = Jc * data.Minv;
   const Eigen::MatrixXd dac_dq = data.dac_dq;
-  Eigen::MatrixXd dac_dq_fd(constraint_dim, model.nv);
+  Eigen::MatrixXd dac_dq_fd(constraint_size, model.nv);
 
-  Eigen::VectorXd contact_acc0(constraint_dim);
-  Eigen::DenseIndex row_id = 0;
+  Eigen::VectorXd contact_acc0(constraint_size);
+  Eigen::Index row_id = 0;
 
   forwardKinematics(model, data, q, v, data.ddq);
   for (size_t k = 0; k < constraint_models.size(); ++k)
   {
     const RigidConstraintModel & cmodel = constraint_models[k];
     const RigidConstraintData & cdata = constraint_data[k];
-    const Eigen::DenseIndex size = cmodel.size();
+    const Eigen::Index size = cmodel.residualSize();
 
     const Motion contact_acc = getContactAcceleration(model, data, cmodel, cdata.c1Mc2);
 
@@ -2417,14 +2427,14 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_loop_closure_kinematic
     ddq_plus = constraintDynamics(
       model, data_fd, q_plus, v, tau, constraint_models, constraint_data, prox_settings);
 
-    Eigen::VectorXd contact_acc_plus(constraint_dim);
-    Eigen::DenseIndex row_id = 0;
+    Eigen::VectorXd contact_acc_plus(constraint_size);
+    Eigen::Index row_id = 0;
     forwardKinematics(model, data_fd, q_plus, v, data.ddq);
     for (size_t k = 0; k < constraint_models.size(); ++k)
     {
       const RigidConstraintModel & cmodel = constraint_models[k];
       const RigidConstraintData & cdata = constraint_data[k];
-      const Eigen::DenseIndex size = cmodel.size();
+      const Eigen::Index size = cmodel.residualSize();
 
       const Motion contact_acc = getContactAcceleration(model, data_fd, cmodel, cdata.c1Mc2);
 
@@ -2467,29 +2477,25 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_dirty_data)
   const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_data;
+  std::vector<RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_data;
 
   RigidConstraintModel ci_LF(CONTACT_6D, model, LF_id, LOCAL);
   RigidConstraintModel ci_RF(CONTACT_3D, model, RF_id, LOCAL);
 
-  ci_LF.corrector.Kp.array() = KP;
-  ci_LF.corrector.Kd.array() = KD;
-  ci_RF.corrector.Kp.array() = KP;
-  ci_RF.corrector.Kd.array() = KD;
+  ci_LF.m_baumgarte_parameters.Kp = KP;
+  ci_LF.m_baumgarte_parameters.Kd = KD;
+  ci_RF.m_baumgarte_parameters.Kp = KP;
+  ci_RF.m_baumgarte_parameters.Kd = KD;
   constraint_models.push_back(ci_LF);
   constraint_data.push_back(RigidConstraintData(ci_LF));
   constraint_models.push_back(ci_RF);
   constraint_data.push_back(RigidConstraintData(ci_RF));
 
-  Eigen::DenseIndex constraint_dim = 0;
-  for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
-
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
 
-  initConstraintDynamics(model, data_dirty, constraint_models);
+  initConstraintDynamics(model, data_dirty, constraint_models, constraint_data);
   constraintDynamics(
     model, data_dirty, q, v, tau, constraint_models, constraint_data, prox_settings);
   computeConstraintDynamicsDerivatives(
@@ -2506,7 +2512,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_dirty_data)
 
   // Test with fresh data
   Data data_fresh(model);
-  initConstraintDynamics(model, data_fresh, constraint_models);
+  initConstraintDynamics(model, data_fresh, constraint_models, constraint_data);
   constraintDynamics(
     model, data_fresh, q, v, tau, constraint_models, constraint_data, prox_settings);
   computeConstraintDynamicsDerivatives(
@@ -2533,8 +2539,8 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_cassie_proximal)
     EXAMPLE_ROBOT_DATA_MODEL_DIR + std::string("/cassie_description/srdf/cassie_v2.srdf");
 
   pinocchio::Model model;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) constraint_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) constraint_datas;
+  std::vector<pinocchio::RigidConstraintModel> constraint_models;
+  std::vector<RigidConstraintData> constraint_datas;
 
   pinocchio::sdf::buildModel(filename, pinocchio::JointModelFreeFlyer(), model, constraint_models);
   pinocchio::srdf::loadReferenceConfigurations(model, srdf_filename, false);
@@ -2549,24 +2555,25 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_cassie_proximal)
 
   Data data(model), data_fd(model);
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_datas);
   for (int k = 0; k < (int)constraint_models.size(); ++k)
   {
     constraint_datas.push_back(RigidConstraintData(constraint_models[(pinocchio::JointIndex)k]));
   }
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < constraint_models.size(); ++k)
-    constraint_dim += constraint_models[k].size();
+    constraint_size += constraint_models[k].residualSize();
 
-  initConstraintDynamics(model, data, constraint_models);
+  initConstraintDynamics(model, data, constraint_models, constraint_datas);
   constraintDynamics(model, data, q, v, tau, constraint_models, constraint_datas, prox_settings);
   data.M.triangularView<Eigen::StrictlyLower>() =
     data.M.transpose().triangularView<Eigen::StrictlyLower>();
   computeConstraintDynamicsDerivatives(
     model, data, constraint_models, constraint_datas, prox_settings);
 
-  initConstraintDynamics(model, data_fd, constraint_models);
+  auto constraint_datas_fd = createData(constraint_models);
+  initConstraintDynamics(model, data_fd, constraint_models, constraint_datas_fd);
   MatrixXd ddq_partial_dq_fd(model.nv, model.nv);
   ddq_partial_dq_fd.setZero();
   MatrixXd ddq_partial_dv_fd(model.nv, model.nv);
@@ -2574,11 +2581,11 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_cassie_proximal)
   MatrixXd ddq_partial_dtau_fd(model.nv, model.nv);
   ddq_partial_dtau_fd.setZero();
 
-  MatrixXd lambda_partial_dtau_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dtau_fd(constraint_size, model.nv);
   lambda_partial_dtau_fd.setZero();
-  MatrixXd lambda_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dq_fd(constraint_size, model.nv);
   lambda_partial_dq_fd.setZero();
-  MatrixXd lambda_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd lambda_partial_dv_fd(constraint_size, model.nv);
   lambda_partial_dv_fd.setZero();
 
   const VectorXd ddq0 = constraintDynamics(
@@ -2588,7 +2595,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_cassie_proximal)
   VectorXd q_plus(model.nq);
   VectorXd ddq_plus(model.nv);
 
-  VectorXd lambda_plus(constraint_dim);
+  VectorXd lambda_plus(constraint_size);
   const double alpha = 1e-8;
   forwardKinematics(model, data, q, v);
   for (int k = 0; k < model.nv; ++k)
@@ -2596,7 +2603,7 @@ BOOST_AUTO_TEST_CASE(test_constraint_dynamics_derivatives_cassie_proximal)
     v_eps[k] += alpha;
     q_plus = integrate(model, q, v_eps);
     ddq_plus = constraintDynamics(
-      model, data_fd, q_plus, v, tau, constraint_models, constraint_datas, prox_settings);
+      model, data_fd, q_plus, v, tau, constraint_models, constraint_datas_fd, prox_settings);
     ddq_partial_dq_fd.col(k) = (ddq_plus - ddq0) / alpha;
     lambda_partial_dq_fd.col(k) = (data_fd.lambda_c - lambda0) / alpha;
     v_eps[k] = 0.;

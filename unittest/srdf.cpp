@@ -2,9 +2,7 @@
 // Copyright (c) 2016-2018 CNRS
 //
 
-#include <iostream>
-
-#include "pinocchio/multibody/model.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/parsers/urdf.hpp"
 #include "pinocchio/parsers/srdf.hpp"
 

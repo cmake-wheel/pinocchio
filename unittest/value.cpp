@@ -18,11 +18,9 @@
 #include <iostream>
 #include <iomanip>
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/parsers/urdf.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
-#include "pinocchio/algorithm/kinematics.hpp"
 
 #include <boost/test/unit_test.hpp>
 

@@ -1,25 +1,12 @@
 //
-// Copyright (c) 2017-2019 CNRS INRIA
+// Copyright (c) 2026 INRIA
 //
 
-#ifndef __pinocchio_serialization_fwd_hpp__
-#define __pinocchio_serialization_fwd_hpp__
+#pragma once
 
-#include "pinocchio/fwd.hpp"
-#include <boost/serialization/nvp.hpp>
+// IWYU pragma: begin_keep
+// IWYU pragma: end_keep
 
-#include "pinocchio/serialization/eigen.hpp"
-
-#define BOOST_SERIALIZATION_MAKE_NVP(member) boost::serialization::make_nvp(##member, member)
-
-namespace pinocchio
-{
-  template<typename T>
-  struct Serialize
-  {
-    template<typename Archive>
-    static void run(Archive & ar, T & object);
-  };
-} // namespace pinocchio
-
-#endif // ifndef __pinocchio_serialization_fwd_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/serialization/fwd.hxx"
+// IWYU pragma: end_exports

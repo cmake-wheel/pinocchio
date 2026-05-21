@@ -11,10 +11,6 @@
 
 #include "pinocchio/multibody/sample-models.hpp"
 
-#include "pinocchio/utils/timer.hpp"
-
-#include <iostream>
-
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
 

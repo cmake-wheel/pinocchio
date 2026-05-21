@@ -1,6 +1,6 @@
 [workspace]
 name = "pinocchio"
-version = "3.9.0"
+version = "4.0.0"
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
 platforms = ["linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64"]
 channels = ["conda-forge"]
@@ -10,10 +10,12 @@ preview = ["pixi-build"]
 
 [dependencies]
 ccache = ">=4.9.1"
-cmake = ">=3.10"
 cxx-compiler = ">=1.7.0"
+cmake = ">=3.10"
 ninja = ">=1.11"
 pkg-config = ">=0.29.2"
+doxygen = ">=1.12.0"
+git = ">=2.47.1"
 libboost-devel = ">=1.80.0"
 libboost-python-devel = ">=1.80.0"
 eigen = ">=3.4.0"
@@ -49,6 +51,7 @@ extra-args = [
   "-DBUILD_WITH_CODEGEN_SUPPORT=OFF",
   "-DBUILD_WITH_SDF_SUPPORT=OFF",
   "-DBUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT=OFF",
+  "-DPINOCCHIO_BUILD_MPFR_TESTING=OFF",
   "-DBUILD_BENCHMARK=OFF",
   "-DBUILD_TESTING_SCIPY=OFF",
 ]
@@ -67,6 +70,7 @@ extra-args = [
   "-DBUILD_WITH_CODEGEN_SUPPORT=OFF",
   "-DBUILD_WITH_SDF_SUPPORT=OFF",
   "-DBUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT=OFF",
+  "-DPINOCCHIO_BUILD_MPFR_TESTING=OFF",
   "-DBUILD_BENCHMARK=OFF",
   "-DBUILD_TESTING_SCIPY=OFF",
 ]
@@ -78,11 +82,11 @@ pkg-config = ">=0.29.2"
 libboost-devel = ">=1.80.0"
 libboost-python-devel = ">=1.80.0"
 eigen = ">=3.4.0"
+coal = ">=3"
 numpy = ">=1.22.0"
 python = ">=3.10.0"
 eigenpy = ">=3.7.0"
 urdfdom = ">=4.0"
-hpp-fcl = ">=3"
 
 [package.run-dependencies]
 libboost-devel = ">=1.80.0"
@@ -128,6 +132,7 @@ configure = { cmd = [
   "-DBUILD_WITH_CODEGEN_SUPPORT=$PINOCCHIO_CODEGEN_SUPPORT",
   "-DBUILD_WITH_SDF_SUPPORT=$PINOCCHIO_SDF_SUPPORT",
   "-DBUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT=$PINOCCHIO_MPFR_SUPPORT",
+  "-DPINOCCHIO_BUILD_MPFR_TESTING=$PINOCCHIO_MPFR_SUPPORT",
   "-DBUILD_BENCHMARK=$PINOCCHIO_BUILD_BENCHMARK",
 ] }
 build = { cmd = "cmake --build build --target all", depends-on = ["configure"] }
@@ -162,6 +167,7 @@ configure-new-version = { cmd = [
   "-DBUILD_WITH_CODEGEN_SUPPORT=OFF",
   "-DBUILD_WITH_SDF_SUPPORT=OFF",
   "-DBUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT=OFF",
+  "-DPINOCCHIO_BUILD_MPFR_TESTING=OFF",
 ] }
 release-new-version = { cmd = "VERSION=$PINOCCHIO_VERSION cmake --build build_new_version --target release", depends-on = [
   "configure-new-version",
@@ -176,7 +182,7 @@ dependencies = { benchmark = ">=1.9.1", bokeh = ">=3.7.0" }
 activation = { env = { PINOCCHIO_BUILD_BENCHMARK = "ON" } }
 
 [feature.collision]
-dependencies = { hpp-fcl = ">=2.4" }
+dependencies = { coal = ">=3" }
 activation = { env = { PINOCCHIO_COLLISION_SUPPORT = "ON" } }
 
 [feature.sdf]
@@ -249,16 +255,16 @@ platforms = ["linux-64"]
 activation = { env = { CC = "clang", CXX = "clang++" } }
 dependencies = { clangxx = "*" }
 
-[feature.test-pixi-build.dependencies]
-pinocchio = { path = "." }
-cmake = ">=3.22"
-cxx-compiler = "*"
-python = "*"
+# [feature.test-pixi-build.dependencies]
+# pinocchio = { path = "." }
+# cmake = ">=3.22"
+# cxx-compiler = "*"
+# python = "*"
 
-[feature.test-pixi-build.tasks]
-test-cmake = "cmake -S unittest/packaging/cmake -B build_test_pixi_build"
-test-python = "python -c 'import pinocchio'"
-test = { depends-on = ["test-cmake", "test-python"] }
+# [feature.test-pixi-build.tasks]
+# test-cmake = "cmake -S unittest/packaging/cmake -B build_test_pixi_build"
+# test-python = "python -c 'import pinocchio'"
+# test = { depends-on = ["test-cmake", "test-python"] }
 
 [environments]
 default = { features = ["python-latest"], solve-group = "python-latest" }
@@ -348,7 +354,7 @@ new-version = { features = [
   "collision",
   "python-latest",
 ], solve-group = "python-latest" }
-test-pixi-build = { features = ["test-pixi-build"], no-default-feature = true }
+# test-pixi-build = { features = ["test-pixi-build"], no-default-feature = true }
 
 # Sanitizers with clang
 [feature.clang-sanitizers]
@@ -375,6 +381,7 @@ CCACHE_SLOPPINESS = "include_file_ctime,include_file_mtime,pch_defines,time_macr
 
 [feature.clang-sanitizers.tasks]
 configure = { cmd = [
+  "CXXFLAGS=-DNDEBUG",
   "cmake",
   "-G",
   "Ninja",
@@ -397,6 +404,7 @@ configure = { cmd = [
   "-DBUILD_WITH_CODEGEN_SUPPORT=OFF",
   "-DBUILD_WITH_SDF_SUPPORT=OFF",
   "-DBUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT=OFF",
+  "-DPINOCCHIO_BUILD_MPFR_TESTING=OFF",
   "-DBUILD_TESTING_SCIPY=OFF",
 ] }
 build = { cmd = "cmake --build build --target pinocchio-test-cpp-dynamic-allocations", depends-on = [

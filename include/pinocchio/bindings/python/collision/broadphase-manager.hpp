@@ -2,8 +2,7 @@
 // Copyright (c) 2022-2024 INRIA
 //
 
-#ifndef __pinocchio_python_collision_broadphase_manager_hpp__
-#define __pinocchio_python_collision_broadphase_manager_hpp__
+#pragma once
 
 #include "pinocchio/collision/broadphase-manager.hpp"
 #include "pinocchio/bindings/python/collision/broadphase-manager-base.hpp"
@@ -29,13 +28,14 @@ namespace pinocchio
       template<class PyClass>
       void visit(PyClass & cl) const
       {
-        cl
-          .def(bp::init<const Model *, const GeometryModel *, GeometryData *>(
-            bp::args("self", "model", "geometry_model", "geometry_data"), "Default constructor")
-                 [bp::with_custodian_and_ward<1, 2>(), bp::with_custodian_and_ward<1, 3>(),
-                  bp::with_custodian_and_ward<1, 4>()])
-          .def(bp::init<const Self &>(
-            bp::args("self", "other"), "Copy constructor")[bp::with_custodian_and_ward<1, 2>()])
+        cl.def(
+            bp::init<const Model *, const GeometryModel *, GeometryData *>(
+              bp::args("self", "model", "geometry_model", "geometry_data"), "Default constructor")
+              [bp::with_custodian_and_ward<1, 2>(), bp::with_custodian_and_ward<1, 3>(),
+               bp::with_custodian_and_ward<1, 4>()])
+          .def(
+            bp::init<const Self &>(
+              bp::args("self", "other"), "Copy constructor")[bp::with_custodian_and_ward<1, 2>()])
 
           .def(
             "getCollisionObjectInflation", &Self::getCollisionObjectInflation, bp::arg("self"),
@@ -48,7 +48,7 @@ namespace pinocchio
 
           .def(
             "getManager", (Derived & (Self::*)()) & Self::getManager, bp::arg("self"),
-            "Returns the internal FCL manager", bp::return_internal_reference<>())
+            "Returns the internal coal manager", bp::return_internal_reference<>())
 
           .def(
             "getCollisionObjectStatus", &Self::getCollisionObjectStatus, bp::arg("self"),
@@ -77,5 +77,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_collision_broadphase_manager_hpp__

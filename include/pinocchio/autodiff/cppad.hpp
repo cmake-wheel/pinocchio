@@ -2,22 +2,34 @@
 // Copyright (c) 2018-2023 CNRS INRIA
 //
 
-#ifndef __pinocchio_autodiff_cppad_hpp__
-#define __pinocchio_autodiff_cppad_hpp__
+#pragma once
 
-#include "pinocchio/math/fwd.hpp"
+// IWYU pragma: always_keep
+
 #define PINOCCHIO_WITH_CPPAD_SUPPORT
 
-// Do not include this file directly.
-// Copy and use directly the intructions from <cppad/example/cppad_eigen.hpp>
-// to avoid redifinition of EIGEN_MATRIXBASE_PLUGIN for Eigen 3.3.0 and later
-// #include <cppad/example/cppad_eigen.hpp>
+// IWYU pragma: begin_keep
+#include <cmath>
 
-#define EIGEN_MATRIXBASE_PLUGIN <pinocchio/autodiff/cppad/math/eigen_plugin.hpp>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
+#include <boost/version.hpp>
+#include <boost/math/constants/constants.hpp>
 #include <boost/mpl/int.hpp>
+
 #include <cppad/cppad.hpp>
-#include <Eigen/Dense>
+
+#include "pinocchio/fwd.hpp"
+#include "pinocchio/macros.hpp"
+#include "pinocchio/eigen-common.hpp"
+#include "pinocchio/fwd.hpp"
+
+#include "pinocchio/utils/static-if.hpp"
+
+#include "pinocchio/math.hpp"
+#include "pinocchio/spatial.hpp"
+// IWYU pragma: end_keep
 
 namespace boost
 {
@@ -65,9 +77,7 @@ namespace Eigen
     template<typename Scalar>
     struct cast_impl<CppAD::AD<Scalar>, Scalar>
     {
-#if EIGEN_VERSION_AT_LEAST(3, 2, 90)
       EIGEN_DEVICE_FUNC
-#endif
       static inline Scalar run(const CppAD::AD<Scalar> & x)
       {
         return CppAD::Value(x);
@@ -108,32 +118,32 @@ namespace Eigen
 
     // machine epsilon with type of real part of x
     // (use assumption that Base is not complex)
-    static CppAD::AD<Base> epsilon(void)
+    EIGEN_DEVICE_FUNC EIGEN_CONSTEXPR static inline CppAD::AD<Base> epsilon(void)
     {
       return CppAD::numeric_limits<CppAD::AD<Base>>::epsilon();
     }
 
     // relaxed version of machine epsilon for comparison of different
     // operations that should result in the same value
-    static CppAD::AD<Base> dummy_precision(void)
+    EIGEN_DEVICE_FUNC EIGEN_CONSTEXPR static inline CppAD::AD<Base> dummy_precision(void)
     {
       return 100. * CppAD::numeric_limits<CppAD::AD<Base>>::epsilon();
     }
 
     // minimum normalized positive value
-    static CppAD::AD<Base> lowest(void)
+    EIGEN_DEVICE_FUNC EIGEN_CONSTEXPR static inline CppAD::AD<Base> lowest(void)
     {
       return CppAD::numeric_limits<CppAD::AD<Base>>::min();
     }
 
     // maximum finite value
-    static CppAD::AD<Base> highest(void)
+    EIGEN_DEVICE_FUNC EIGEN_CONSTEXPR static inline CppAD::AD<Base> highest(void)
     {
       return CppAD::numeric_limits<CppAD::AD<Base>>::max();
     }
 
     // number of decimal digits that can be represented without change.
-    static int digits10(void)
+    EIGEN_DEVICE_FUNC EIGEN_CONSTEXPR static inline int digits10(void)
     {
       return CppAD::numeric_limits<CppAD::AD<Base>>::digits10;
     }
@@ -141,8 +151,6 @@ namespace Eigen
 } // namespace Eigen
 
 // Source from #include <cppad/example/cppad_eigen.hpp>
-#include "pinocchio/utils/static-if.hpp"
-
 namespace CppAD
 {
   // functions that return references
@@ -195,38 +203,11 @@ namespace CppAD
   }
 } // namespace CppAD
 
-#include "pinocchio/utils/static-if.hpp"
-
-namespace pinocchio
-{
-  template<typename Scalar>
-  struct TaylorSeriesExpansion<CppAD::AD<Scalar>> : TaylorSeriesExpansion<Scalar>
-  {
-    typedef TaylorSeriesExpansion<Scalar> Base;
-    typedef CppAD::AD<Scalar> ADScalar;
-
-    template<int degree>
-    static ADScalar precision()
-    {
-      return ADScalar(Base::template precision<degree>());
-    }
-  };
-
-  template<typename Scalar, typename ADScalar>
-  struct ScalarCast<Scalar, CppAD::AD<ADScalar>>
-  {
-    static Scalar cast(const CppAD::AD<ADScalar> & value)
-    {
-      return scalar_cast<Scalar>(CppAD::Value(value));
-    }
-  };
-
-} // namespace pinocchio
-
-#include "pinocchio/autodiff/cppad/spatial/se3-tpl.hpp"
-#include "pinocchio/autodiff/cppad/spatial/log.hxx"
-#include "pinocchio/autodiff/cppad/utils/static-if.hpp"
-#include "pinocchio/autodiff/cppad/math/quaternion.hpp"
-#include "pinocchio/autodiff/cppad/algorithm/aba.hpp"
-
-#endif // #ifndef __pinocchio_autodiff_cppad_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/autodiff/cppad/utils/static-if.hxx"
+#include "pinocchio/src/autodiff/cppad/math/quaternion.hxx"
+#include "pinocchio/src/autodiff/cppad/math/taylor-series-expansion.hxx"
+#include "pinocchio/src/autodiff/cppad/spatial/se3-tpl.hxx"
+#include "pinocchio/src/autodiff/cppad/spatial/log.hxx"
+#include "pinocchio/src/autodiff/cppad/algorithm/aba.hxx"
+// IWYU pragma: end_exports

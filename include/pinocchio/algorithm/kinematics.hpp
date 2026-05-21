@@ -2,11 +2,27 @@
 // Copyright (c) 2015-2019 CNRS INRIA
 //
 
-#ifndef __pinocchio_kinematics_hpp__
-#define __pinocchio_kinematics_hpp__
+#pragma once
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+// IWYU pragma: begin_keep
+#include <Eigen/Core>
+
+#include <cassert>
+#include <cstddef>
+#include <vector>
+
+#include <boost/fusion/container/vector.hpp>
+
+#include "pinocchio/macros.hpp"
+
+#include "pinocchio/spatial.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/multibody/visitor.hpp"
+
+#include "pinocchio/algorithm/model.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -107,10 +123,10 @@ namespace pinocchio
    * structure. LOCAL convention should only be used when aba and crba algorithms are called in
    * LOCAL convention as well.
    *
-   * @param[in] model      The kinematic model
-   * @param[in] data       Data associated to model
-   * @param[in] jointId    Id of the reference joint
-   * @param[in] jointId    Id of the target joint
+   * @param[in] model         The kinematic model
+   * @param[in] data          Data associated to model
+   * @param[in] jointIdRef    Id of the reference joint
+   * @param[in] jointIdTarget Id of the target joint
    * @param[in] convention Convention to use (computation is done using data.liMi if LOCAL, and
    * data.oMi if WORLD).
    *
@@ -193,13 +209,6 @@ namespace pinocchio
 
 } // namespace pinocchio
 
-/* --- Details -------------------------------------------------------------------- */
-/* --- Details -------------------------------------------------------------------- */
-/* --- Details -------------------------------------------------------------------- */
-#include "pinocchio/algorithm/kinematics.hxx"
-
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/algorithm/kinematics.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-
-#endif // ifndef __pinocchio_kinematics_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/kinematics.hxx"
+// IWYU pragma: end_exports

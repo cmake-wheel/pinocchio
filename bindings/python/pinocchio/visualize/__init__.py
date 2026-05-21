@@ -7,7 +7,7 @@ from .meshcat_visualizer import MeshcatVisualizer
 from .panda3d_visualizer import Panda3dVisualizer
 from .rviz_visualizer import RVizVisualizer
 
-if find_spec("hppfcl") is not None:
+if find_spec("coal") is not None:
     from .viser_visualizer import ViserVisualizer
 
 from .visualizers import Visualizer

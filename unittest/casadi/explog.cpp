@@ -3,7 +3,6 @@
 //
 
 #include "pinocchio/autodiff/casadi.hpp"
-#include "pinocchio/autodiff/casadi-algo.hpp"
 
 #include "pinocchio/algorithm/joint-configuration.hpp"
 

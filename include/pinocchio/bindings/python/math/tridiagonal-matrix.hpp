@@ -2,11 +2,10 @@
 // Copyright (c) 2024 INRIA
 //
 
-#ifndef __pinocchio_python_math_tridiagonal_matrix_hpp__
-#define __pinocchio_python_math_tridiagonal_matrix_hpp__
+#pragma once
 
 #include "pinocchio/bindings/python/fwd.hpp"
-#include "pinocchio/math/tridiagonal-matrix.hpp"
+#include "pinocchio/math.hpp"
 
 #include <eigenpy/eigenpy.hpp>
 #include <eigenpy/memory.hpp>
@@ -32,8 +31,9 @@ namespace pinocchio
       {
         static const Scalar dummy_precision = Eigen::NumTraits<Scalar>::dummy_precision();
 
-        cl.def(bp::init<Eigen::DenseIndex>(
-                 (bp::arg("self"), bp::arg("size")), "Default constructor from a given size."))
+        cl.def(
+            bp::init<Eigen::Index>(
+              (bp::arg("self"), bp::arg("size")), "Default constructor from a given size."))
 #ifndef PINOCCHIO_PYTHON_SKIP_COMPARISON_OPERATIONS
           .def(bp::self == bp::self)
           .def(bp::self != bp::self)
@@ -88,17 +88,25 @@ namespace pinocchio
           .def("cols", &TridiagonalSymmetricMatrix::cols, bp::arg("self"))
           .def("matrix", &TridiagonalSymmetricMatrix::matrix, bp::arg("self"))
 
+          .def(
+            "computeEigenvalue", &TridiagonalSymmetricMatrix::computeEigenvalue,
+            (bp::arg("self"), bp::arg("eigenvalue_index"), bp::arg("eps") = 1e-8),
+            "Computes the kth eigenvalue associated with the input tridiagonal matrix up to "
+            "precision eps.")
+
+          .def(
+            "computeSpectrum", &TridiagonalSymmetricMatrix::computeSpectrum,
+            (bp::arg("self"), bp::arg("eps") = 1e-8),
+            "Computes the full spectrum associated with the input tridiagonal matrix up to "
+            "precision eps.")
+
           .def(bp::self * PlainMatrixType())
           .def(PlainMatrixType() * bp::self);
       }
 
       static void expose()
       {
-#if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION == 6 && EIGENPY_VERSION_AT_LEAST(2, 9, 0)
-        typedef PINOCCHIO_SHARED_PTR_HOLDER_TYPE(TridiagonalSymmetricMatrix) HolderType;
-#else
         typedef ::boost::python::detail::not_specified HolderType;
-#endif
         bp::class_<TridiagonalSymmetricMatrix, HolderType>(
           "TridiagonalSymmetricMatrix", "Tridiagonal symmetric matrix.", bp::no_init)
           .def(TridiagonalSymmetricMatrixPythonVisitor());
@@ -107,5 +115,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_math_tridiagonal_matrix_hpp__

@@ -2,8 +2,7 @@
 // Copyright (c) 2020 INRIA
 //
 
-#ifndef __pinocchio_python_utils_macros_hpp__
-#define __pinocchio_python_utils_macros_hpp__
+#pragma once
 
 #define PINOCCHIO_ADD_PROPERTY(STRUCT_NAME, PROPERTY_NAME, DOC)                                    \
   def_readwrite(#PROPERTY_NAME, &STRUCT_NAME::PROPERTY_NAME, DOC)
@@ -26,5 +25,3 @@
       &STRUCT_NAME::PROPERTY_NAME,                                                                 \
       ::boost::python::return_value_policy<::boost::python::return_by_value>()),                   \
     DOC)
-
-#endif // ifndef __pinocchio_python_utils_macros_hpp__

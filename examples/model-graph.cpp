@@ -1,12 +1,15 @@
-#include "pinocchio/parsers/graph/model-graph.hpp"
-#include "pinocchio/parsers/graph/joints.hpp"
-#include "pinocchio/parsers/graph/model-graph-algo.hpp"
 
-#include "pinocchio/spatial/se3.hpp"
-#include "pinocchio/spatial/inertia.hpp"
-#include "pinocchio/multibody/model.hpp"
+#include <Eigen/Core>
 
 #include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "pinocchio/math.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/parsers/graph.hpp"
+#include "pinocchio/spatial.hpp"
 
 /// This example show how to:
 ///  - Construct a kinematics chain with ModelGraph API

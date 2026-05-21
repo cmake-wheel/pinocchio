@@ -1,14 +1,14 @@
 //
-// Copyright (c) 2024 INRIA
+// Copyright (c) 2024-2025 INRIA
 //
-
-#define BOOST_PYTHON_MAX_ARITY 24
 
 #include "pinocchio/bindings/python/algorithm/algorithms.hpp"
 #include "pinocchio/bindings/python/utils/std-vector.hpp"
 #include "pinocchio/bindings/python/utils/model-checker.hpp"
 
 #include "pinocchio/algorithm/contact-inverse-dynamics.hpp"
+
+#include <boost/optional.hpp>
 
 namespace pinocchio
 {
@@ -18,47 +18,47 @@ namespace pinocchio
 #ifndef PINOCCHIO_PYTHON_SKIP_ALGORITHM_CONSTRAINED_DYNAMICS
     typedef context::Scalar Scalar;
     typedef context::VectorXs VectorXs;
-    typedef const Eigen::Ref<const VectorXs> ConstRefVectorXs;
-    enum
-    {
-      Options = context::Options
-    };
+    using context::RefConstVectorXs;
+    using context::RefVectorXs;
 
-    static ConstRefVectorXs computeContactImpulses_wrapper(
-      const ModelTpl<Scalar, Options, JointCollectionDefaultTpl> & model,
-      DataTpl<Scalar, Options, JointCollectionDefaultTpl> & data,
-      const ConstRefVectorXs & c_ref,
-      const context::RigidConstraintModelVector & contact_models,
-      context::RigidConstraintDataVector & contact_datas,
-      const context::CoulombFrictionConeVector & cones,
-      const ConstRefVectorXs & R,
-      const ConstRefVectorXs & constraint_correction,
+    static bp::tuple computeInverseDynamicsConstraintForces_wrapper(
+      const VectorXs & c_ref,
+      const context::PointContactConstraintModelVector & contact_models,
+      const context::PointContactConstraintDataVector & contact_datas,
+      const boost::optional<VectorXs> & lambda_guess,
       ProximalSettingsTpl<Scalar> & settings,
-      const boost::optional<ConstRefVectorXs> & lambda_guess = boost::none)
+      bool solve_ncp)
     {
-      return computeContactImpulses(
-        model, data, c_ref, contact_models, contact_datas, cones, R, constraint_correction,
-        settings, lambda_guess);
+      const Eigen::Index problem_size = getTotalConstraintResidualSize(contact_models);
+      VectorXs lambda_sol = lambda_guess ? lambda_guess.get() : VectorXs::Zero(problem_size);
+
+      const bool has_converged = computeInverseDynamicsConstraintForces(
+        contact_models, contact_datas, c_ref, lambda_sol, settings, solve_ncp);
+      return bp::make_tuple(has_converged, bp::object(lambda_sol));
     }
 
-    static ConstRefVectorXs contactInverseDynamics_wrapper(
-      const ModelTpl<Scalar, Options, JointCollectionDefaultTpl> & model,
-      DataTpl<Scalar, Options, JointCollectionDefaultTpl> & data,
-      ConstRefVectorXs & q,
-      ConstRefVectorXs & v,
-      ConstRefVectorXs & a,
+    static bp::tuple contactInverseDynamics_wrapper(
+      const context::Model & model,
+      context::Data & data,
+      RefConstVectorXs q,
+      RefConstVectorXs v,
+      RefConstVectorXs a,
       Scalar dt,
-      const context::RigidConstraintModelVector & contact_models,
-      context::RigidConstraintDataVector & contact_datas,
-      const context::CoulombFrictionConeVector & cones,
-      ConstRefVectorXs & R,
-      ConstRefVectorXs & constraint_correction,
+      const context::PointContactConstraintModelVector & contact_models,
+      context::PointContactConstraintDataVector & contact_datas,
+      RefVectorXs constraint_correction,
       ProximalSettingsTpl<Scalar> & settings,
-      const boost::optional<ConstRefVectorXs> & lambda_guess = boost::none)
+      const boost::optional<VectorXs> & lambda_guess = boost::none,
+      bool solve_ncp = true)
     {
-      return contactInverseDynamics(
-        model, data, q, v, a, dt, contact_models, contact_datas, cones, R, constraint_correction,
-        settings, lambda_guess);
+      const Eigen::Index problem_size = getTotalConstraintResidualSize(contact_models);
+      VectorXs lambda_sol = lambda_guess ? lambda_guess.get() : VectorXs::Zero(problem_size);
+
+      const bool has_converged = contactInverseDynamics(
+        model, data, q, v, a, dt, contact_models, contact_datas, constraint_correction, lambda_sol,
+        settings, solve_ncp);
+
+      return bp::make_tuple(has_converged, data.tau, lambda_sol);
     }
 #endif // PINOCCHIO_PYTHON_SKIP_ALGORITHM_CONSTRAINED_DYNAMICS
 
@@ -66,29 +66,26 @@ namespace pinocchio
     {
 #ifndef PINOCCHIO_PYTHON_SKIP_ALGORITHM_CONSTRAINED_DYNAMICS
       bp::def(
-        "computeContactForces", computeContactImpulses_wrapper,
-        (bp::arg("model"), "data", "c_ref", "contact_models", "contact_datas", "cones", "R",
-         "constraint_correction", bp::arg("settings"), bp::arg("lambda_guess") = boost::none),
-        "Compute the inverse dynamics with frictional contacts, store the result in Data and "
-        "return it.\n\n"
+        "computeInverseDynamicsConstraintForces", computeInverseDynamicsConstraintForces_wrapper,
+        (bp::args("c_ref", "contact_models", "contact_datas"),
+         bp::arg("lambda_guess") = boost::none, bp::arg("settings"), bp::arg("solve_ncp") = true),
+        "Computes the inverse dynamics with point contacts. Returns a tuple containing "
+        "(has_converged, lambda_sol).\n\n"
         "Parameters:\n"
-        "\tmodel: model of the kinematic tree\n"
-        "\tdata: data related to the model\n"
-        "\tc_ref: the reference velocity of contact points\n"
         "\tcontact_models: list of contact models\n"
-        "\tcontact_datas: list of contact datas\n"
-        "\tcones: list of friction cones\n"
-        "\tR: vector representing the diagonal of the compliance matrix\n"
-        "\tconstraint_correction: vector representing the constraint correction\n"
+        "\tc_ref: the reference velocity of contact points\n"
+        "\tlambda_guess: optional initial guess for contact forces\n"
         "\tsettings: the settings of the proximal algorithm\n"
-        "\tlambda_guess: initial guess for contact forces\n",
+        "\tsolve_ncp: whether to solve the NCP (true) or CCP (false)\n",
         mimic_not_supported_function<>(0));
 
       bp::def(
         "contactInverseDynamics", contactInverseDynamics_wrapper,
-        (bp::arg("model"), "data", "q", "v", "a", "dt", "contact_models", "contact_datas", "cones",
-         "R", "constraint_correction", bp::arg("settings"), bp::arg("lambda_guess") = boost::none),
-        "Compute the inverse dynamics with frictional contacts, store the result in Data and "
+        (bp::args(
+           "model", "data", "q", "v", "a", "dt", "contact_models", "contact_datas",
+           "constraint_correction", "settings"),
+         bp::arg("lambda_guess") = boost::none, bp::arg("solve_ncp") = true),
+        "Compute the inverse dynamics with point contacts, store the result in Data and "
         "return it.\n\n"
         "Parameters:\n"
         "\tmodel: model of the kinematic tree\n"
@@ -99,11 +96,10 @@ namespace pinocchio
         "\tdt: the time step\n"
         "\tcontact_models: list of contact models\n"
         "\tcontact_datas: list of contact datas\n"
-        "\tcones: list of friction cones\n"
-        "\tR: vector representing the diagonal of the compliance matrix\n"
         "\tconstraint_correction: vector representing the constraint correction\n"
         "\tsettings: the settings of the proximal algorithm\n"
-        "\tlambda_guess: initial guess for contact forces\n",
+        "\tlambda_guess: initial guess for contact forces\n"
+        "\tsolve_ncp: whether to solve the NCP (true) or CCP (false)\n",
         mimic_not_supported_function<>(0));
 #endif // PINOCCHIO_PYTHON_SKIP_ALGORITHM_CONSTRAINED_DYNAMICS
     }

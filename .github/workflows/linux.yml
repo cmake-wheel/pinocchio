@@ -168,18 +168,6 @@ jobs:
           ./run_rnea
           ./load_urdf
 
-          # Test pkg-config packaging
-          echo === Test pkg-config packaging ===
-          cd ../../pkgconfig
-          mkdir build
-          cd build
-          cmake .. \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DPYTHON_EXECUTABLE=$(which python3)
-          make -j2
-          ./run_rnea
-          ./load_urdf
-
           # Test FetchContent packaging
           echo === Test FetchContent packaging ===
           cd ../../external

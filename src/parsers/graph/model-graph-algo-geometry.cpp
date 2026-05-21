@@ -2,12 +2,22 @@
 // Copyright (c) 2025 INRIA
 //
 
-#include "pinocchio/parsers/graph/model-graph.hpp"
-#include "pinocchio/parsers/graph/model-graph-algo-geometry.hpp"
-#include "pinocchio/parsers/graph/geometries.hpp"
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <unordered_map>
 
-#include <hpp/fcl/mesh_loader/loader.h>
-#include <hpp/fcl/mesh_loader/assimp.h>
+#include <boost/variant.hpp>
+
+#include <coal/BVH/BVH_model.h>
+#include <coal/mesh_loader/loader.h>
+#include <coal/shape/geometric_shapes.h>
+#include <coal/fwd.hh>
+
+#include "pinocchio/macros.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/parsers/graph.hpp"
+#include "pinocchio/src/parsers/meshloader-fwd.hxx"
 
 namespace pinocchio
 {
@@ -20,14 +30,14 @@ namespace pinocchio
         const pinocchio::Frame & body_frame;
         const pinocchio::FrameIndex & f_id;
         const Geometry & geom;
-        ::hpp::fcl::MeshLoaderPtr mesh_loader;
+        ::coal::MeshLoaderPtr mesh_loader;
         GeometryModel & model;
 
         AddGeometryToModel(
           const pinocchio::Frame & b_f,
           const pinocchio::FrameIndex & f_id,
           const Geometry & g,
-          ::hpp::fcl::MeshLoaderPtr mesh_loader,
+          ::coal::MeshLoaderPtr mesh_loader,
           GeometryModel & model_)
         : body_frame(b_f)
         , f_id(f_id)
@@ -38,7 +48,7 @@ namespace pinocchio
         }
 
         // For primitive only
-        void addGeometry(std::shared_ptr<fcl::CollisionGeometry> g)
+        void addGeometry(std::shared_ptr<coal::CollisionGeometry> g)
         {
           GeometryObject geometry_object(
             geom.name, body_frame.parentJoint, f_id, body_frame.placement * geom.placement, g, "",
@@ -49,27 +59,27 @@ namespace pinocchio
 
         void operator()(const Sphere & s)
         {
-          addGeometry(std::make_shared<fcl::Sphere>(s.radius));
+          addGeometry(std::make_shared<coal::Sphere>(s.radius));
         }
 
         void operator()(const Capsule & c)
         {
-          addGeometry(std::make_shared<fcl::Capsule>(c.size[0], c.size[1]));
+          addGeometry(std::make_shared<coal::Capsule>(c.size[0], c.size[1]));
         }
 
         void operator()(const Cylinder & c)
         {
-          addGeometry(std::make_shared<fcl::Cylinder>(c.size[0], c.size[1]));
+          addGeometry(std::make_shared<coal::Cylinder>(c.size[0], c.size[1]));
         }
 
         void operator()(const Box & b)
         {
-          addGeometry(std::make_shared<fcl::Box>(b.size[0], b.size[1], b.size[2]));
+          addGeometry(std::make_shared<coal::Box>(b.size[0], b.size[1], b.size[2]));
         }
 
         void operator()(const Mesh & m)
         {
-          hpp::fcl::BVHModelPtr_t bvh = mesh_loader->load(m.path, geom.scale);
+          coal::BVHModelPtr_t bvh = mesh_loader->load(m.path, geom.scale);
 
           GeometryObject geometry_object(
             geom.name, body_frame.parentJoint, f_id, body_frame.placement * geom.placement, bvh,
@@ -84,11 +94,11 @@ namespace pinocchio
       const ModelGraph & g,
       const Model & model,
       const GeometryType type,
-      ::hpp::fcl::MeshLoaderPtr mesh_loader)
+      ::coal::MeshLoaderPtr mesh_loader)
     {
       GeometryModel geomModel;
       if (!mesh_loader)
-        mesh_loader = std::make_shared<fcl::MeshLoader>(fcl::MeshLoader());
+        mesh_loader = std::make_shared<coal::MeshLoader>(coal::MeshLoader());
 
       for (const auto & f : model.frames)
       {

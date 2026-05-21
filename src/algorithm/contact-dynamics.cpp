@@ -2,8 +2,7 @@
 // Copyright (c) 2022 INRIA
 //
 
-#include "pinocchio/spatial/fwd.hpp"
-
+#include "pinocchio/src/context/template-instantiation.hxx"
 #ifndef PINOCCHIO_SKIP_ALGORITHM_CONTACT_DYNAMICS
 
   #include "pinocchio/algorithm/contact-dynamics.hpp"
@@ -19,8 +18,8 @@ namespace pinocchio
     context::VectorXs,
     context::MatrixXs,
     context::MatrixXs>(
-    const context::Model &,
-    context::Data &,
+    const Model &,
+    Data &,
     const Eigen::MatrixBase<context::VectorXs> &,
     const Eigen::MatrixBase<context::MatrixXs> &,
     const Eigen::MatrixBase<context::MatrixXs> &,

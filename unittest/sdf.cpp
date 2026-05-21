@@ -2,14 +2,12 @@
 // Copyright (c) 2015-2021 CNRS INRIA
 //
 
-#include <iostream>
-#include <fstream>
-#include <streambuf>
-
-#include "pinocchio/multibody/model.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/parsers/sdf.hpp"
 
 #include <boost/test/unit_test.hpp>
+
+using PointAnchorConstraintModelVector = std::vector<pinocchio::PointAnchorConstraintModel>;
 
 BOOST_AUTO_TEST_SUITE(BOOST_TEST_MODULE)
 
@@ -21,8 +19,8 @@ BOOST_AUTO_TEST_CASE(build_model)
 
   pinocchio::Model model;
   const std::string rootLinkName = "pelvis";
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) contact_models;
-  pinocchio::sdf::buildModel(filename, model, contact_models, rootLinkName);
+  PointAnchorConstraintModelVector constraint_models;
+  pinocchio::sdf::buildModel(filename, model, constraint_models, rootLinkName);
   pinocchio::GeometryModel geomModel;
   pinocchio::sdf::buildGeom(model, filename, pinocchio::COLLISION, geomModel, rootLinkName, dir);
 
@@ -37,9 +35,9 @@ BOOST_AUTO_TEST_CASE(build_model_with_joint)
   const std::string dir = PINOCCHIO_MODEL_DIR;
   const std::string rootLinkName = "pelvis";
   pinocchio::Model model;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) contact_models;
+  PointAnchorConstraintModelVector constraint_models;
   pinocchio::sdf::buildModel(
-    filename, pinocchio::JointModelFreeFlyer(), model, contact_models, rootLinkName);
+    filename, pinocchio::JointModelFreeFlyer(), model, constraint_models, rootLinkName);
   pinocchio::GeometryModel geomModel;
   pinocchio::sdf::buildGeom(model, filename, pinocchio::COLLISION, geomModel, rootLinkName, dir);
 
@@ -54,9 +52,9 @@ BOOST_AUTO_TEST_CASE(build_model_without_rootLink)
   const std::string dir = PINOCCHIO_MODEL_DIR;
   const std::string rootLinkName = "";
   pinocchio::Model model;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) contact_models;
+  PointAnchorConstraintModelVector constraint_models;
   pinocchio::sdf::buildModel(
-    filename, pinocchio::JointModelFreeFlyer(), model, contact_models, rootLinkName);
+    filename, pinocchio::JointModelFreeFlyer(), model, constraint_models, rootLinkName);
   pinocchio::GeometryModel geomModel;
   pinocchio::sdf::buildGeom(model, filename, pinocchio::COLLISION, geomModel, rootLinkName, dir);
 
@@ -67,17 +65,17 @@ BOOST_AUTO_TEST_CASE(build_model_with_root_joint_name)
 {
   const std::string filename = PINOCCHIO_MODEL_DIR + std::string("/simple_humanoid.sdf");
   const std::string rootLinkName = "WAIST_LINK0";
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) contact_models;
+  PointAnchorConstraintModelVector constraint_models;
   pinocchio::Model model;
   pinocchio::sdf::buildModel(
-    filename, pinocchio::JointModelFreeFlyer(), model, contact_models, rootLinkName);
+    filename, pinocchio::JointModelFreeFlyer(), model, constraint_models, rootLinkName);
   BOOST_CHECK(model.names[1] == "root_joint");
 
   pinocchio::Model model_name;
   const std::string name_ = "freeFlyer_joint";
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) contact_models_name;
+  PointAnchorConstraintModelVector constraint_models_name;
   pinocchio::sdf::buildModel(
-    filename, pinocchio::JointModelFreeFlyer(), name_, model_name, contact_models_name,
+    filename, pinocchio::JointModelFreeFlyer(), name_, model_name, constraint_models_name,
     rootLinkName);
   BOOST_CHECK(model_name.names[1] == name_);
 }
@@ -89,9 +87,9 @@ BOOST_AUTO_TEST_CASE(compare_model_with_urdf)
 
   pinocchio::Model model_sdf;
   const std::string rootLinkName = "WAIST_LINK0";
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) contact_models;
+  PointAnchorConstraintModelVector constraint_models;
   pinocchio::sdf::buildModel(
-    filename, pinocchio::JointModelFreeFlyer(), model_sdf, contact_models, rootLinkName);
+    filename, pinocchio::JointModelFreeFlyer(), model_sdf, constraint_models, rootLinkName);
   pinocchio::GeometryModel geomModel;
   pinocchio::sdf::buildGeom(
     model_sdf, filename, pinocchio::COLLISION, geomModel, rootLinkName, dir);
@@ -136,8 +134,8 @@ BOOST_AUTO_TEST_CASE(compare_model_with_urdf)
   BOOST_CHECK(model_urdf.armature.size() == model_sdf.armature.size());
 
   BOOST_CHECK(model_urdf.armature == model_sdf.armature);
-  BOOST_CHECK(model_urdf.friction.size() == model_sdf.friction.size());
-  BOOST_CHECK(model_urdf.friction == model_sdf.friction);
+  BOOST_CHECK(model_urdf.upperDryFrictionLimit.size() == model_sdf.upperDryFrictionLimit.size());
+  BOOST_CHECK(model_urdf.upperDryFrictionLimit == model_sdf.upperDryFrictionLimit);
 
   BOOST_CHECK(model_urdf.damping.size() == model_sdf.damping.size());
 
@@ -151,12 +149,12 @@ BOOST_AUTO_TEST_CASE(compare_model_with_urdf)
 
   BOOST_CHECK(model_urdf.rotorGearRatio == model_sdf.rotorGearRatio);
 
-  BOOST_CHECK(model_urdf.effortLimit.size() == model_sdf.effortLimit.size());
-  BOOST_CHECK(model_urdf.effortLimit == model_sdf.effortLimit);
+  BOOST_CHECK(model_urdf.upperEffortLimit.size() == model_sdf.upperEffortLimit.size());
+  BOOST_CHECK(model_urdf.upperEffortLimit == model_sdf.upperEffortLimit);
 
-  BOOST_CHECK(model_urdf.velocityLimit.size() == model_sdf.velocityLimit.size());
+  BOOST_CHECK(model_urdf.upperVelocityLimit.size() == model_sdf.upperVelocityLimit.size());
 
-  BOOST_CHECK(model_urdf.velocityLimit == model_sdf.velocityLimit);
+  BOOST_CHECK(model_urdf.upperVelocityLimit == model_sdf.upperVelocityLimit);
   BOOST_CHECK(model_urdf.lowerPositionLimit.size() == model_sdf.lowerPositionLimit.size());
   BOOST_CHECK(model_urdf.lowerPositionLimit == model_sdf.lowerPositionLimit);
 
@@ -185,138 +183,139 @@ BOOST_AUTO_TEST_CASE(compare_model_with_urdf)
 BOOST_AUTO_TEST_CASE(compare_model_in_version_1_6)
 {
   // Read file as XML
-  std::string filestr("<sdf version=\"1.6\">"
-                      "  <model name=\"parallelogram\">"
-                      "    <link name=\"link_A1\">"
-                      "      <pose>0 0 0 0 0 0</pose>"
-                      "      <inertial>"
-                      "        <pose>0 0 0 0 0 0</pose>"
-                      "        <mass>10</mass>"
-                      "        <inertia>"
-                      "          <ixx>0.008416666667</ixx>"
-                      "          <iyy>0.841666666667</iyy>"
-                      "          <izz>0.833416666667</izz>"
-                      "          <ixy>0.</ixy>"
-                      "          <ixz>0.</ixz>"
-                      "          <iyz>0.</iyz>"
-                      "        </inertia>"
-                      "      </inertial>"
-                      "      <visual name=\"link_A1_visual\">"
-                      "        <geometry>"
-                      "          <cylinder>"
-                      "            <length>1.0</length>"
-                      "            <radius>0.05</radius>"
-                      "          </cylinder>"
-                      "        </geometry>"
-                      "      </visual>"
-                      "    </link>"
-                      "    <link name=\"link_B1\">"
-                      "      <pose>-0.2 0 0 0 0 0</pose>"
-                      "      <inertial>"
-                      "        <pose>0 0 0 0 0 0</pose>"
-                      "        <mass>5</mass>"
-                      "        <inertia>"
-                      "          <ixx>0.0042083333333</ixx>"
-                      "          <iyy>0.1541666666667</iyy>"
-                      "          <izz>0.1500416666667</izz>"
-                      "          <ixy>0</ixy>"
-                      "          <ixz>0</ixz>"
-                      "          <iyz>0</iyz>"
-                      "        </inertia>"
-                      "      </inertial>"
-                      "      <visual name=\"link_B1_visual\">"
-                      "        <geometry>"
-                      "          <cylinder>"
-                      "            <length>0.6</length>"
-                      "            <radius>0.05</radius>"
-                      "          </cylinder>"
-                      "        </geometry>"
-                      "      </visual>"
-                      "    </link>"
-                      "    <link name=\"link_A2\">"
-                      "      <pose>0.6 0 0 0 0 0</pose>"
-                      "      <inertial>"
-                      "        <pose>0 0 0 0 0 0</pose>"
-                      "        <mass>10</mass>"
-                      "        <inertia>"
-                      "          <ixx>0.008416666667</ixx>"
-                      "          <iyy>0.841666666667</iyy>"
-                      "          <izz>0.833416666667</izz>"
-                      "          <ixy>0.</ixy>"
-                      "          <ixz>0.</ixz>"
-                      "          <iyz>0.</iyz>"
-                      "        </inertia>"
-                      "      </inertial>"
-                      "      <visual name=\"link_A2_visual\">"
-                      "        <geometry>"
-                      "          <cylinder>"
-                      "            <length>1.0</length>"
-                      "            <radius>0.05</radius>"
-                      "          </cylinder>"
-                      "        </geometry>"
-                      "      </visual>"
-                      "    </link>"
-                      "    <link name=\"link_B2\">"
-                      "      <pose>0.8 0 0 0 0 0</pose>"
-                      "      <inertial>"
-                      "        <pose>0 0 0 0 0 0</pose>"
-                      "        <mass>5</mass>"
-                      "        <inertia>"
-                      "          <ixx>0.0042083333333</ixx>"
-                      "          <iyy>0.1541666666667</iyy>"
-                      "          <izz>0.1500416666667</izz>"
-                      "          <ixy>0</ixy>"
-                      "          <ixz>0</ixz>"
-                      "          <iyz>0</iyz>"
-                      "        </inertia>"
-                      "      </inertial>"
-                      "      <visual name=\"link_B2_visual\">"
-                      "        <geometry>"
-                      "          <cylinder>"
-                      "            <length>0.6</length>"
-                      "            <radius>0.05</radius>"
-                      "          </cylinder>"
-                      "        </geometry>"
-                      "      </visual>"
-                      "    </link>"
-                      "    <joint name=\"joint_B1\" type=\"revolute\">"
-                      "      <pose>-0.3 0 0 0 0 0</pose>"
-                      "      <child>link_B1</child>"
-                      "      <parent>link_A1</parent>"
-                      "      <axis>"
-                      "        <xyz>0 1 0</xyz>"
-                      "        <use_parent_model_frame>1</use_parent_model_frame>"
-                      "      </axis>"
-                      "    </joint>"
-                      "    <joint name=\"joint_A2\" type=\"revolute\">"
-                      "      <pose>-0.5 0 0 0 0 0</pose>"
-                      "      <child>link_A2</child>"
-                      "      <parent>link_B1</parent>"
-                      "      <axis>"
-                      "        <xyz>0 1 0</xyz>"
-                      "        <use_parent_model_frame>1</use_parent_model_frame>"
-                      "      </axis>"
-                      "    </joint>"
-                      "    <joint name=\"joint_B2\" type=\"revolute\">"
-                      "      <pose>-0.3 0 0 0 0 0</pose>"
-                      "      <child>link_B2</child>"
-                      "      <parent>link_A1</parent>"
-                      "      <axis>"
-                      "        <xyz>0 1 0</xyz>"
-                      "        <use_parent_model_frame>1</use_parent_model_frame>"
-                      "      </axis>"
-                      "    </joint>"
-                      "    <joint name=\"joint_B3\" type=\"revolute\">"
-                      "      <pose>0.5 0 0 0 0 0</pose>"
-                      "      <child>link_A2</child>"
-                      "      <parent>link_B2</parent>"
-                      "      <axis>"
-                      "        <xyz>0 1 0</xyz>"
-                      "        <use_parent_model_frame>1</use_parent_model_frame>"
-                      "      </axis>"
-                      "    </joint>"
-                      "  </model>"
-                      "</sdf>");
+  std::string filestr(
+    "<sdf version=\"1.6\">"
+    "  <model name=\"parallelogram\">"
+    "    <link name=\"link_A1\">"
+    "      <pose>0 0 0 0 0 0</pose>"
+    "      <inertial>"
+    "        <pose>0 0 0 0 0 0</pose>"
+    "        <mass>10</mass>"
+    "        <inertia>"
+    "          <ixx>0.008416666667</ixx>"
+    "          <iyy>0.841666666667</iyy>"
+    "          <izz>0.833416666667</izz>"
+    "          <ixy>0.</ixy>"
+    "          <ixz>0.</ixz>"
+    "          <iyz>0.</iyz>"
+    "        </inertia>"
+    "      </inertial>"
+    "      <visual name=\"link_A1_visual\">"
+    "        <geometry>"
+    "          <cylinder>"
+    "            <length>1.0</length>"
+    "            <radius>0.05</radius>"
+    "          </cylinder>"
+    "        </geometry>"
+    "      </visual>"
+    "    </link>"
+    "    <link name=\"link_B1\">"
+    "      <pose>-0.2 0 0 0 0 0</pose>"
+    "      <inertial>"
+    "        <pose>0 0 0 0 0 0</pose>"
+    "        <mass>5</mass>"
+    "        <inertia>"
+    "          <ixx>0.0042083333333</ixx>"
+    "          <iyy>0.1541666666667</iyy>"
+    "          <izz>0.1500416666667</izz>"
+    "          <ixy>0</ixy>"
+    "          <ixz>0</ixz>"
+    "          <iyz>0</iyz>"
+    "        </inertia>"
+    "      </inertial>"
+    "      <visual name=\"link_B1_visual\">"
+    "        <geometry>"
+    "          <cylinder>"
+    "            <length>0.6</length>"
+    "            <radius>0.05</radius>"
+    "          </cylinder>"
+    "        </geometry>"
+    "      </visual>"
+    "    </link>"
+    "    <link name=\"link_A2\">"
+    "      <pose>0.6 0 0 0 0 0</pose>"
+    "      <inertial>"
+    "        <pose>0 0 0 0 0 0</pose>"
+    "        <mass>10</mass>"
+    "        <inertia>"
+    "          <ixx>0.008416666667</ixx>"
+    "          <iyy>0.841666666667</iyy>"
+    "          <izz>0.833416666667</izz>"
+    "          <ixy>0.</ixy>"
+    "          <ixz>0.</ixz>"
+    "          <iyz>0.</iyz>"
+    "        </inertia>"
+    "      </inertial>"
+    "      <visual name=\"link_A2_visual\">"
+    "        <geometry>"
+    "          <cylinder>"
+    "            <length>1.0</length>"
+    "            <radius>0.05</radius>"
+    "          </cylinder>"
+    "        </geometry>"
+    "      </visual>"
+    "    </link>"
+    "    <link name=\"link_B2\">"
+    "      <pose>0.8 0 0 0 0 0</pose>"
+    "      <inertial>"
+    "        <pose>0 0 0 0 0 0</pose>"
+    "        <mass>5</mass>"
+    "        <inertia>"
+    "          <ixx>0.0042083333333</ixx>"
+    "          <iyy>0.1541666666667</iyy>"
+    "          <izz>0.1500416666667</izz>"
+    "          <ixy>0</ixy>"
+    "          <ixz>0</ixz>"
+    "          <iyz>0</iyz>"
+    "        </inertia>"
+    "      </inertial>"
+    "      <visual name=\"link_B2_visual\">"
+    "        <geometry>"
+    "          <cylinder>"
+    "            <length>0.6</length>"
+    "            <radius>0.05</radius>"
+    "          </cylinder>"
+    "        </geometry>"
+    "      </visual>"
+    "    </link>"
+    "    <joint name=\"joint_B1\" type=\"revolute\">"
+    "      <pose>-0.3 0 0 0 0 0</pose>"
+    "      <child>link_B1</child>"
+    "      <parent>link_A1</parent>"
+    "      <axis>"
+    "        <xyz>0 1 0</xyz>"
+    "        <use_parent_model_frame>1</use_parent_model_frame>"
+    "      </axis>"
+    "    </joint>"
+    "    <joint name=\"joint_A2\" type=\"revolute\">"
+    "      <pose>-0.5 0 0 0 0 0</pose>"
+    "      <child>link_A2</child>"
+    "      <parent>link_B1</parent>"
+    "      <axis>"
+    "        <xyz>0 1 0</xyz>"
+    "        <use_parent_model_frame>1</use_parent_model_frame>"
+    "      </axis>"
+    "    </joint>"
+    "    <joint name=\"joint_B2\" type=\"revolute\">"
+    "      <pose>-0.3 0 0 0 0 0</pose>"
+    "      <child>link_B2</child>"
+    "      <parent>link_A1</parent>"
+    "      <axis>"
+    "        <xyz>0 1 0</xyz>"
+    "        <use_parent_model_frame>1</use_parent_model_frame>"
+    "      </axis>"
+    "    </joint>"
+    "    <joint name=\"joint_B3\" type=\"revolute\">"
+    "      <pose>0.5 0 0 0 0 0</pose>"
+    "      <child>link_A2</child>"
+    "      <parent>link_B2</parent>"
+    "      <axis>"
+    "        <xyz>0 1 0</xyz>"
+    "        <use_parent_model_frame>1</use_parent_model_frame>"
+    "      </axis>"
+    "    </joint>"
+    "  </model>"
+    "</sdf>");
 
   double height = 0.1;
   double width = 0.01;
@@ -377,8 +376,8 @@ BOOST_AUTO_TEST_CASE(compare_model_in_version_1_6)
   model.appendBodyToJoint(joint4_id, inertia_link_A_2, placement_center_link_A_minus);
 
   pinocchio::Model model_sdf;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) contact_models;
-  pinocchio::sdf::buildModelFromXML(filestr, model_sdf, contact_models);
+  PointAnchorConstraintModelVector constraint_models;
+  pinocchio::sdf::buildModelFromXML(filestr, model_sdf, constraint_models);
 
   BOOST_CHECK(model.nq == model_sdf.nq);
   BOOST_CHECK(model.nv == model_sdf.nv);
@@ -407,13 +406,11 @@ BOOST_AUTO_TEST_CASE(compare_model_in_version_1_6)
     BOOST_CHECK(model.inertias[k].isApprox(model_sdf.inertias[k]));
   }
 
-  BOOST_CHECK(contact_models.size() == 1);
-  BOOST_CHECK(contact_models[0].joint1_id == 4);
-  BOOST_CHECK(contact_models[0].joint1_placement == placement_center_link_A_minus);
-  BOOST_CHECK(contact_models[0].joint2_id == 2);
-  BOOST_CHECK(contact_models[0].joint2_placement == placement_center_link_A);
-  BOOST_CHECK(contact_models[0].type == pinocchio::CONTACT_6D);
-  BOOST_CHECK(contact_models[0].reference_frame == pinocchio::LOCAL);
+  BOOST_CHECK(constraint_models.size() == 1);
+  BOOST_CHECK(constraint_models[0].joint1_id == 4);
+  BOOST_CHECK(constraint_models[0].joint1_placement == placement_center_link_A_minus);
+  BOOST_CHECK(constraint_models[0].joint2_id == 2);
+  BOOST_CHECK(constraint_models[0].joint2_placement == placement_center_link_A);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

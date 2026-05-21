@@ -5,9 +5,10 @@ https://tel.archives-ouvertes.fr/file/index/docid/833019/filename/thesis.pdf
 Section 3.8.1 Computing minimum bounding capsules
 """
 
+import os
 from pathlib import Path
 
-import hppfcl
+import coal
 import numpy as np
 import scipy.optimize as optimize
 
@@ -38,7 +39,7 @@ def distance_points_segment(p, a, b):
 def pca_approximation(vertices):
     mean = vertices.mean(axis=0)
     vertices -= mean
-    u, s, vh = np.linalg.svd(vertices, full_matrices=True)
+    _u, _s, vh = np.linalg.svd(vertices, full_matrices=True)
     components = vh
     pca_proj = vertices.dot(components.T)
     vertices += mean
@@ -75,7 +76,7 @@ def capsule_approximation(vertices):
 
 
 def approximate_mesh(filename, lMg):
-    mesh_loader = hppfcl.MeshLoader()
+    mesh_loader = coal.MeshLoader()
     mesh = mesh_loader.load(filename, np.ones(3))
     vertices = np.array([lMg * mesh.vertices(i) for i in range(mesh.num_vertices)])
     assert vertices.shape == (mesh.num_vertices, 3)
@@ -158,7 +159,7 @@ def parse_urdf(infile, outfile):
 if __name__ == "__main__":
     # Example for a single capsule
     # filename = "mesh.obj"
-    # mesh_loader = hppfcl.MeshLoader()
+    # mesh_loader = coal.MeshLoader()
     # mesh = mesh_loader.load(filename, np.ones(3))
     # vertices = mesh.vertices()
     # a, b, r = capsule_approximation(vertices)
@@ -167,9 +168,7 @@ if __name__ == "__main__":
     # This path refers to Pinocchio source code but you can define your own directory
     # here.
 
-    pinocchio_model_dir = Path(__file__).parent.parent / "models"
-    urdf_filename = (
-        pinocchio_model_dir
-        + "models/example-robot-data/robots/ur_description/urdf/ur5_gripper.urdf"
-    )
-    parse_urdf(urdf_filename, "ur5_gripper_with_capsules.urdf")
+    model_path = Path(os.environ.get("EXAMPLE_ROBOT_DATA_MODEL_DIR"))
+    urdf_filename = "ur5_gripper.urdf"
+    urdf_model_path = model_path / "ur_description/urdf" / urdf_filename
+    parse_urdf(urdf_model_path, "ur5_gripper_with_capsules.urdf")

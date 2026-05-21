@@ -2,16 +2,16 @@
 // Copyright (c) 2015-2021 CNRS INRIA
 //
 
-#ifndef __pinocchio_python_joints_variant_hpp__
-#define __pinocchio_python_joints_variant_hpp__
+#pragma once
 
 #include <boost/algorithm/string/replace.hpp>
 
 #include <boost/python.hpp>
 
-#include "pinocchio/multibody/joint/joint-collection.hpp"
+#include "pinocchio/multibody/joint.hpp"
 #include "pinocchio/bindings/python/multibody/joint/joints-models.hpp"
 #include "pinocchio/bindings/python/multibody/joint/joints-datas.hpp"
+#include "pinocchio/bindings/python/multibody/joint/joints-liegroup.hpp"
 #include "pinocchio/bindings/python/utils/printable.hpp"
 
 namespace pinocchio
@@ -66,6 +66,7 @@ namespace pinocchio
           bp::class_<T>(
             sanitizedClassname<T>().c_str(), sanitizedClassname<T>().c_str(), bp::no_init)
             .def(JointModelBasePythonVisitor<T>())
+            .def(JointModelLieGroupPythonVisitor<T>())
             .def(PrintableVisitor<T>()));
         bp::implicitly_convertible<T, context::JointModel>();
       }
@@ -73,5 +74,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_joints_variant_hpp__

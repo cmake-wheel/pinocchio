@@ -2,20 +2,11 @@
 // Copyright (c) 2015-2021 CNRS INRIA
 //
 
-#include <iostream>
-
-#include "pinocchio/spatial/force.hpp"
-#include "pinocchio/spatial/motion.hpp"
-#include "pinocchio/spatial/se3.hpp"
-#include "pinocchio/spatial/inertia.hpp"
-#include "pinocchio/spatial/act-on-set.hpp"
-#include "pinocchio/spatial/explog.hpp"
-#include "pinocchio/spatial/skew.hpp"
-#include "pinocchio/spatial/cartesian-axis.hpp"
-#include "pinocchio/spatial/spatial-axis.hpp"
+#include "pinocchio/spatial.hpp"
 
 #include <boost/test/unit_test.hpp>
-#include <boost/utility/binary.hpp>
+
+#include <Eigen/Eigenvalues>
 
 BOOST_AUTO_TEST_SUITE(BOOST_TEST_MODULE)
 
@@ -523,13 +514,11 @@ BOOST_AUTO_TEST_CASE(test_Inertia)
   BOOST_CHECK_EQUAL(matI(1, 1), aI.mass());
   BOOST_CHECK_EQUAL(matI(2, 2), aI.mass()); // 1,1 before unifying
 
-  BOOST_CHECK_SMALL(
-    (matI - matI.transpose()).norm(),
-    matI.norm()); // previously ensure that( (matI-matI.transpose()).isMuchSmallerThan(matI) );
-  BOOST_CHECK_SMALL(
-    (matI.topRightCorner<3, 3>() * aI.lever()).norm(),
-    aI.lever().norm()); // previously ensure that(
-                        // (matI.topRightCorner<3,3>()*aI.lever()).isMuchSmallerThan(aI.lever()) );
+  // previously ensure that( (matI-matI.transpose()).isMuchSmallerThan(matI) );
+  BOOST_CHECK_SMALL((matI - matI.transpose()).norm(), matI.norm());
+  // previously ensure that(
+  // (matI.topRightCorner<3,3>()*aI.lever()).isMuchSmallerThan(aI.lever()));
+  BOOST_CHECK_SMALL((matI.topRightCorner<3, 3>() * aI.lever()).norm(), aI.lever().norm());
 
   Inertia I1 = Inertia::Identity();
   BOOST_CHECK(I1.matrix().isApprox(Matrix6::Identity()));
@@ -629,7 +618,7 @@ BOOST_AUTO_TEST_CASE(test_Inertia)
   BOOST_CHECK_SMALL(I1.lever().norm(), 1e-12);
   BOOST_CHECK(I1.inertia().matrix().isApprox(
     Symmetric3(3.79705882, 0., 3.79705882, 0., 0., 1.81176471).matrix(),
-    1e-5)); // Computed with hppfcl::Capsule
+    1e-5)); // Computed with coal::Capsule
 
   // Copy operator
   Inertia aI_copy(aI);
@@ -647,7 +636,9 @@ BOOST_AUTO_TEST_CASE(test_Inertia)
   BOOST_CHECK(aI == aI);
   BOOST_CHECK(aI.isApprox(aI));
   Inertia aI_approx(aI);
-  aI_approx.mass() += eps / 2.;
+  // isApprox use relative comparison we must
+  // offset mass by a relative value
+  aI_approx.mass() += aI_approx.mass() * (eps / 2.);
   BOOST_CHECK(aI_approx.isApprox(aI, eps));
 
   // Test Variation
@@ -753,13 +744,13 @@ BOOST_AUTO_TEST_CASE(test_Inertia)
     // Convert logcholesky to inertia tpl
     Inertia I_from_log_cholesky = Inertia::FromLogCholeskyParameters(log_cholesky);
 
-    // Check if conversion from inertia tpl to pseudo inertia gives same result as from logcholesky
-    // parametrization to pseudo-inertia
+    // Check if conversion from inertia tpl to pseudo inertia gives same
+    // result as from logcholesky parametrization to pseudo-inertia
     Eigen::Matrix4d pseudo_from_inertia = I_from_log_cholesky.toPseudoInertia().toMatrix();
     BOOST_CHECK(pseudo_matrix.isApprox(pseudo_from_inertia, 1e-10));
 
-    // // Check if log-cholesky parametrization to pseudo-inertia gives same result as their
-    // calculations
+    // // Check if log-cholesky parametrization to pseudo-inertia gives same
+    // result as their calculations
     double alpha = log_cholesky.parameters[0];
     double d1 = log_cholesky.parameters[1];
     double d2 = log_cholesky.parameters[2];
@@ -788,7 +779,8 @@ BOOST_AUTO_TEST_CASE(test_Inertia)
     Eigen::Matrix4d pseudo_chol = U * U.transpose();
     BOOST_CHECK(pseudo_matrix.isApprox(pseudo_chol, 1e-10));
 
-    // Additional checks: Convert back from pseudo-inertia to inertia and validate
+    // Additional checks: Convert back from pseudo-inertia to inertia and
+    // validate
     Inertia I_back = pseudo.toInertia();
     BOOST_CHECK_CLOSE(I_back.mass(), I_from_log_cholesky.mass(), 1e-12);
     BOOST_CHECK(I_back.lever().isApprox(I_from_log_cholesky.lever(), 1e-12));

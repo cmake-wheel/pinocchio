@@ -1,7 +1,7 @@
 import sys
 import time
 
-import hppfcl as fcl
+import coal
 import numpy as np
 import pinocchio as pin
 from pinocchio.visualize import MeshcatVisualizer
@@ -14,11 +14,11 @@ radius = 0.05
 
 mass_link_A = 10.0
 length_link_A = 1.0
-shape_link_A = fcl.Capsule(radius, length_link_A)
+shape_link_A = coal.Capsule(radius, length_link_A)
 
 mass_link_B = 5.0
 length_link_B = 0.6
-shape_link_B = fcl.Capsule(radius, length_link_B)
+shape_link_B = coal.Capsule(radius, length_link_B)
 
 inertia_link_A = pin.Inertia.FromBox(mass_link_A, length_link_A, width, height)
 placement_center_link_A = pin.SE3.Identity()
@@ -100,7 +100,7 @@ constraint_model = pin.RigidConstraintModel(
     constraint1_joint2_placement,
 )
 constraint_data = constraint_model.createData()
-constraint_dim = constraint_model.size()
+constraint_size = constraint_model.residualSize()
 
 # First, do an inverse geometry
 rho = 1e-10
@@ -108,13 +108,17 @@ mu = 1e-4
 
 q = q0.copy()
 
-y = np.ones(constraint_dim)
+y = np.ones(constraint_size)
 data.M = np.eye(model.nv) * rho
-kkt_constraint = pin.ContactCholeskyDecomposition(model, [constraint_model])
+kkt_constraint = pin.ConstraintCholeskyDecomposition(
+    model, data, [constraint_model], [constraint_data]
+)
 eps = 1e-10
 N = 100
 for k in range(N):
     pin.computeJointJacobians(model, data, q)
+    data.q_in = q
+    constraint_model.calc(model, data, constraint_data)
     kkt_constraint.compute(model, data, [constraint_model], [constraint_data], mu)
     constraint_value = constraint_data.c1Mc2.translation
 
@@ -134,8 +138,8 @@ for k in range(N):
     rhs = np.concatenate([-constraint_value - y * mu, np.zeros(model.nv)])
 
     dz = kkt_constraint.solve(rhs)
-    dy = dz[:constraint_dim]
-    dq = dz[constraint_dim:]
+    dy = dz[:constraint_size]
+    dq = dz[constraint_size:]
 
     alpha = 1.0
     q = pin.integrate(model, q, -alpha * dq)
@@ -150,11 +154,13 @@ tau = np.zeros(model.nv)
 dt = 5e-3
 
 T_sim = 10
-t = 0
+t = 0.0
 mu_sim = 1e-10
-constraint_model.corrector.Kp[:] = 10
-constraint_model.corrector.Kd[:] = 2.0 * np.sqrt(constraint_model.corrector.Kp)
-pin.initConstraintDynamics(model, data, [constraint_model])
+constraint_model.m_baumgarte_parameters.Kp = 10
+constraint_model.m_baumgarte_parameters.Kd = 2.0 * np.sqrt(
+    constraint_model.m_baumgarte_parameters.Kp
+)
+pin.initConstraintDynamics(model, data, [constraint_model], [constraint_data])
 prox_settings = pin.ProximalSettings(1e-8, mu_sim, 10)
 
 try:

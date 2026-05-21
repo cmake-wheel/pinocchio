@@ -2,8 +2,7 @@
 // Copyright (c) 2021 INRIA
 //
 
-#ifndef __pinocchio_python_context_cppad_hpp__
-#define __pinocchio_python_context_cppad_hpp__
+#pragma once
 
 #include "pinocchio/autodiff/cppad.hpp"
 
@@ -34,5 +33,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // #ifndef __pinocchio_python_context_cppad_hpp__

@@ -2,16 +2,16 @@
 // Copyright (c) 2020 INRIA
 //
 
+#include "pinocchio/math/multiprecision.hpp"
+
+#include "pinocchio/multibody/sample-models.hpp"
+
+#include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
 #include "pinocchio/algorithm/aba.hpp"
 #include "pinocchio/algorithm/jacobian.hpp"
-#include "pinocchio/algorithm/center-of-mass.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/algorithm/crba.hpp"
-#include "pinocchio/algorithm/centroidal.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
-
-#include "pinocchio/math/multiprecision.hpp"
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/math/special_functions/gamma.hpp>
@@ -54,7 +54,7 @@ BOOST_AUTO_TEST_CASE(test_cast)
   BOOST_CHECK(initial_value == value_cast);
 
   typedef Eigen::Matrix<float_100, Eigen::Dynamic, 1> VectorFloat100;
-  static const Eigen::DenseIndex dim = 100;
+  static const Eigen::Index dim = 100;
   Eigen::VectorXd initial_vec = Eigen::VectorXd::Random(dim);
   VectorFloat100 vec_float_100 = initial_vec.cast<float_100>();
   Eigen::VectorXd vec = vec_float_100.cast<double>();

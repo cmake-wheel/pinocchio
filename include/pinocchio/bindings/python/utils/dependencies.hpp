@@ -2,8 +2,7 @@
 // Copyright (c) 2019 INRIA
 //
 
-#ifndef __pinocchio_python_utils_dependencies_hpp__
-#define __pinocchio_python_utils_dependencies_hpp__
+#pragma once
 
 #include "pinocchio/bindings/python/fwd.hpp"
 
@@ -16,5 +15,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_utils_dependencies_hpp__

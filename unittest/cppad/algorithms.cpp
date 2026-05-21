@@ -4,15 +4,13 @@
 
 #include "pinocchio/autodiff/cppad.hpp"
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
 
 #include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/crba.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
 #include "pinocchio/algorithm/aba.hpp"
-#include "pinocchio/algorithm/joint-configuration.hpp"
 
 #include "pinocchio/multibody/sample-models.hpp"
 
@@ -195,22 +193,22 @@ BOOST_AUTO_TEST_CASE(test_kinematics_jacobian)
     const ADData::Motion v_global = ad_data.oMi[joint_id].act(v_local);
 
     VectorXAD Y(6 * 3);
-    Eigen::DenseIndex current_id = 0;
-    for (Eigen::DenseIndex k = 0; k < 3; ++k)
+    Eigen::Index current_id = 0;
+    for (Eigen::Index k = 0; k < 3; ++k)
     {
       Y[current_id + k + Motion::LINEAR] = v_local.linear()[k];
       Y[current_id + k + Motion::ANGULAR] = v_local.angular()[k];
     }
     current_id += 6;
 
-    for (Eigen::DenseIndex k = 0; k < 3; ++k)
+    for (Eigen::Index k = 0; k < 3; ++k)
     {
       Y[current_id + k + Motion::LINEAR] = v_global.linear()[k];
       Y[current_id + k + Motion::ANGULAR] = v_global.angular()[k];
     }
     current_id += 6;
 
-    for (Eigen::DenseIndex k = 0; k < 3; ++k)
+    for (Eigen::Index k = 0; k < 3; ++k)
     {
       Y[current_id + k + Motion::LINEAR] = a_local.linear()[k];
       Y[current_id + k + Motion::ANGULAR] = a_local.angular()[k];
@@ -220,7 +218,7 @@ BOOST_AUTO_TEST_CASE(test_kinematics_jacobian)
     CppAD::ADFun<Scalar> vjoint(ad_v, Y);
 
     CPPAD_TESTVECTOR(Scalar) x((size_t)model.nv);
-    for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+    for (Eigen::Index k = 0; k < model.nv; ++k)
     {
       x[(size_t)k] = v[k];
     }
@@ -255,15 +253,15 @@ BOOST_AUTO_TEST_CASE(test_kinematics_jacobian)
     pinocchio::forwardKinematics(ad_model, ad_data, ad_q, ad_v, ad_a);
 
     VectorXAD Y(6 * 2);
-    Eigen::DenseIndex current_id = 0;
-    for (Eigen::DenseIndex k = 0; k < 3; ++k)
+    Eigen::Index current_id = 0;
+    for (Eigen::Index k = 0; k < 3; ++k)
     {
       Y[current_id + k + Motion::LINEAR] = v_local.linear()[k];
       Y[current_id + k + Motion::ANGULAR] = v_local.angular()[k];
     }
     current_id += 6;
 
-    for (Eigen::DenseIndex k = 0; k < 3; ++k)
+    for (Eigen::Index k = 0; k < 3; ++k)
     {
       Y[current_id + k + Motion::LINEAR] = a_local.linear()[k];
       Y[current_id + k + Motion::ANGULAR] = a_local.angular()[k];
@@ -273,7 +271,7 @@ BOOST_AUTO_TEST_CASE(test_kinematics_jacobian)
     CppAD::ADFun<Scalar> ajoint(ad_a, Y);
 
     CPPAD_TESTVECTOR(Scalar) x((size_t)model.nv);
-    for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+    for (Eigen::Index k = 0; k < model.nv; ++k)
     {
       x[(size_t)k] = a[k];
     }

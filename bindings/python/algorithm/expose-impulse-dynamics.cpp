@@ -16,10 +16,8 @@ namespace pinocchio
   {
 
 #ifndef PINOCCHIO_PYTHON_SKIP_ALGORITHM_IMPULSE_DYNAMICS
-    typedef PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(context::RigidConstraintModel)
-      RigidConstraintModelVector;
-    typedef PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(context::RigidConstraintData)
-      RigidConstraintDataVector;
+    typedef std::vector<context::RigidConstraintModel> RigidConstraintModelVector;
+    typedef std::vector<context::RigidConstraintData> RigidConstraintDataVector;
 
     static const context::VectorXs impulseDynamics_proxy(
       const context::Model & model,

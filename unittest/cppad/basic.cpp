@@ -5,10 +5,6 @@
 #include "pinocchio/autodiff/cppad.hpp"
 #include <cppad/speed/det_by_minor.hpp>
 
-#include <boost/variant.hpp> // to avoid C99 warnings
-
-#include <iostream>
-
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
 
@@ -33,7 +29,7 @@ BOOST_AUTO_TEST_CASE(test_example1_cppad)
   // set and declare independent variables and start tape recording
   for (j = 0; j < n; j++)
   {
-    a_x[(Eigen::DenseIndex)j] = double(1 + j);
+    a_x[(Eigen::Index)j] = double(1 + j);
   }
   CppAD::Independent(a_x);
 
@@ -90,10 +86,9 @@ BOOST_AUTO_TEST_CASE(test_example2_cppad)
   {
     for (j = 0; j < size; j++)
     { // lower triangular matrix
-      a_x[(Eigen::DenseIndex)(i * size + j)] = x[(Eigen::DenseIndex)(i * size + j)] = 0.0;
+      a_x[(Eigen::Index)(i * size + j)] = x[(Eigen::Index)(i * size + j)] = 0.0;
       if (j <= i)
-        a_x[(Eigen::DenseIndex)(i * size + j)] = x[(Eigen::DenseIndex)(i * size + j)] =
-          double(1 + i + j);
+        a_x[(Eigen::Index)(i * size + j)] = x[(Eigen::Index)(i * size + j)] = double(1 + i + j);
     }
   }
   CppAD::Independent(a_x);
@@ -105,9 +100,9 @@ BOOST_AUTO_TEST_CASE(test_example2_cppad)
   {
     for (j = 0; j < size; j++)
     {
-      X((Eigen::DenseIndex)i, (Eigen::DenseIndex)j) = x[(Eigen::DenseIndex)(i * size + j)];
+      X((Eigen::Index)i, (Eigen::Index)j) = x[(Eigen::Index)(i * size + j)];
       // If we used a_X(i, j) = X(i, j), a_X would not depend on a_x.
-      a_X((Eigen::DenseIndex)i, (Eigen::DenseIndex)j) = a_x[(Eigen::DenseIndex)(i * size + j)];
+      a_X((Eigen::Index)i, (Eigen::Index)j) = a_x[(Eigen::Index)(i * size + j)];
     }
   }
 
@@ -132,8 +127,7 @@ BOOST_AUTO_TEST_CASE(test_example2_cppad)
   {
     for (j = 0; j < size; j++)
       BOOST_CHECK(NearEqual(
-        jac[(Eigen::DenseIndex)(i * size + j)], inv_X((Eigen::DenseIndex)j, (Eigen::DenseIndex)i),
-        eps, eps));
+        jac[(Eigen::Index)(i * size + j)], inv_X((Eigen::Index)j, (Eigen::Index)i), eps, eps));
   }
 }
 

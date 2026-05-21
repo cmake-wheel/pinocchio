@@ -1,14 +1,11 @@
 //
 // Copyright (c) 2017-2018 CNRS
-// Copyright (c) 2018-2025 INRIA
+// Copyright (c) 2018-2026 INRIA
 //
 
-#include <iostream>
-
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/algorithm/jacobian.hpp"
-#include "pinocchio/algorithm/joint-configuration.hpp"
+#include "pinocchio/algorithm/frames.hpp"
 #include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/kinematics-derivatives.hpp"
 #include "pinocchio/multibody/sample-models.hpp"
@@ -21,7 +18,6 @@ bool isZero(
   const Eigen::Tensor<Scalar, 3, Options> & tensor3,
   const Scalar & prec = Eigen::NumTraits<Scalar>::epsilon())
 {
-  typedef Eigen::Tensor<Scalar, 3, Options> Tensor3x;
   auto dims = tensor3.dimensions();
   const Eigen::DenseIndex outer_offset = dims[1] * dims[2];
   bool is_zero = true;
@@ -89,7 +85,7 @@ BOOST_AUTO_TEST_CASE(test_kinematics_derivatives_velocity)
   VectorXd v(VectorXd::Random(model.nv));
   VectorXd a(VectorXd::Random(model.nv));
 
-  computeForwardKinematicsDerivatives(model, data, q, v, a);
+  computeForwardKinematicsDerivatives(model, data, q, v);
 
   const Model::JointIndex jointId = model.existJointName("rarm2_joint")
                                       ? model.getJointId("rarm2_joint")
@@ -759,7 +755,7 @@ BOOST_AUTO_TEST_CASE(test_classic_acceleration_derivatives)
   const Motion::Vector3 point_acc_LWA = oMpoint.rotation() * point_acc_L; // LOCAL_WORLD_ALIGNED
 
   // Derivatives w.r.t q
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     v_plus[k] = eps;
     const VectorXd q_plus = integrate(model, q, v_plus);
@@ -789,7 +785,7 @@ BOOST_AUTO_TEST_CASE(test_classic_acceleration_derivatives)
   BOOST_CHECK(a3_partial_dq_LWA_fd.isApprox(a3_partial_dq_LWA, sqrt(eps)));
 
   // Derivatives w.r.t v
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     v_plus = v;
     v_plus[k] += eps;
@@ -815,7 +811,7 @@ BOOST_AUTO_TEST_CASE(test_classic_acceleration_derivatives)
 
   // Derivatives w.r.t v
   Eigen::VectorXd a_plus = Eigen::VectorXd::Zero(model.nv);
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     a_plus = a;
     a_plus[k] += eps;
@@ -959,7 +955,7 @@ BOOST_AUTO_TEST_CASE(test_kinematics_hessians)
   computeJointKinematicHessians(model, data2, q);
   BOOST_CHECK(data2.J.isApprox(data.J));
 
-  const Eigen::DenseIndex matrix_offset = 6 * model.nv;
+  const Eigen::Index matrix_offset = 6 * model.nv;
 
   for (int k = 0; k < model.nv; ++k)
   {
@@ -1025,12 +1021,12 @@ BOOST_AUTO_TEST_CASE(test_kinematics_hessians)
   computeJointJacobians(model, data_ref, q);
   VectorXd v_plus(VectorXd::Zero(model.nv));
 
-  const Eigen::DenseIndex outer_offset = model.nv * 6;
+  const Eigen::Index outer_offset = model.nv * 6;
 
   // WORLD
   getJointJacobian(model, data_ref, joint_id, WORLD, J_ref);
   Data::Tensor3x kinematic_hessian_world = getJointKinematicHessian(model, data, joint_id, WORLD);
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     v_plus[k] = eps;
     const VectorXd q_plus = integrate(model, q, v_plus);
@@ -1055,7 +1051,7 @@ BOOST_AUTO_TEST_CASE(test_kinematics_hessians)
   Data::Tensor3x kinematic_hessian_local_world_aligned =
     getJointKinematicHessian(model, data, joint_id, LOCAL_WORLD_ALIGNED);
   Data::Matrix3x dt_last_fd(3, model.nv);
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     v_plus[k] = eps;
     const VectorXd q_plus = integrate(model, q, v_plus);
@@ -1090,7 +1086,7 @@ BOOST_AUTO_TEST_CASE(test_kinematics_hessians)
   computeJointJacobians(model, data_ref, q);
   getJointJacobian(model, data_ref, joint_id, LOCAL, J_ref);
   Data::Tensor3x kinematic_hessian_local = getJointKinematicHessian(model, data, joint_id, LOCAL);
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     v_plus[k] = eps;
     const VectorXd q_plus = integrate(model, q, v_plus);
@@ -1112,7 +1108,103 @@ BOOST_AUTO_TEST_CASE(test_kinematics_hessians)
   }
 }
 
-BOOST_AUTO_TEST_CASE(test_joint_0)
+BOOST_AUTO_TEST_CASE(test_kinematics_hessians_with_placement)
+{
+  using namespace Eigen;
+  using namespace pinocchio;
+
+  Model model;
+  buildModels::humanoidRandom(model, true);
+
+  Data data(model), data_ref(model), data_plus(model);
+
+  model.lowerPositionLimit.head<3>().fill(-1.);
+  model.upperPositionLimit.head<3>().fill(1.);
+  VectorXd q = randomConfiguration(model);
+
+  const Model::JointIndex joint_id = model.existJointName("rarm2_joint")
+                                       ? model.getJointId("rarm2_joint")
+                                       : (Model::Index)(model.njoints - 1);
+
+  computeJointJacobians(model, data, q);
+  computeJointKinematicHessians(model, data);
+
+  const SE3 frame_placement = SE3::Random();
+
+  const double eps = 1e-8;
+  Data::Matrix6x J_ref(6, model.nv), J_plus(6, model.nv);
+  J_ref.setZero();
+  J_plus.setZero();
+
+  computeJointJacobians(model, data_ref, q);
+  VectorXd v_plus(VectorXd::Zero(model.nv));
+
+  const Eigen::Index outer_offset = model.nv * 6;
+
+  // // WORLD
+  getFrameJacobian(model, data_ref, joint_id, frame_placement, WORLD, J_ref);
+  Data::Tensor3x kinematic_hessian_world =
+    getFrameKinematicHessian(model, data, joint_id, frame_placement, WORLD);
+  for (Eigen::Index k = 0; k < model.nv; ++k)
+  {
+    v_plus[k] = eps;
+    const VectorXd q_plus = integrate(model, q, v_plus);
+    computeJointJacobians(model, data_plus, q_plus);
+    J_plus.setZero();
+    getFrameJacobian(model, data_plus, joint_id, frame_placement, WORLD, J_plus);
+
+    Data::Matrix6x dJ_dq_ref = (J_plus - J_ref) / eps;
+    Eigen::Map<Data::Matrix6x> dJ_dq(
+      kinematic_hessian_world.data() + k * outer_offset, 6, model.nv);
+
+    BOOST_CHECK((dJ_dq_ref - dJ_dq).isZero(sqrt(eps)));
+    v_plus[k] = 0.;
+  }
+
+  // LOCAL_WORLD_ALIGNED
+  computeJointJacobians(model, data_ref, q);
+  getFrameJacobian(model, data_ref, joint_id, frame_placement, LOCAL_WORLD_ALIGNED, J_ref);
+  Data::Tensor3x kinematic_hessian_local_world_aligned =
+    getFrameKinematicHessian(model, data, joint_id, frame_placement, LOCAL_WORLD_ALIGNED);
+  for (Eigen::Index k = 0; k < model.nv; ++k)
+  {
+    v_plus[k] = eps;
+    const VectorXd q_plus = integrate(model, q, v_plus);
+    computeJointJacobians(model, data_plus, q_plus);
+    J_plus.setZero();
+    getFrameJacobian(model, data_plus, joint_id, frame_placement, LOCAL_WORLD_ALIGNED, J_plus);
+
+    Data::Matrix6x dJ_dq_ref = (J_plus - J_ref) / eps;
+    Eigen::Map<Data::Matrix6x> dJ_dq(
+      kinematic_hessian_local_world_aligned.data() + k * outer_offset, 6, model.nv);
+
+    BOOST_CHECK((dJ_dq_ref - dJ_dq).isZero(sqrt(eps)));
+    v_plus[k] = 0.;
+  }
+
+  // LOCAL
+  computeJointJacobians(model, data_ref, q);
+  getFrameJacobian(model, data_ref, joint_id, frame_placement, LOCAL, J_ref);
+  Data::Tensor3x kinematic_hessian_local =
+    getFrameKinematicHessian(model, data, joint_id, frame_placement, LOCAL);
+  for (Eigen::Index k = 0; k < model.nv; ++k)
+  {
+    v_plus[k] = eps;
+    const VectorXd q_plus = integrate(model, q, v_plus);
+    computeJointJacobians(model, data_plus, q_plus);
+    J_plus.setZero();
+    getFrameJacobian(model, data_plus, joint_id, frame_placement, LOCAL, J_plus);
+
+    Data::Matrix6x dJ_dq_ref = (J_plus - J_ref) / eps;
+    Eigen::Map<Data::Matrix6x> dJ_dq(
+      kinematic_hessian_local.data() + k * outer_offset, 6, model.nv);
+
+    BOOST_CHECK((dJ_dq_ref - dJ_dq).isZero(sqrt(eps)));
+    v_plus[k] = 0.;
+  }
+}
+
+BOOST_AUTO_TEST_CASE(test_kinematics_hessians_joint_0)
 {
   using namespace Eigen;
   using namespace pinocchio;

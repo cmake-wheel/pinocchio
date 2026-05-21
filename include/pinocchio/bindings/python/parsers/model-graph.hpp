@@ -2,8 +2,7 @@
 // Copyright (c) 2025 INRIA
 //
 
-#ifndef __pinocchio_python_parsers_model_graph_hpp__
-#define __pinocchio_python_parsers_model_graph_hpp__
+#pragma once
 
 #include <boost/python/class.hpp>
 #include <boost/python/scope.hpp>
@@ -47,14 +46,12 @@ namespace pinocchio
       exposeGeometryBuilder();
       exposeModelGraph();
       exposeModelGraphAlgo();
-  #if defined(PINOCCHIO_WITH_HPP_FCL)
+  #if defined(PINOCCHIO_WITH_COLLISION)
       exposeAlgoGeometry();
-  #endif // if defined(PINOCCHIO_WITH_HPP_FCL)
+  #endif // if defined(PINOCCHIO_WITH_COLLISION)
 #endif   // if defined(PINOCCHIO_PYTHON_INTERFACE_MAIN_MODULE)
       exposeModelConfigurationConverter();
     }
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_parsers_mjcf_hpp__

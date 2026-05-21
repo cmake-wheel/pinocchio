@@ -2,8 +2,7 @@
 // Copyright (c) 2020-2023 INRIA
 //
 
-#ifndef __pinocchio_python_context_default_hpp__
-#define __pinocchio_python_context_default_hpp__
+#pragma once
 
 #define PINOCCHIO_PYTHON_SCALAR_TYPE PINOCCHIO_PYTHON_SCALAR_TYPE_DEFAULT
 #define PINOCCHIO_PYTHON_INTERFACE_MAIN_MODULE
@@ -28,4 +27,3 @@ namespace pinocchio
 } // namespace pinocchio
 
 #undef PINOCCHIO_PYTHON_SCALAR_TYPE
-#endif // #ifndef __pinocchio_python_context_default_hpp__

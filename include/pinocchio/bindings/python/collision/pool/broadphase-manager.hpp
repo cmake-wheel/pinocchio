@@ -1,11 +1,11 @@
 //
-// Copyright (c) 2022 INRIA
+// Copyright (c) 2022-2025 INRIA
 //
 
-#ifndef __pinocchio_python_collision_pool_broadphase_manager_hpp__
-#define __pinocchio_python_collision_pool_broadphase_manager_hpp__
+#pragma once
 
 #include <eigenpy/eigen-to-python.hpp>
+#include <eigenpy/copyable.hpp>
 
 #include "pinocchio/collision/pool/broadphase-manager.hpp"
 
@@ -15,7 +15,6 @@
 #include <eigenpy/exception.hpp>
 
 #include "pinocchio/algorithm/check.hpp"
-#include "pinocchio/bindings/python/utils/copyable.hpp"
 #include "pinocchio/bindings/python/utils/std-vector.hpp"
 
 namespace pinocchio
@@ -68,8 +67,9 @@ namespace pinocchio
       template<class PyClass>
       void visit(PyClass & cl) const
       {
-        cl.def(bp::init<const Model &, const GeometryModel &, bp::optional<size_t>>(
-                 bp::args("self", "model", "geometry_model", "size"), "Default constructor."))
+        cl.def(
+            bp::init<const Model &, const GeometryModel &, bp::optional<size_t>>(
+              bp::args("self", "model", "geometry_model", "size"), "Default constructor."))
           .def(
             bp::init<const BroadPhaseManagerPool &>(bp::args("self", "other"), "Copy constructor."))
 
@@ -88,7 +88,7 @@ namespace pinocchio
 
           .def(
             "update",
-            (void(BroadPhaseManagerPool::*)(const GeometryData &)) & BroadPhaseManagerPool::update,
+            (void (BroadPhaseManagerPool::*)(const GeometryData &))&BroadPhaseManagerPool::update,
             bp::args("self", "geometry_data"),
             "Update all the geometry datas with the input geometry data value.")
 
@@ -113,7 +113,7 @@ namespace pinocchio
       static void expose()
       {
         std::string manager_name = boost::typeindex::type_id<Manager>().pretty_name();
-        boost::algorithm::replace_all(manager_name, "hpp::fcl::", "");
+        boost::algorithm::replace_all(manager_name, "coal::", "");
         const std::string broadphase_prefix = helper::base_class_name<BroadPhaseManager>::get();
         const std::string class_name = broadphase_prefix + "Pool" + "_" + manager_name;
 
@@ -122,7 +122,7 @@ namespace pinocchio
         bp::class_<BroadPhaseManagerPool, bp::bases<Base>>(
           class_name.c_str(), doc.c_str(), bp::no_init)
           .def(BroadPhaseManagerPoolPythonVisitor())
-          .def(CopyableVisitor<BroadPhaseManagerPool>());
+          .def(::eigenpy::CopyableVisitor<BroadPhaseManagerPool>());
 
         const std::string vector_name = "StdVec_" + broadphase_prefix + "_" + manager_name;
         StdVectorPythonVisitor<BroadPhaseManagerVector>::expose(vector_name);
@@ -130,5 +130,3 @@ namespace pinocchio
     };
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifnded __pinocchio_python_collision_pool_broadphase_manager_hpp__

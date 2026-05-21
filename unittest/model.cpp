@@ -3,12 +3,10 @@
 // Copyright (c) 2018-2025 INRIA
 //
 
-#include "pinocchio/multibody/data.hpp"
-#include "pinocchio/multibody/model.hpp"
+#include "pinocchio/multibody.hpp"
 
 #include "pinocchio/algorithm/check.hpp"
 #include "pinocchio/algorithm/model.hpp"
-#include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/frames.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/algorithm/geometry.hpp"
@@ -167,12 +165,70 @@ BOOST_AUTO_TEST_CASE(cast)
   BOOST_CHECK(model2 == model.cast<long double>());
 }
 
+// This is the minimal collection to build the `buildModels::manipulator` model
+template<typename _Scalar, int _Options>
+struct ManipulatorJointCollectionNoThrow
+{
+  typedef _Scalar Scalar;
+  static constexpr int Options = _Options;
+
+  // Joint Revolute
+  typedef ::pinocchio::JointModelRevoluteTpl<Scalar, Options, 0> JointModelRX;
+  typedef ::pinocchio::JointModelRevoluteTpl<Scalar, Options, 1> JointModelRY;
+  typedef ::pinocchio::JointModelRevoluteTpl<Scalar, Options, 2> JointModelRZ;
+
+  typedef boost::variant<JointModelRX, JointModelRY, JointModelRZ> JointModelVariant;
+
+  // Joint Revolute
+  typedef ::pinocchio::JointDataRevoluteTpl<Scalar, Options, 0> JointDataRX;
+  typedef ::pinocchio::JointDataRevoluteTpl<Scalar, Options, 1> JointDataRY;
+  typedef ::pinocchio::JointDataRevoluteTpl<Scalar, Options, 2> JointDataRZ;
+
+  typedef boost::variant<JointDataRX, JointDataRY, JointDataRZ> JointDataVariant;
+};
+
+template<typename _Scalar, int _Options>
+struct ManipulatorJointCollectionThrow
+{
+  typedef _Scalar Scalar;
+  static constexpr int Options = _Options;
+
+  // Joint Revolute
+  typedef ::pinocchio::JointModelRevoluteTpl<Scalar, Options, 0> JointModelRX;
+  typedef ::pinocchio::JointModelRevoluteTpl<Scalar, Options, 1> JointModelRY;
+
+  typedef boost::variant<JointModelRX, JointModelRY> JointModelVariant;
+
+  // Joint Revolute
+  typedef ::pinocchio::JointDataRevoluteTpl<Scalar, Options, 0> JointDataRX;
+  typedef ::pinocchio::JointDataRevoluteTpl<Scalar, Options, 1> JointDataRY;
+
+  typedef boost::variant<JointDataRX, JointDataRY> JointDataVariant;
+};
+
+BOOST_AUTO_TEST_CASE(cast_collection)
+{
+  typedef ::pinocchio::ModelTpl<double, 0, JointCollectionDefaultTpl> Model;
+  typedef ::pinocchio::ModelTpl<double, 0, ManipulatorJointCollectionNoThrow> MinimalModelNoThrow;
+  typedef ::pinocchio::ModelTpl<double, 0, ManipulatorJointCollectionThrow> MinimalModelThrow;
+
+  Model model_full;
+  buildModels::manipulator(model_full);
+
+  Model model_full_copy(model_full);
+  BOOST_CHECK(model_full == model_full_copy);
+
+  BOOST_CHECK_NO_THROW({ MinimalModelNoThrow model_no_throw = model_full; });
+
+  BOOST_CHECK_THROW({ MinimalModelThrow model_throw = model_full; }, std::invalid_argument);
+}
+
 BOOST_AUTO_TEST_CASE(test_std_vector_of_Model)
 {
   Model model;
   buildModels::humanoid(model);
 
-  PINOCCHIO_ALIGNED_STD_VECTOR(Model) models;
+  std::vector<Model> models;
   for (size_t k = 0; k < 20; ++k)
   {
     models.push_back(Model());
@@ -182,7 +238,7 @@ BOOST_AUTO_TEST_CASE(test_std_vector_of_Model)
   }
 }
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
 struct AddPrefix
 {
   std::string p;
@@ -691,19 +747,7 @@ BOOST_AUTO_TEST_CASE(test_buildReducedModel)
   }
 }
 
-BOOST_AUTO_TEST_CASE(test_aligned_vector_of_model)
-{
-  typedef PINOCCHIO_ALIGNED_STD_VECTOR(Model) VectorOfModels;
-
-  VectorOfModels models;
-  for (size_t k = 0; k < 100; ++k)
-  {
-    models.push_back(Model());
-    buildModels::humanoidRandom(models[k]);
-  }
-}
-
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
 BOOST_AUTO_TEST_CASE(test_buildReducedModel_with_geom)
 {
   Model humanoid_model;
@@ -842,7 +886,7 @@ BOOST_AUTO_TEST_CASE(test_buildReducedModel_with_geom)
   BOOST_CHECK(reduced_geometry_models[1] == reduced_humanoid_geometry);
   BOOST_CHECK(reduced_geometry_models[2] == reduced_humanoid_geometry);
 }
-#endif // PINOCCHIO_WITH_HPP_FCL
+#endif // PINOCCHIO_WITH_COLLISION
 
 BOOST_AUTO_TEST_CASE(test_findCommonAncestor)
 {
@@ -1167,6 +1211,81 @@ BOOST_AUTO_TEST_CASE(test_append_model_universe_with_inertia_issue_2805)
   BOOST_CHECK(new_model.frames[fixed_link_2_frame_index].placement.isApprox(
     expected_model.frames[fixed_link_2_frame_index].placement));
   BOOST_CHECK(new_model.inertias[1].isApprox(expected_model.inertias[1]));
+}
+
+BOOST_AUTO_TEST_CASE(test_colwise_sparsity_pattern_and_span_indexes)
+{
+  // --- Exact value check on a simple sequential 1-DOF chain ---
+  Model chain;
+  chain.addJoint(0, JointModelRX(), SE3::Identity(), "j1");
+  chain.addJoint(1, JointModelRY(), SE3::Identity(), "j2");
+  chain.addJoint(2, JointModelRZ(), SE3::Identity(), "j3");
+
+  // sparsity_pattern_vector is indexed by joint_id:
+  //   index 0 = universe (nv=0, all-false pattern)
+  //   index 1 = j1, index 2 = j2, index 3 = j3
+  BOOST_REQUIRE_EQUAL(chain.sparsity_pattern_vector.size(), 4u);
+  BOOST_REQUIRE_EQUAL(chain.span_indexes_vector.size(), 4u);
+
+  // All patterns must have the final nv as size
+  for (const auto & pat : chain.sparsity_pattern_vector)
+    BOOST_CHECK_EQUAL(pat.size(), chain.nv);
+
+  // j1 (col 0): only its own DOF — joint_id = 1
+  BOOST_CHECK_EQUAL(chain.span_indexes_vector[1].size(), 1u);
+  BOOST_CHECK_EQUAL(chain.span_indexes_vector[1][0], 0);
+  BOOST_CHECK(chain.sparsity_pattern_vector[1][0]);
+  BOOST_CHECK(!chain.sparsity_pattern_vector[1][1]);
+  BOOST_CHECK(!chain.sparsity_pattern_vector[1][2]);
+
+  // j2 (col 1): j1's DOF + own DOF — joint_id = 2
+  BOOST_CHECK_EQUAL(chain.span_indexes_vector[2].size(), 2u);
+  BOOST_CHECK_EQUAL(chain.span_indexes_vector[2][0], 0);
+  BOOST_CHECK_EQUAL(chain.span_indexes_vector[2][1], 1);
+  BOOST_CHECK(chain.sparsity_pattern_vector[2][0]);
+  BOOST_CHECK(chain.sparsity_pattern_vector[2][1]);
+  BOOST_CHECK(!chain.sparsity_pattern_vector[2][2]);
+
+  // j3 (col 2): j1's + j2's + own DOF — joint_id = 3
+  BOOST_CHECK_EQUAL(chain.span_indexes_vector[3].size(), 3u);
+  BOOST_CHECK_EQUAL(chain.span_indexes_vector[3][0], 0);
+  BOOST_CHECK_EQUAL(chain.span_indexes_vector[3][1], 1);
+  BOOST_CHECK_EQUAL(chain.span_indexes_vector[3][2], 2);
+  BOOST_CHECK(chain.sparsity_pattern_vector[3][0]);
+  BOOST_CHECK(chain.sparsity_pattern_vector[3][1]);
+  BOOST_CHECK(chain.sparsity_pattern_vector[3][2]);
+
+  // --- Consistency check on humanoidRandom ---
+  Model model;
+  buildModels::humanoidRandom(model);
+
+  // One entry per joint (indexed by joint_id, including universe at index 0)
+  BOOST_CHECK_EQUAL(model.sparsity_pattern_vector.size(), (size_t)model.njoints);
+  BOOST_CHECK_EQUAL(model.span_indexes_vector.size(), (size_t)model.njoints);
+
+  for (size_t i = 0; i < model.sparsity_pattern_vector.size(); ++i)
+  {
+    const auto & pattern = model.sparsity_pattern_vector[i];
+    const auto & span_idx = model.span_indexes_vector[i];
+
+    // Patterns must be resized to the final nv
+    BOOST_CHECK_EQUAL(pattern.size(), model.nv);
+
+    // All span indexes must be in [0, nv)
+    for (const auto idx : span_idx)
+    {
+      BOOST_CHECK_GE(idx, 0);
+      BOOST_CHECK_LT(idx, model.nv);
+    }
+
+    // Cross-check: number of true entries in pattern == size of span_indexes
+    const Eigen::Index n_true = pattern.count();
+    BOOST_CHECK_EQUAL(n_true, (Eigen::Index)span_idx.size());
+
+    // Every span index maps to a true entry in the pattern
+    for (const auto idx : span_idx)
+      BOOST_CHECK(pattern[idx]);
+  }
 }
 
 BOOST_AUTO_TEST_SUITE_END()

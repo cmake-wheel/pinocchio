@@ -2,8 +2,7 @@
 // Copyright (c) 2018 CNRS
 //
 
-#ifndef __pinocchio_unit_test_utils_macros_hpp__
-#define __pinocchio_unit_test_utils_macros_hpp__
+#pragma once
 
 #ifdef __clang__
   #include <boost/variant.hpp> // to avoid some warning with clang
@@ -21,5 +20,3 @@
 // #else
 //   #define END_UNIT_TEST_SECTION
 // #endif
-
-#endif // ifndef __pinocchio_unit_test_utils_macros_hpp__

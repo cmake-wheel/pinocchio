@@ -3,7 +3,7 @@
 // Copyright (c) 2018-2025 INRIA
 //
 
-#include "pinocchio/multibody/model.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/algorithm/model.hpp"
 #include "pinocchio/multibody/sample-models.hpp"
 #include <iostream>
@@ -25,14 +25,15 @@ namespace pinocchio
     typedef typename D::ConfigVector_t CV;
 
     idx = model.addJoint(
-      parent_id, jmodel, joint_placement, name + "_joint", TV::Zero(),
-      1e3 * (TV::Random() + TV::Constant(1)), 1e3 * (CV::Random() - CV::Constant(1)),
-      1e3 * (CV::Random() + CV::Constant(1)));
+      parent_id, jmodel, joint_placement, name + "_joint", TV::Zero(jmodel.nv()),
+      1e3 * (TV::Random(jmodel.nv()) + TV::Constant(jmodel.nv(), 1.)),
+      1e3 * (CV::Random(jmodel.nq()) - CV::Constant(jmodel.nq(), 1.)),
+      1e3 * (CV::Random(jmodel.nq()) + CV::Constant(jmodel.nq(), 1.)));
 
     model.appendBodyToJoint(idx, Y, SE3::Identity());
   }
 
-  void buildAllJointsModel(Model & model)
+  void buildModelWithAllJoints(Model & model)
   {
     addJointAndBody(
       model, JointModelFreeFlyer(), model.getJointId("universe"), SE3::Identity(), "freeflyer",
@@ -67,6 +68,52 @@ namespace pinocchio
     addJointAndBody(
       model, JointModelTranslation(), model.getJointId("sphericalZYX_joint"), SE3::Identity(),
       "translation", Inertia::Random());
+
+    JointModelComposite jmodel_composite;
+    jmodel_composite.addJoint(JointModelRZ());
+    jmodel_composite.addJoint(JointModelRY());
+    jmodel_composite.addJoint(JointModelRX());
+
+    addJointAndBody(
+      model, jmodel_composite, model.getJointId("translation_joint"), SE3::Identity(),
+      "composite_zyx", Inertia::Random());
+  }
+
+  void buildModelWithAllBoundedJoints(Model & model)
+  {
+    addJointAndBody(
+      model, JointModelRX(), model.getJointId("universe"), SE3::Identity(), "rx",
+      Inertia::Random());
+    addJointAndBody(
+      model, JointModelPX(), model.getJointId("rx_joint"), SE3::Identity(), "px",
+      Inertia::Random());
+    addJointAndBody(
+      model, JointModelHX(1.0), model.getJointId("px_joint"), SE3::Identity(), "hx",
+      Inertia::Random());
+    addJointAndBody(
+      model, JointModelPrismaticUnaligned(SE3::Vector3(1, 0, 0)), model.getJointId("hx_joint"),
+      SE3::Identity(), "pu", Inertia::Random());
+    addJointAndBody(
+      model, JointModelRevoluteUnaligned(SE3::Vector3(0, 0, 1)), model.getJointId("pu_joint"),
+      SE3::Identity(), "ru", Inertia::Random());
+    addJointAndBody(
+      model, JointModelHelicalUnaligned(SE3::Vector3(0, 0, 1), 1.0), model.getJointId("ru_joint"),
+      SE3::Identity(), "hu", Inertia::Random());
+    addJointAndBody(
+      model, JointModelSphericalZYX(), model.getJointId("hu_joint"), SE3::Identity(),
+      "sphericalZYX", Inertia::Random());
+    addJointAndBody(
+      model, JointModelTranslation(), model.getJointId("sphericalZYX_joint"), SE3::Identity(),
+      "translation", Inertia::Random());
+
+    JointModelComposite jmodel_composite;
+    jmodel_composite.addJoint(JointModelRZ());
+    jmodel_composite.addJoint(JointModelRY());
+    jmodel_composite.addJoint(JointModelRX());
+
+    addJointAndBody(
+      model, jmodel_composite, model.getJointId("translation_joint"), SE3::Identity(),
+      "composite_zyx", Inertia::Random());
   }
 
   void toFull(

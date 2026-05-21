@@ -2,20 +2,19 @@
 // Copyright (c) 2016-2023 CNRS INRIA
 //
 
+#include "pinocchio/multibody/sample-models.hpp"
+#include "pinocchio/geometry.hpp"
+
 #include "pinocchio/extra/reachable-workspace.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
-#include "pinocchio/multibody/geometry.hpp"
 #include "pinocchio/parsers/urdf.hpp"
-
-#include <iostream>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
-  #include <hpp/fcl/collision_object.h>
-#endif // PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
+  #include <coal/collision_object.h>
+#endif // PINOCCHIO_WITH_COLLISION
 
 /// @brief Create a spherical joint with a stick of length l attached to it
 /// @param length length of the stick
@@ -87,15 +86,15 @@ struct robotCreationFixture
   int frame_name;
 };
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
 /// @brief Create an obstacle to add to the geometry model
 /// @param distance where to put the object
 /// @param dimension dimension of the box
 static void
 addObstacle(pinocchio::GeometryModel & geom_model, const double distance, const double dimension)
 {
-  std::shared_ptr<pinocchio::fcl::CollisionGeometry> geometry =
-    std::make_shared<pinocchio::fcl::Box>(dimension, dimension, dimension);
+  std::shared_ptr<coal::CollisionGeometry> geometry =
+    std::make_shared<coal::Box>(dimension, dimension, dimension);
   std::string geometry_object_name = "obstacle";
   pinocchio::SE3 geomPlacement(1);
   geomPlacement.translation() = pinocchio::SE3::LinearType(distance, 0, 0);
@@ -114,8 +113,8 @@ BOOST_AUTO_TEST_SUITE(ReachableWorkspace)
 /// `itertools.combinations`
 BOOST_AUTO_TEST_CASE(test_combination_generation)
 {
-  int ndof = 6;
-  int ncomb = 2;
+  unsigned int ndof = 6;
+  unsigned int ncomb = 2;
 
   Eigen::VectorXi indices = Eigen::VectorXi::Zero(ncomb);
 
@@ -125,7 +124,8 @@ BOOST_AUTO_TEST_CASE(test_combination_generation)
   Eigen::MatrixXi res(size, ncomb);
   for (int k = 0; k < size; k++)
   {
-    pinocchio::internal::generateCombination(ndof, ncomb, indices);
+    pinocchio::internal::generateCombination(
+      static_cast<int>(ndof), static_cast<int>(ncomb), indices);
 
     res.row(k) = indices;
   }
@@ -232,8 +232,8 @@ BOOST_FIXTURE_TEST_CASE(test_compute_vertex, robotCreationFixture)
   Eigen::MatrixXd vertex;
 
   double constraint = 0.2;
-  auto f_ = [this, &constraint](const Model & model, Data & data) -> bool {
-    SE3 pos = data.oMf[frame_name];
+  auto f_ = [this, &constraint](const Model &, Data & data) -> bool {
+    SE3 pos = data.oMf[static_cast<size_t>(frame_name)];
     if (pos.translation()(0) < constraint)
       return false;
     else
@@ -252,7 +252,7 @@ BOOST_FIXTURE_TEST_CASE(test_compute_vertex, robotCreationFixture)
   }
 }
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
 /// @brief test of the vertex computation for a 2DOf planar robot with an obstacle in its workspace.
 /// Verify that vertex are inside the rectangle of the joint limits and that faces are computed
 BOOST_FIXTURE_TEST_CASE(test_reachable_workspace_with_collision, robotCreationFixture)

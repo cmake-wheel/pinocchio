@@ -2,13 +2,16 @@
 // Copyright (c) 2025 INRIA
 //
 
-#ifndef __pinocchio_algorithm_check_model_hpp__
-#define __pinocchio_algorithm_check_model_hpp__
+#pragma once
 
-#include "pinocchio/algorithm/check-base.hpp"
-
+// IWYU pragma: begin_keep
 #include <boost/fusion/container/list.hpp>
 #include <boost/fusion/container/generation/make_list.hpp>
+#include <boost/fusion/algorithm/iteration/accumulate.hpp>
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/algorithm/check-base.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -52,6 +55,7 @@ namespace pinocchio
 } // namespace pinocchio
 
 /* --- Details -------------------------------------------------------------------- */
-#include "pinocchio/algorithm/check-model.hxx"
 
-#endif // __pinocchio_algorithm_check_model_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/check-model.hxx"
+// IWYU pragma: end_exports

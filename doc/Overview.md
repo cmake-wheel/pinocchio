@@ -1,4 +1,4 @@
-# Overview {#index}
+# Overview {#mainpage}
 <!--
 //
 // Copyright (c) 2016, 2018 CNRS
@@ -52,17 +52,37 @@ We start with a simple program to compute the robot inverse dynamics. It is give
 
 \subsection OverviewSimpleCompile Compiling and running your program
 
-You can compile the C++ version by including Pinocchio and Eigen header directories.
+You can compile the C++ with this minimal CMakeLists.txt:
 
-\code g++ -std=c++11 overview-simple.cpp -o overview-simple $(pkg-config --cflags --libs pinocchio)  \endcode
+```{.cmake}
+cmake_minimum_required(VERSION 3.22)
+
+project(overview CXX)
+
+find_package(pinocchio REQUIRED)
+
+add_executable(overview-simple overview-simple.cpp)
+target_link_libraries(overview-simple PUBLIC pinocchio::pinocchio)
+```
+
+Then run the following CMake command:
+
+```{.bash}
+cmake -B build
+cmake --build build
+```
 
 Once your code is compiled, you might then run it using
 
-\code ./overview-simple \endcode
+```{.bash}
+./build/overview-simple
+```
 
 In Python, just run it:
 
-\code python overview-simple.py \endcode
+```{.bash}
+python overview-simple.py
+```
 
 \subsection OverviewSimpleExplain Explanation of the program
 
@@ -121,16 +141,37 @@ in Python.
 
 In similar way than the previous example, you simple need to do:
 
-\code g++ -std=c++11 overview-urdf.cpp -o overview-urdf $(pkg-config --cflags --libs pinocchio) \endcode
+```{.cmake}
+cmake_minimum_required(VERSION 3.22)
+
+project(overview-urdf CXX)
+
+find_package(pinocchio REQUIRED)
+
+add_executable(overview-urdf overview-urdf.cpp)
+target_link_libraries(overview-urdf PUBLIC pinocchio::pinocchio)
+```
+
+Then run the following CMake command:
+
+```{.bash}
+cmake -B build
+cmake --build build
+```
 
 The program typically runs with a UR5 URDF description, that can be found for example in this repository https://github.com/humanoid-path-planner/ur_description
 
 Now you can launch the program:
-\code ./overview-urdf /path/to/ur5.urdf \endcode
+
+```{.bash}
+./build/overview-urdf /path/to/ur5.urdf
+```
 
 In Python, just run it:
 
-\code python overview-urdf.py /path/to/ur5.urdf \endcode
+```{.bash}
+python overview-urdf.py /path/to/ur5.urdf
+```
 
 \subsection OverviewComplexExplain Explanation of the program
 

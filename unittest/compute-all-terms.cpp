@@ -2,18 +2,15 @@
 // Copyright (c) 2015-2021 CNRS INRIA
 //
 
-#include "pinocchio/spatial/fwd.hpp"
-#include "pinocchio/spatial/se3.hpp"
-#include "pinocchio/multibody/visitor.hpp"
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/spatial.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/sample-models.hpp"
+
 #include "pinocchio/algorithm/crba.hpp"
 #include "pinocchio/algorithm/centroidal.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
 #include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/compute-all-terms.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
-#include "pinocchio/utils/timer.hpp"
 
 #include <boost/test/unit_test.hpp>
 
@@ -39,8 +36,9 @@ void run_test(const Model & model, const Eigen::VectorXd & q, const Eigen::Vecto
   computeGeneralizedGravity(model, data_other, q);
 
   BOOST_CHECK(data.nle.isApprox(data_other.nle));
-  BOOST_CHECK(Eigen::MatrixXd(data.M.triangularView<Eigen::Upper>())
-                .isApprox(Eigen::MatrixXd(data_other.M.triangularView<Eigen::Upper>())));
+  BOOST_CHECK(
+    Eigen::MatrixXd(data.M.triangularView<Eigen::Upper>())
+      .isApprox(Eigen::MatrixXd(data_other.M.triangularView<Eigen::Upper>())));
   BOOST_CHECK(data.J.isApprox(data_other.J));
   BOOST_CHECK(data.dJ.isApprox(data_other.dJ));
   BOOST_CHECK(data.Jcom.isApprox(data_other.Jcom));

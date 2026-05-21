@@ -1,12 +1,32 @@
 //
 // Copyright (c) 2017-2019 CNRS INRIA
 
-#ifndef __pinocchio_algorithm_rnea_second_order_derivatives_hpp__
-#define __pinocchio_algorithm_rnea_second_order_derivatives_hpp__
+#pragma once
 
-#include "pinocchio/container/aligned-vector.hpp"
-#include "pinocchio/multibody/data.hpp"
-#include "pinocchio/multibody/model.hpp"
+// IWYU pragma: begin_keep
+#include <Eigen/Core>
+
+#include <cassert>
+#include <cstddef>
+#include <type_traits>
+#include <vector>
+
+#include <boost/fusion/container/vector.hpp>
+
+#include "pinocchio/macros.hpp"
+#include "pinocchio/eigen-common.hpp"
+#include "pinocchio/fwd.hpp"
+
+#include "pinocchio/math.hpp"
+
+#include "pinocchio/spatial.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/multibody/visitor.hpp"
+
+#include "pinocchio/algorithm/check.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -107,7 +127,7 @@ namespace pinocchio
   /// \param[in] v The joint velocity vector (dim model.nv).
   /// \param[in] a The joint acceleration vector (dim model.nv).
   ///
-  /// \returns The results are stored in data.d2tau_dqdq, data.d2tau_dvdv,
+  /// \note The results are stored in data.d2tau_dqdq, data.d2tau_dvdv,
   /// data.d2tau_dqdv, and data.d2tau_dadq which respectively correspond to the
   /// Second-Order partial derivatives of the joint torque vector with respect to
   /// the joint configuration, velocity and cross Second-Order partial derivatives
@@ -154,6 +174,6 @@ namespace pinocchio
 
 } // namespace pinocchio
 
-#include "pinocchio/algorithm/rnea-second-order-derivatives.hxx"
-
-#endif // ifndef __pinocchio_algorithm_rnea_second_order_derivatives_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/rnea-second-order-derivatives.hxx"
+// IWYU pragma: end_exports

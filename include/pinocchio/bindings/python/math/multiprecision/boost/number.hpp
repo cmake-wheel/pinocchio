@@ -2,8 +2,7 @@
 // Copyright (c) 2021-2022 INRIA
 //
 
-#ifndef __pinocchio_python_math_multiprecision_boost_number_hpp__
-#define __pinocchio_python_math_multiprecision_boost_number_hpp__
+#pragma once
 
 #include "pinocchio/math/multiprecision.hpp"
 
@@ -220,5 +219,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_math_multiprecision_boost_number_hpp__

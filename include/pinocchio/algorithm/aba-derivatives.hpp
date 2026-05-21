@@ -1,14 +1,38 @@
 //
-// Copyright (c) 2018-2021 CNRS INRIA
+// Copyright (c) 2018 CNRS
+// Copyright (c) 2018-2024 INRIA
 //
 
-#ifndef __pinocchio_algorithm_aba_derivatives_hpp__
-#define __pinocchio_algorithm_aba_derivatives_hpp__
+#pragma once
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+// IWYU pragma: begin_keep
 
+#include <Eigen/Core>
+
+#include <cassert>
+#include <cstddef>
 #include <type_traits>
+#include <vector>
+
+#include <boost/fusion/container/vector.hpp>
+
+#include "pinocchio/macros.hpp"
+#include "pinocchio/eigen-common.hpp"
+#include "pinocchio/fwd.hpp"
+
+#include "pinocchio/math.hpp"
+
+#include "pinocchio/spatial.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/multibody/visitor.hpp"
+
+#include "pinocchio/algorithm/check.hpp"
+#include "pinocchio/algorithm/aba.hpp"
+#include "pinocchio/algorithm/joint-configuration.hpp"
+
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -93,6 +117,8 @@ namespace pinocchio
     typename ConfigVectorType,
     typename TangentVectorType1,
     typename TangentVectorType2,
+    typename SpatialForce,
+    typename SpatialForceAllocator,
     typename MatrixType1,
     typename MatrixType2,
     typename MatrixType3>
@@ -102,7 +128,7 @@ namespace pinocchio
     const Eigen::MatrixBase<ConfigVectorType> & q,
     const Eigen::MatrixBase<TangentVectorType1> & v,
     const Eigen::MatrixBase<TangentVectorType2> & tau,
-    const container::aligned_vector<ForceTpl<Scalar, Options>> & fext,
+    const std::vector<SpatialForce, SpatialForceAllocator> & fext,
     const Eigen::MatrixBase<MatrixType1> & aba_partial_dq,
     const Eigen::MatrixBase<MatrixType2> & aba_partial_dv,
     const Eigen::MatrixBase<MatrixType3> & aba_partial_dtau);
@@ -136,10 +162,10 @@ namespace pinocchio
     typename ConfigVectorType,
     typename TangentVectorType1,
     typename TangentVectorType2>
-  typename std::enable_if<
+  std::enable_if_t<
     ConfigVectorType::IsVectorAtCompileTime || TangentVectorType1::IsVectorAtCompileTime
       || TangentVectorType2::IsVectorAtCompileTime,
-    void>::type
+    void>
   computeABADerivatives(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     DataTpl<Scalar, Options, JointCollectionTpl> & data,
@@ -163,7 +189,7 @@ namespace pinocchio
   /// \param[in] fext External forces expressed in the local frame of the joints (dim
   /// model.njoints).
   ///
-  /// \returns The results are stored in data.ddq_dq, data.ddq_dv and data.Minv which respectively
+  /// \note The results are stored in data.ddq_dq, data.ddq_dv and data.Minv which respectively
   /// correspond
   ///          to the partial derivatives of the joint acceleration vector with respect to the joint
   ///          configuration, velocity and torque. And as for pinocchio::computeMinverse, only the
@@ -177,14 +203,16 @@ namespace pinocchio
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorType,
     typename TangentVectorType1,
-    typename TangentVectorType2>
+    typename TangentVectorType2,
+    typename SpatialForce,
+    typename SpatialForceAllocator>
   void computeABADerivatives(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     DataTpl<Scalar, Options, JointCollectionTpl> & data,
     const Eigen::MatrixBase<ConfigVectorType> & q,
     const Eigen::MatrixBase<TangentVectorType1> & v,
     const Eigen::MatrixBase<TangentVectorType2> & tau,
-    const container::aligned_vector<ForceTpl<Scalar, Options>> & fext);
+    const std::vector<SpatialForce, SpatialForceAllocator> & fext);
 
   ///
   /// \brief The derivatives of the Articulated-Body algorithm.
@@ -216,10 +244,10 @@ namespace pinocchio
     typename MatrixType1,
     typename MatrixType2,
     typename MatrixType3>
-  typename std::enable_if<
+  std::enable_if_t<
     !(MatrixType1::IsVectorAtCompileTime || MatrixType2::IsVectorAtCompileTime
       || MatrixType3::IsVectorAtCompileTime),
-    void>::type
+    void>
   computeABADerivatives(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     DataTpl<Scalar, Options, JointCollectionTpl> & data,
@@ -272,13 +300,15 @@ namespace pinocchio
     typename Scalar,
     int Options,
     template<typename, int> class JointCollectionTpl,
+    typename SpatialForce,
+    typename SpatialForceAllocator,
     typename MatrixType1,
     typename MatrixType2,
     typename MatrixType3>
   void computeABADerivatives(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     DataTpl<Scalar, Options, JointCollectionTpl> & data,
-    const container::aligned_vector<ForceTpl<Scalar, Options>> & fext,
+    const std::vector<SpatialForce, SpatialForceAllocator> & fext,
     const Eigen::MatrixBase<MatrixType1> & aba_partial_dq,
     const Eigen::MatrixBase<MatrixType2> & aba_partial_dv,
     const Eigen::MatrixBase<MatrixType3> & aba_partial_dtau);
@@ -300,19 +330,19 @@ namespace pinocchio
   ///
   /// \sa pinocchio::aba
   ///
-  template<typename Scalar, int Options, template<typename, int> class JointCollectionTpl>
+  template<
+    typename Scalar,
+    int Options,
+    template<typename, int> class JointCollectionTpl,
+    typename SpatialForce,
+    typename SpatialForceAllocator>
   void computeABADerivatives(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     DataTpl<Scalar, Options, JointCollectionTpl> & data,
-    const container::aligned_vector<ForceTpl<Scalar, Options>> & fext);
+    const std::vector<SpatialForce, SpatialForceAllocator> & fext);
 
 } // namespace pinocchio
 
-/* --- Details -------------------------------------------------------------------- */
-#include "pinocchio/algorithm/aba-derivatives.hxx"
-
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/algorithm/aba-derivatives.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-
-#endif // ifndef __pinocchio_algorithm_aba_derivatives_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/aba-derivatives.hxx"
+// IWYU pragma: end_exports

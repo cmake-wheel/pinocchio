@@ -2,6 +2,7 @@
 // Copyright (c) 2022 INRIA
 //
 
+#include "pinocchio/src/context/template-instantiation.hxx"
 #include "pinocchio/algorithm/compute-all-terms.hpp"
 
 namespace pinocchio
@@ -14,8 +15,8 @@ namespace pinocchio
       JointCollectionDefaultTpl,
       Eigen::Ref<const context::VectorXs>,
       Eigen::Ref<const context::VectorXs>>(
-      const context::Model &,
-      context::Data &,
+      const Model &,
+      Data &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &);
   } // namespace impl

@@ -2,8 +2,7 @@
 // Copyright (c) 2019-2020 INRIA
 //
 
-#include "pinocchio/multibody/data.hpp"
-#include "pinocchio/multibody/model.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/multibody/sample-models.hpp"
 
 #include "pinocchio/algorithm/check.hpp"
@@ -82,7 +81,7 @@ BOOST_AUTO_TEST_CASE(test_data_mimic_idx_vExtended_to_idx_v_fromRow)
     Data data_mimic(model_mimic);
     Data data_full(model_full);
 
-    for (size_t joint_id = 1; joint_id < model_mimic.njoints; joint_id++)
+    for (JointIndex joint_id = 1; joint_id < JointIndex(model_mimic.njoints); joint_id++)
     {
       const int idx_vj = model_mimic.joints[joint_id].idx_v();
       const int idx_vExtended_j = model_mimic.joints[joint_id].idx_vExtended();
@@ -108,20 +107,21 @@ BOOST_AUTO_TEST_CASE(test_data_mimic_mimic_parents_fromRow)
 
     Data data_mimic(model_mimic);
 
-    for (size_t joint_id = 1; joint_id < model_mimic.njoints; joint_id++)
+    for (JointIndex joint_id = 1; joint_id < JointIndex(model_mimic.njoints); joint_id++)
     {
       const int idx_vExtended_j = model_mimic.joints[joint_id].idx_vExtended();
       const int nvExtended_j = model_mimic.joints[joint_id].nvExtended();
 
       // If the parent from row is not the universe, it should be either mimic or non mimic - not
       // both
-      const bool parent_is_universe = (data_mimic.parents_fromRow[idx_vExtended_j] == -1);
+      const bool parent_is_universe =
+        (data_mimic.parents_fromRow[JointIndex(idx_vExtended_j)] == -1);
       const bool parent_is_mimic =
-        (data_mimic.mimic_parents_fromRow[idx_vExtended_j]
-         == data_mimic.parents_fromRow[idx_vExtended_j]);
+        (data_mimic.mimic_parents_fromRow[JointIndex(idx_vExtended_j)]
+         == data_mimic.parents_fromRow[JointIndex(idx_vExtended_j)]);
       const bool parent_is_not_mimic =
-        (data_mimic.non_mimic_parents_fromRow[idx_vExtended_j]
-         == data_mimic.parents_fromRow[idx_vExtended_j]);
+        (data_mimic.non_mimic_parents_fromRow[JointIndex(idx_vExtended_j)]
+         == data_mimic.parents_fromRow[JointIndex(idx_vExtended_j)]);
       BOOST_CHECK(parent_is_universe || (parent_is_mimic != parent_is_not_mimic));
 
       for (int v = 1; v < nvExtended_j; v++)
@@ -148,25 +148,12 @@ BOOST_AUTO_TEST_CASE(test_copy_and_equal_op)
   BOOST_CHECK(data != data_copy);
 }
 
-BOOST_AUTO_TEST_CASE(test_container_aligned_vector)
-{
-  Model model;
-  buildModels::humanoidRandom(model);
-
-  Data data(model);
-
-  container::aligned_vector<Data::Force> & f = data.f;
-  data.f[0].setRandom();
-
-  BOOST_CHECK(data.f[0] == f[0]);
-}
-
 BOOST_AUTO_TEST_CASE(test_std_vector_of_Data)
 {
   Model model;
   buildModels::humanoidRandom(model);
 
-  PINOCCHIO_ALIGNED_STD_VECTOR(Data) datas;
+  std::vector<Data> datas;
   for (size_t k = 0; k < 20; ++k)
     datas.push_back(Data(model));
 }

@@ -3,10 +3,9 @@
 // Copyright (c) 2015 Wandercraft, 86 rue de Paris 91400 Orsay, France.
 //
 
-#ifndef __pinocchio_python_explog_hpp__
-#define __pinocchio_python_explog_hpp__
+#pragma once
 
-#include "pinocchio/spatial/explog.hpp"
+#include "pinocchio/spatial.hpp"
 
 namespace pinocchio
 {
@@ -88,7 +87,7 @@ namespace pinocchio
       Matrix<typename Vector6Like::Scalar, 7, 1, PINOCCHIO_EIGEN_PLAIN_TYPE(Vector6Like)::Options>
       exp6_proxy_quatvec(const Vector6Like & vec6)
     {
-      EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Vector6Like, 6);
+      PINOCCHIO_EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE_OR_DYNAMIC(Vector6Like, 6);
       return quaternion::exp6(vec6); // use quaternion-exp6 overload
     }
 
@@ -163,7 +162,7 @@ namespace pinocchio
       Matrix<typename Vector4Like::Scalar, 3, 1, PINOCCHIO_EIGEN_PLAIN_TYPE(Vector4Like)::Options>
       log3_proxy_quatvec(const Vector4Like & v)
     {
-      EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Vector4Like, 4);
+      PINOCCHIO_EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE_OR_DYNAMIC(Vector4Like, 4);
       typedef typename Vector4Like::Scalar Scalar;
       typedef Eigen::Quaternion<Scalar, PINOCCHIO_EIGEN_PLAIN_TYPE(Vector4Like)::Options>
         Quaternion_t;
@@ -179,8 +178,9 @@ namespace pinocchio
       Matrix<typename Vector4Like::Scalar, 3, 1, PINOCCHIO_EIGEN_PLAIN_TYPE(Vector4Like)::Options>
       log3_proxy_quatvec(const Vector4Like & v, Eigen::Ref<Matrix1Like> theta)
     {
-      EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Vector4Like, 4);
       typedef typename Vector4Like::Scalar Scalar;
+      PINOCCHIO_EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE_OR_DYNAMIC(Vector4Like, 4);
+
       typedef Eigen::Quaternion<Scalar, PINOCCHIO_EIGEN_PLAIN_TYPE(Vector4Like)::Options>
         Quaternion_t;
       typedef Eigen::Map<const Quaternion_t> ConstQuaternionMap_t;
@@ -196,8 +196,9 @@ namespace pinocchio
       Matrix<typename Vector4Like::Scalar, 3, 1, PINOCCHIO_EIGEN_PLAIN_TYPE(Vector4Like)::Options>
       log3_proxy_quatvec_fix(const Vector4Like & v, _Scalar & theta)
     {
-      EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Vector4Like, 4);
       typedef typename Vector4Like::Scalar Scalar;
+
+      PINOCCHIO_EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE_OR_DYNAMIC(Vector4Like, 4);
       typedef Eigen::Quaternion<Scalar, PINOCCHIO_EIGEN_PLAIN_TYPE(Vector4Like)::Options>
         Quaternion_t;
       typedef Eigen::Map<const Quaternion_t> ConstQuaternionMap_t;
@@ -219,12 +220,10 @@ namespace pinocchio
     MotionTpl<typename Vector7Like::Scalar, PINOCCHIO_EIGEN_PLAIN_TYPE(Vector7Like)::Options>
     log6_proxy_quatvec(const Vector7Like & q)
     {
-      EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Vector7Like, 7);
       typedef typename Vector7Like::Scalar Scalar;
-      enum
-      {
-        Options = PINOCCHIO_EIGEN_PLAIN_TYPE(Vector7Like)::Options
-      };
+
+      PINOCCHIO_EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE_OR_DYNAMIC(Vector7Like, 7);
+      static constexpr int Options = PINOCCHIO_EIGEN_PLAIN_TYPE(Vector7Like)::Options;
       typedef Eigen::Quaternion<Scalar, Options> Quaternion;
       typedef Eigen::Map<const Quaternion, Options> ConstQuaternionMap;
       typedef Eigen::Matrix<Scalar, 3, 1, Options> Vector3;
@@ -236,5 +235,3 @@ namespace pinocchio
     }
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_explog_hpp__

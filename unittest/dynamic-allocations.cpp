@@ -2,6 +2,10 @@
 // Copyright (c) 2025 INRIA
 //
 
+#include "pinocchio/spatial.hpp"
+#include "pinocchio/multibody/sample-models.hpp"
+#include "pinocchio/constraints.hpp"
+
 #include "pinocchio/algorithm/aba.hpp"
 #include "pinocchio/algorithm/aba-derivatives.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
@@ -19,18 +23,13 @@
 #include "pinocchio/algorithm/compute-all-terms.hpp"
 #include "pinocchio/algorithm/energy.hpp"
 #include "pinocchio/algorithm/cholesky.hpp"
-#include "pinocchio/algorithm/contact-info.hpp"
-#include "pinocchio/algorithm/contact-dynamics.hpp"
-#include "pinocchio/algorithm/contact-cholesky.hpp"
+#include "pinocchio/algorithm/constraint-cholesky.hpp"
 #include "pinocchio/algorithm/constrained-dynamics.hpp"
 #include "pinocchio/algorithm/constrained-dynamics-derivatives.hpp"
 #include "pinocchio/algorithm/impulse-dynamics.hpp"
 #include "pinocchio/algorithm/impulse-dynamics-derivatives.hpp"
 #include "pinocchio/algorithm/regressor.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
-#include "pinocchio/spatial/classic-acceleration.hpp"
-#include "pinocchio/spatial/explog.hpp"
 using namespace pinocchio;
 
 #include <boost/test/unit_test.hpp>
@@ -387,8 +386,8 @@ void runContactDynamicsTest(const Model & model, Data & data)
 
   // ============ CONTACT DYNAMICS ============
   // Create contacts
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) contact_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) contact_data;
+  std::vector<RigidConstraintModel> contact_models;
+  std::vector<RigidConstraintData> contact_data;
 
   if (model.nframes > 1)
   {
@@ -399,7 +398,7 @@ void runContactDynamicsTest(const Model & model, Data & data)
     contact_data.push_back(RigidConstraintData(contact_model_6d));
 
     // Initialize contact data
-    initConstraintDynamics(model, data, contact_models);
+    initConstraintDynamics(model, data, contact_models, contact_data);
 
     [&]() noexcept [[clang::nonblocking]] {
       // Constrained forward dynamics
@@ -407,19 +406,19 @@ void runContactDynamicsTest(const Model & model, Data & data)
     }();
 
     // Contact Cholesky
-    ContactCholeskyDecomposition contact_chol;
-    contact_chol.allocate(model, contact_models);
+    ConstraintCholeskyDecomposition constraint_chol;
+    constraint_chol.rebuild(model, data, contact_models, contact_data);
 
     [&]() noexcept [[clang::nonblocking]] {
       crba(model, data, q, Convention::WORLD);
-      contact_chol.compute(model, data, contact_models, contact_data);
+      constraint_chol.compute(model, data, contact_models, contact_data);
     }();
 
     // Constrained dynamics derivatives
     Data::MatrixXs ddq_dq = Data::MatrixXs::Zero(model.nv, model.nv);
     Data::MatrixXs ddq_dv = Data::MatrixXs::Zero(model.nv, model.nv);
     Data::MatrixXs ddq_dtau = Data::MatrixXs::Zero(model.nv, model.nv);
-    const int constraint_dim = contact_models[0].size();
+    const int constraint_dim = contact_models[0].residualSize();
     Data::MatrixXs lambda_dq = Data::MatrixXs::Zero(constraint_dim, model.nv);
     Data::MatrixXs lambda_dv = Data::MatrixXs::Zero(constraint_dim, model.nv);
     Data::MatrixXs lambda_dtau = Data::MatrixXs::Zero(constraint_dim, model.nv);

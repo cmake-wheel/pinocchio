@@ -73,7 +73,8 @@ class Pendulum:
         self.withSinCos = False  # If true, state is [cos(q),sin(q),qdot], else [q,qdot]
 
     def createPendulum(self, nbJoint, rootId=0, prefix="", jointPlacement=None):
-        color = [red, green, blue, transparency] = [1, 1, 0.78, 1.0]
+        # [red, green, blue, transparency]
+        color = [1, 1, 0.78, 1.0]
         colorred = [1.0, 0.0, 0.0, 1.0]
 
         jointId = rootId

@@ -16,8 +16,8 @@ like a UR5 manipulator robot. See Lab 1 for loading the UR5 robot.
 A collision checking library, provided by Pinocchio.
 
 Pinocchio provides collision checking for a large class of 3D objects
-(sphere, capsule, box, triangle soup) using library FCL. Any 3D object
-of FCL can be loaded using the C++ interface or the URDF model.
+(sphere, capsule, box, triangle soup) using library coal. Any 3D object
+of coal can be loaded using the C++ interface or the URDF model.
 Although, only capsules can yet be added through the Python API, and
 only URDF-loaded meshes and Python-loaded capsules can be easily
 connected with Gepetto viewer (help is welcome to correct this, it would

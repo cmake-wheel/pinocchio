@@ -2,12 +2,8 @@
 // Copyright (c) 2015-2022 CNRS INRIA
 //
 
-#include <iostream>
-
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
-
-#include "pinocchio/multibody/geometry.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/geometry.hpp"
 #include "pinocchio/parsers/urdf.hpp"
 
 #include <vector>
@@ -33,9 +29,9 @@ BOOST_AUTO_TEST_CASE(manage_collision_pairs)
   pinocchio::urdf::buildGeom(model, filename, pinocchio::COLLISION, geom_model, package_dirs);
   geom_model.addAllCollisionPairs();
 
-  for (Eigen::DenseIndex i = 0; i < (Eigen::DenseIndex)geom_model.ngeoms; ++i)
+  for (Eigen::Index i = 0; i < (Eigen::Index)geom_model.ngeoms; ++i)
   {
-    for (Eigen::DenseIndex j = i + 1; j < (Eigen::DenseIndex)geom_model.ngeoms; ++j)
+    for (Eigen::Index j = i + 1; j < (Eigen::Index)geom_model.ngeoms; ++j)
     {
       BOOST_CHECK(geom_model.collisionPairMapping(i, j) < (int)geom_model.collisionPairs.size());
       BOOST_CHECK(geom_model.collisionPairMapping(j, i) < (int)geom_model.collisionPairs.size());
@@ -51,13 +47,14 @@ BOOST_AUTO_TEST_CASE(manage_collision_pairs)
     }
   }
 
-  GeometryModel::MatrixXb collision_map(GeometryModel::MatrixXb::Zero(
-    (Eigen::DenseIndex)geom_model.ngeoms, (Eigen::DenseIndex)geom_model.ngeoms));
+  GeometryModel::MatrixXb collision_map(
+    GeometryModel::MatrixXb::Zero(
+      (Eigen::Index)geom_model.ngeoms, (Eigen::Index)geom_model.ngeoms));
 
   for (size_t k = 0; k < geom_model.collisionPairs.size(); ++k)
   {
     const CollisionPair & cp = geom_model.collisionPairs[k];
-    collision_map((Eigen::DenseIndex)cp.first, (Eigen::DenseIndex)cp.second) = true;
+    collision_map((Eigen::Index)cp.first, (Eigen::Index)cp.second) = true;
   }
   GeometryModel::MatrixXb collision_map_lower = collision_map.transpose();
 
@@ -103,12 +100,13 @@ BOOST_AUTO_TEST_CASE(manage_collision_pairs)
     geom_data_copy.deactivateAllCollisionPairs();
     geom_data_copy_lower.deactivateAllCollisionPairs();
 
-    GeometryData::MatrixXb collision_map(GeometryModel::MatrixXb::Zero(
-      (Eigen::DenseIndex)geom_model.ngeoms, (Eigen::DenseIndex)geom_model.ngeoms));
+    GeometryData::MatrixXb collision_map(
+      GeometryModel::MatrixXb::Zero(
+        (Eigen::Index)geom_model.ngeoms, (Eigen::Index)geom_model.ngeoms));
     for (size_t k = 0; k < geom_data.activeCollisionPairs.size(); ++k)
     {
       const CollisionPair & cp = geom_model.collisionPairs[k];
-      collision_map((Eigen::DenseIndex)cp.first, (Eigen::DenseIndex)cp.second) =
+      collision_map((Eigen::Index)cp.first, (Eigen::Index)cp.second) =
         geom_data.activeCollisionPairs[k];
     }
     GeometryData::MatrixXb collision_map_lower = collision_map.transpose();
@@ -124,8 +122,9 @@ BOOST_AUTO_TEST_CASE(manage_collision_pairs)
   {
     GeometryData geom_data_upper(geom_model), geom_data_lower(geom_model);
 
-    const GeometryData::MatrixXs security_margin_map(GeometryData::MatrixXs::Ones(
-      (Eigen::DenseIndex)geom_model.ngeoms, (Eigen::DenseIndex)geom_model.ngeoms));
+    const GeometryData::MatrixXs security_margin_map(
+      GeometryData::MatrixXs::Ones(
+        (Eigen::Index)geom_model.ngeoms, (Eigen::Index)geom_model.ngeoms));
     GeometryData::MatrixXs security_margin_map_upper(security_margin_map);
     security_margin_map_upper.triangularView<Eigen::Lower>().fill(0.);
 
@@ -202,14 +201,14 @@ BOOST_AUTO_TEST_CASE(test_clone)
   geom_model.addAllCollisionPairs();
 
   geom_model.geometryObjects[0].geometry =
-    GeometryObject::CollisionGeometryPtr(new ::hpp::fcl::Sphere(0.5));
+    GeometryObject::CollisionGeometryPtr(new ::coal::Sphere(0.5));
   GeometryModel geom_model_clone = geom_model.clone();
   GeometryModel geom_model_copy = geom_model;
 
   BOOST_CHECK(geom_model_clone == geom_model);
   BOOST_CHECK(geom_model_copy == geom_model);
 
-  static_cast<::hpp::fcl::Sphere *>(geom_model.geometryObjects[0].geometry.get())->radius = 1.;
+  static_cast<::coal::Sphere *>(geom_model.geometryObjects[0].geometry.get())->radius = 1.;
   BOOST_CHECK(geom_model_clone != geom_model);
   BOOST_CHECK(geom_model_copy == geom_model);
 }

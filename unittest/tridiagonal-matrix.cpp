@@ -2,11 +2,9 @@
 // Copyright (c) 2024 INRIA
 //
 
-#include <iostream>
+#include <pinocchio/math.hpp>
 
-#include <pinocchio/math/tridiagonal-matrix.hpp>
-
-#include <boost/variant.hpp> // to avoid C99 warnings
+#include <Eigen/Eigenvalues>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
@@ -17,7 +15,7 @@ using namespace pinocchio;
 
 BOOST_AUTO_TEST_CASE(test_zero)
 {
-  const Eigen::DenseIndex mat_size = 20;
+  const Eigen::Index mat_size = 20;
   TridiagonalSymmetricMatrixTpl<double> tridiagonal_matrix(mat_size);
 
   tridiagonal_matrix.setZero();
@@ -28,7 +26,7 @@ BOOST_AUTO_TEST_CASE(test_zero)
 
 BOOST_AUTO_TEST_CASE(test_identity)
 {
-  const Eigen::DenseIndex mat_size = 20;
+  const Eigen::Index mat_size = 20;
   TridiagonalSymmetricMatrixTpl<double> tridiagonal_matrix(mat_size);
   typedef TridiagonalSymmetricMatrixTpl<double>::PlainMatrixType PlainMatrixType;
 
@@ -48,7 +46,7 @@ BOOST_AUTO_TEST_CASE(test_identity)
   // Fill matrix
   {
     PlainMatrixType mat(mat_size, mat_size);
-    mat = tridiagonal_matrix;
+    mat = tridiagonal_matrix.eigen();
 
     BOOST_CHECK(mat.isIdentity(0));
   }
@@ -59,7 +57,7 @@ BOOST_AUTO_TEST_CASE(test_identity)
     PlainMatrixType mat = PlainMatrixType::Random(mat_size, mat_size);
 
     PlainMatrixType plain(mat_size, mat_size);
-    plain = tridiagonal_matrix;
+    plain = tridiagonal_matrix.eigen();
 
     PlainMatrixType res_apply_on_the_right = tridiagonal_matrix * mat;
     PlainMatrixType res_apply_on_the_right_ref = plain * mat;
@@ -73,7 +71,7 @@ BOOST_AUTO_TEST_CASE(test_identity)
 
 BOOST_AUTO_TEST_CASE(test_random)
 {
-  const Eigen::DenseIndex mat_size = 20;
+  const Eigen::Index mat_size = 20;
   TridiagonalSymmetricMatrixTpl<double> tridiagonal_matrix(mat_size);
   typedef TridiagonalSymmetricMatrixTpl<double>::PlainMatrixType PlainMatrixType;
 
@@ -87,7 +85,7 @@ BOOST_AUTO_TEST_CASE(test_random)
   // Fill matrix
   {
     PlainMatrixType mat(mat_size, mat_size);
-    mat = tridiagonal_matrix;
+    mat = tridiagonal_matrix.eigen();
 
     BOOST_CHECK(mat.diagonal() == tridiagonal_matrix.diagonal());
     BOOST_CHECK(mat.diagonal<-1>() == tridiagonal_matrix.subDiagonal());
@@ -100,7 +98,7 @@ BOOST_AUTO_TEST_CASE(test_random)
     PlainMatrixType rhs_mat = PlainMatrixType::Random(mat_size, mat_size);
 
     PlainMatrixType plain(mat_size, mat_size);
-    plain = tridiagonal_matrix;
+    plain = tridiagonal_matrix.eigen();
 
     PlainMatrixType res = tridiagonal_matrix * rhs_mat;
 
@@ -114,14 +112,14 @@ BOOST_AUTO_TEST_CASE(test_random)
 BOOST_AUTO_TEST_CASE(test_inverse)
 {
   typedef TridiagonalSymmetricMatrixTpl<double> TridiagonalSymmetricMatrixd;
-  const Eigen::DenseIndex mat_size = 10;
+  const Eigen::Index mat_size = 10;
   TridiagonalSymmetricMatrixTpl<double> tridiagonal_matrix(mat_size);
   typedef TridiagonalSymmetricMatrixTpl<double>::PlainMatrixType PlainMatrixType;
 
   tridiagonal_matrix.setRandom();
 
   PlainMatrixType plain_mat(mat_size, mat_size);
-  plain_mat = tridiagonal_matrix;
+  plain_mat = tridiagonal_matrix.eigen();
   const PlainMatrixType plain_mat_inverse = plain_mat.inverse();
 
   const TridiagonalSymmetricMatrixInverse<TridiagonalSymmetricMatrixd> &
@@ -169,6 +167,57 @@ BOOST_AUTO_TEST_CASE(test_inverse)
     res.bottomRows(mat_size - 1) +=
       sub_diagonal_matrix.diagonal<-1>().asDiagonal() * test_mat.topRows(mat_size - 1);
     BOOST_CHECK(res.isApprox(res_ref));
+  }
+}
+
+BOOST_AUTO_TEST_CASE(test_eigenvalues)
+{
+  const Eigen::Index mat_size = 20;
+  TridiagonalSymmetricMatrixTpl<double> tridiagonal_matrix(mat_size);
+
+  const double eps = 1e-8;
+
+  // Case: Identity matrix
+  {
+    tridiagonal_matrix.setIdentity();
+    const auto spectrum = computeSpectrum(tridiagonal_matrix, eps);
+
+    BOOST_CHECK(spectrum.isOnes(eps));
+  }
+
+  // Case: Zero matrix
+  {
+    tridiagonal_matrix.setZero();
+    const auto spectrum = computeSpectrum(tridiagonal_matrix, eps);
+
+    BOOST_CHECK(spectrum.isZero(eps));
+  }
+
+  // Case: Random matrix
+#ifndef NDEBUG
+  for (int k = 0; k < 100; ++k)
+#else
+  for (int k = 0; k < 10000; ++k)
+#endif
+  {
+    tridiagonal_matrix.setRandom();
+    const auto spectrum = computeSpectrum(tridiagonal_matrix, eps);
+
+    const Eigen::MatrixXd dense_matrix = tridiagonal_matrix.matrix();
+
+    const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen_solver(
+      dense_matrix, Eigen::EigenvaluesOnly);
+    const auto spectrum_ref = eigen_solver.eigenvalues();
+    BOOST_CHECK(spectrum.isApprox(spectrum_ref, eps));
+
+    // Compute largest and lowest eigenvalues
+    const Eigen::Index last_index = tridiagonal_matrix.rows() - 1;
+    const Eigen::Index first_index = 0;
+    const double largest_eigenvalue = computeEigenvalue(tridiagonal_matrix, last_index, eps);
+    BOOST_CHECK(math::fabs(largest_eigenvalue - spectrum_ref[last_index]) <= eps);
+
+    const double lowest_eigenvalue = computeEigenvalue(tridiagonal_matrix, first_index, eps);
+    BOOST_CHECK(math::fabs(lowest_eigenvalue - spectrum_ref[first_index]) <= eps);
   }
 }
 

@@ -4,12 +4,11 @@
 
 #include <iostream>
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/geometry.hpp"
 
-#include "pinocchio/multibody/geometry.hpp"
-#include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/collision/collision.hpp"
+#include "pinocchio/collision/distance.hpp"
 #include "pinocchio/algorithm/geometry.hpp"
 #include "pinocchio/parsers/urdf.hpp"
 #include "pinocchio/parsers/srdf.hpp"
@@ -23,7 +22,7 @@ using namespace pinocchio;
 typedef std::map<std::string, pinocchio::SE3> PositionsMap_t;
 typedef std::map<std::string, pinocchio::SE3> JointPositionsMap_t;
 typedef std::map<std::string, pinocchio::SE3> GeometryPositionsMap_t;
-typedef std::map<std::pair<std::string, std::string>, fcl::DistanceResult> PairDistanceMap_t;
+typedef std::map<std::pair<std::string, std::string>, coal::DistanceResult> PairDistanceMap_t;
 JointPositionsMap_t
 fillPinocchioJointPositions(const pinocchio::Model & model, const pinocchio::Data & data);
 GeometryPositionsMap_t fillPinocchioGeometryPositions(
@@ -52,7 +51,7 @@ BOOST_AUTO_TEST_CASE(test_simple_boxes)
   model.appendBodyToJoint(idx, Inertia::Random(), SE3::Identity());
   model.addBodyFrame("planar2_body", idx, SE3::Identity());
 
-  std::shared_ptr<fcl::Box> sample(new fcl::Box(1, 1, 1));
+  std::shared_ptr<coal::Box> sample(new coal::Box(1, 1, 1));
   Model::FrameIndex body_id_1 = model.getBodyId("planar1_body");
   Model::JointIndex joint_parent_1 = model.frames[body_id_1].parentJoint;
   Model::JointIndex idx_geom1 = geomModel.addGeometryObject(GeometryObject(
@@ -60,7 +59,7 @@ BOOST_AUTO_TEST_CASE(test_simple_boxes)
     sample, "", Eigen::Vector3d::Ones()));
   geomModel.geometryObjects[idx_geom1].parentJoint = model.frames[body_id_1].parentJoint;
 
-  std::shared_ptr<fcl::Box> sample2(new fcl::Box(1, 1, 1));
+  std::shared_ptr<coal::Box> sample2(new coal::Box(1, 1, 1));
   Model::FrameIndex body_id_2 = model.getBodyId("planar2_body");
   Model::JointIndex joint_parent_2 = model.frames[body_id_2].parentJoint;
   Model::JointIndex idx_geom2 = geomModel.addGeometryObject(
@@ -71,7 +70,7 @@ BOOST_AUTO_TEST_CASE(test_simple_boxes)
   BOOST_CHECK(
     geomModel.geometryObjects[idx_geom2].parentJoint == model.frames[body_id_2].parentJoint);
 
-  std::shared_ptr<fcl::Box> universe_body_geometry(new fcl::Box(1, 1, 1));
+  std::shared_ptr<coal::Box> universe_body_geometry(new coal::Box(1, 1, 1));
   model.addBodyFrame("universe_body", 0, SE3::Identity());
   Model::FrameIndex body_id_3 = model.getBodyId("universe_body");
   Model::JointIndex joint_parent_3 = model.frames[body_id_3].parentJoint;
@@ -163,7 +162,7 @@ BOOST_AUTO_TEST_CASE(loading_model_and_check_distance)
 
   Data data(model);
   GeometryData geomData(geomModel);
-  fcl::CollisionResult result;
+  coal::CollisionResult result;
 
   Eigen::VectorXd q(model.nq);
   q << 0, 0, 0.840252, 0, 0, 0, 1, 0, 0, -0.3490658, 0.6981317, -0.3490658, 0, 0, 0, -0.3490658,
@@ -174,7 +173,7 @@ BOOST_AUTO_TEST_CASE(loading_model_and_check_distance)
   pinocchio::Index idx = geomModel.findCollisionPair(CollisionPair(1, 10));
   BOOST_CHECK(computeCollision(geomModel, geomData, idx) == false);
 
-  fcl::DistanceResult distance_res = computeDistance(geomModel, geomData, idx);
+  coal::DistanceResult distance_res = computeDistance(geomModel, geomData, idx);
   BOOST_CHECK(distance_res.min_distance > 0.);
 }
 
@@ -218,17 +217,17 @@ BOOST_AUTO_TEST_CASE(test_collisions)
     const GeometryObject & obj1 = geom_model.geometryObjects[cp.first];
     const GeometryObject & obj2 = geom_model.geometryObjects[cp.second];
 
-    hpp::fcl::CollisionResult other_res;
+    coal::CollisionResult other_res;
     computeCollision(geom_model, geom_data, cp_index);
 
-    fcl::Transform3f oM1(toFclTransform3f(geom_data.oMg[cp.first])),
-      oM2(toFclTransform3f(geom_data.oMg[cp.second]));
+    coal::Transform3s oM1(toCoalTransform3s(geom_data.oMg[cp.first])),
+      oM2(toCoalTransform3s(geom_data.oMg[cp.second]));
 
-    fcl::collide(
+    coal::collide(
       obj1.geometry.get(), oM1, obj2.geometry.get(), oM2, geom_data.collisionRequests[cp_index],
       other_res);
 
-    const hpp::fcl::CollisionResult & res = geom_data.collisionResults[cp_index];
+    const coal::CollisionResult & res = geom_data.collisionResults[cp_index];
 
     BOOST_CHECK(res.isCollision() == other_res.isCollision());
     BOOST_CHECK(!res.isCollision());

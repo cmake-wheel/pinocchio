@@ -10,6 +10,143 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-04-13
+
+### Highlights
+
+- `lcaba` algorithm:
+  - Compute forward dynamics for constrained system with closed kinematics loops
+  - [Python example here](./examples/simulation-lcaba.py)
+- New constraint API:
+  - `PointContactConstraintModelTpl`, `PointAnchorConstraintModelTpl`, `FrameAnchorConstraintModelTpl`, `JointLimitConstraintModelTpl` and `JointFrictionConstraintModelTpl` constraint models
+  - Each constraint model is associated to its own constraint data
+  - Variants `ConstraintModelTpl`/`ConstraintDataTpl` encapsulate all constraints models and data
+  - Delassus operator API: `DelassusOperatorDenseTpl`, `DelassusOperatorSparseTpl`, `DelassusOperatorCholeskyExpressionTpl`, `DelassusOperatorRigidBodyTpl`
+  - These operators are tightly linked to the new constraints API
+    All these operators compute the same mathematical operator $J M^{-1} J^T$ ($J$ is the constraints jacobian, $M^{-1}$ is the inverse of the mass matrix),
+    but with different algorithms and internal optimizations
+- `ADMMConstraintSolverTpl` and `PGSConstraintSolverTpl` algorithms:
+  - Solve constrained dynamics expressed with the new constraint API
+  - Python examples [here](./examples/admm-constraint-solver.py) and [here](./examples/g1-constraint-simulation.py).
+    These examples show how to use each constraint model, how to build a constraint problem, how to compute the associated Delassus operator and how to solve it
+- New [header convention](./development/convention.md)
+  - Introduce omnibus headers:
+    - `pinocchio/math.hpp`
+    - `pinocchio/spatial.hpp`
+    - `pinocchio/mutlibody.hpp`
+    - ...
+
+### Added
+- Add `lcaba` algorithm in `pinocchio/algorithm/loop-constrained-aba.hpp`
+  - Compute forward dynamics for constrained system with closed kinematics loops
+- Add `computeJointMinimalOrdering` in `pinocchio/constraints.hpp`
+  - Compute joint processing order for `lcaba`
+- Add new constraint API in `pinocchio/constraints.hpp`
+  - `PointContactConstraintModel`: models a unilateral contact constraint with coulomb friction cone
+  - `PointAnchorConstraintModel`: models a point-wise equality constraint (bilateral constraint)
+  - `FrameAnchorConstraintModel`: models a frame-wise equality constraint (bilateral constraint)
+  - `JointLimitConstraintModel`: models a component-wise joint limit lower/upper bound constraint
+  - `JointFrictionConstraintModel`: models a component-wise joint friction lower/upper bound constraint
+- Add new Delassus API in `pinocchio/algorithm/delassus.hpp`
+- Add `ADMMConstraintSolverTpl` in `pinocchio/algorithm/solvers/admm-solver.hpp`
+  - Solve constrained dynamics using an ADMM algorithm
+- Add `PGSConstraintSolverTpl` in `pinocchio/algorithm/solvers/pgs-solver.hpp`
+  - Solve constrained dynamics using a projected Gauss Siedel algorithm
+- Add new functions in `pinocchio/multibody/liegroup.hpp`
+  - `tangentMap`: transforms a configuration variation into a small variation expressed in the parametric space
+  - `tangentMapProduct` and `tangentMapTransport`: apply `tangentMap` while exploiting sparsity
+- Add mimic joint support for all Lie group related algorithms
+- Add new methods to `JointModelBase`:
+  - `jointQrows` and `jointQcols` that make selections of size `NQ`
+  - `jointQVMap` that make selections of size `NQ x NV`
+  - `lieGroup` that returns the Lie group instance associated to a joint
+- Add `lieGroup` function that returns the Lie group instance associated to a model
+- Add new `mjcf::buildModel` overload to load new constraint API from MJCF
+- Add new `sdf::buildModel` overload to load new constraint API from SDF
+- Add new Python functions to load MJCF model:
+  - Add `pinocchio.buildModelFromMJCFAndRootJoint` load model with a custom root joint
+  - Add `pinocchio.buildModelAndConstraintFromMJCF` load model and constraints (new API)
+  - Add `pinocchio.buildModelAndLegacyConstraintFromMJCF` load model and constraints (old API)
+- Add Python example showcasing the [candlewick visualizer](./examples/candlewick-viewer-solo.py)
+- Add `PINOCCHIO_DISABLE_UNSUPPORTED_WARNINGS` C++ definition to disable unsupported algorithm warnings
+- Add `PINOCCHIO_BUILD_MPFR_TESTING` CMake option to build MPFR tests
+- Add `pinocchio/utils/alloca.hpp`: Helpers for mapping stack allocation for Eigen::Map
+- Add `pinochio/container/eigen-storage.hpp`: Introduce `internal::EigenStorageTpl`
+- Add `pinochio/container/matrix-stack.hpp`: Introduce `internal::MatrixStackTpl`
+- Add `pinochio/container/double-entry-container.hpp`: Introduce `internal::DoubleEntryContainer`
+- Add `internal::MatrixBlockElementTpl` in `math.hpp`
+- Add `internal::BlockDiagonalMatrixTpl` in `math.hpp`
+- Add `internal::matrix_product` in `math.hpp`
+- Add `internal::matrix_inversion` in `math.hpp`
+- Add `internal::matrix_inversion_code_generated` in `math.hpp`
+
+### Changed
+- C++17 is now the minimal supported version of the C++ standard. Check [cppreference](https://en.cppreference.com/w/cpp/compiler_support/17) to see if your compiler supports it.
+- Introduce new header convention [described here](./development/convention.md)
+  - Omnibus header as default pinocchio include
+  - Replace headers guards by `#pragma once`
+- Bindings/python: Add missing arg names in `visualizer-visitor.hpp`
+- Renamed `PINOCCHIO_PRAGMA_DEPRECATED_HEADER` to `PINOCCHIO_MOVED_HEADER`
+- Docs: update documentation stylesheet, fix some Doxygen config options
+- Replace `hpp-fcl` by `coal` (see `doc/_porting.md`):
+  - C++:
+    - Deprecate `pinocchio/multibody/fcl.hpp` moved at `pinocchio/multibody/coal.hpp`
+    - Deprecate `pinocchio/serialization/fcl.hpp` moved at `pinocchio/serialization/coal.hpp`
+    - Deprecate `pinocchio/collision/fcl-pinocchio-conversions.hpp` moved at `pinocchio/collision/coal-pinocchio-conversions.hpp`
+    - Deprecate `pinocchio/bindings/python/collision/fcl/transform.hpp` moved at `pinocchio/bindings/python/collision/coal/transform.hpp`
+    - Deprecate `pinocchio::toFclTransform3f` replaced by `pinocchio::toCoalTransform3s`
+    - Deprecate `PINOCCHIO_WITH_HPP_FCL` replaced by `PINOCCHIO_WITH_COLLISION`
+  - Python:
+    - Deprecate `pinocchio.WITH_HPP_FCL` and `pinocchio.WITH_HPP_FCL_BINDINGS` replaced by `pinocchio.WITH_COLLISION`
+    - Deprecate `pinocchio.hppfcl` replaced by `pinocchio.coal`
+    - Deprecate `buildModelFromMJCF(filename, root_joint, root_joint_name)` replaced by `buildModelFromMJCFAndRootJoint` and `buildModelAndLegacyConstraintsFromMJCF`
+    - Deprecate `buildModelFromSdf` replaced by `buildModelAndLegacyConstraintsFromSdf`
+- Don't use `Eigen::aligned_allocator`:
+  - Deprecate `PINOCCHIO_ALIGNED_STD_VECTOR` replaced by `std::vector`
+  - Deprecate `PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR` replaced by `std::vector`
+  - Deprecate `pinocchio::container::aligned_vector` replaced by `std::allocator`
+  - Deprecate `pinocchio/container/aligned-vector.hpp`
+  - Deprecate `pinocchio::python::StdAlignedVectorPythonVisitor`
+- Deprecate `pinocchio/bindings/python/multibody/joint/joint.hpp` replaced by `pinocchio/bindings/python/multibody/joint/joint-model.hpp`
+- Deprecate Python bindings headers already implemented in eigenpy:
+  - `pinocchio/bindings/python/utils/registration.hpp` replaced by `eigenpy/registration.hpp`
+  - `pinocchio/bindings/python/utils/copyable.hpp` replaced by `eigenpy/copyable.hpp`
+  - `pinocchio/bindings/python/utils/deprecation.hpp` replaced by `eigenpy/deprecation-policy.hpp`
+- Following algorithms are now unsupported algorithms (no more deprecated):
+  - `forwardDynamics`
+  - `impulseDynamics`
+  - `getKKTContactDynamicMatrixInverse`
+- Change arguments in `initConstraintDynamics`
+- Change arguments in `BaumgarteCorrectorParametersTpl` constructor: scalar are used instead of vectors
+- Deprecate `ContactCholeskyDecompositionTpl`, replaced by  `ConstraintCholeskyDecompositionTpl`
+- Deprecate `DelassusCholeskyExpressionTpl`, replaced by  `DelassusOperatorCholeskyExpressionTpl`
+- Major refactorization of `ConstraintCholeskyDecompositionTpl` to ease online resizing
+- Deprecate `ConstraintCholeskyDecompositionTpl::allocate` replaced by `ConstraintCholeskyDecompositionTpl::rebuild`
+- Change arguments in `ConstraintCholeskyDecompositionTpl` constructor
+
+### Removed
+- Remove all warnings with G++ and Clang
+- Remove unused headers `deprecated-macros.hpp` and `deprecated-namespaces.hpp`
+- Remove header `pinocchio/deprecation.hpp`, directly use generated `pinocchio/deprecated.hpp`
+- macros.hpp: remove macros already provided by jrl-cmakemodules
+- Remove pinocchio 3 deprecated files and functions (see `doc/_porting/porting-3-to-4.md`)
+- Remove `PINOCCHIO_WITH_CXX{11,14,17}_SUPPORT` defines
+- Remove support to coal < 3
+- Remove support to eigenpy < 3
+- Eigen 3.4 is now the minimal required version of Eigen:
+  - Remove Eigen < 3.4 workaround
+  - Remove `PINOCCHIO_WITH_EIGEN_TENSOR_MODULE` define
+- Boost 1.74 is the minimal Boost supported version:
+  - Remove Boost < 1.74 workaround
+- pkg-config file are no more generate
+- PyPy interpreter is no more supported
+- Use `RTSan` instead of `EIGEN_RUNTIME_NO_MALLOC`:
+  - Remove `CHECK_RUNTIME_MALLOC` CMake option
+  - Remove `PINOCCHIO_EIGEN_CHECK_MALLOC` C++ definition
+  - Deprecate `PINOCCHIO_EIGEN_MALLOC*` macros
+- Remove `gettimeofday` definition on Windows
+- Remove `operator-(timeval, timeval)` definition
+
 ## [3.9.0] - 2026-01-05
 
 ### Added
@@ -98,7 +235,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Add explicit template instantiation for constraint algorithms for `casadi`, `CppAD` and `CppADCodeGen` scalar ([#2659](https://github.com/stack-of-tasks/pinocchio/pull/2659))
 - Add `casadi` bindings for `pinocchio.initConstraintDynamics` and `pinocchio.constraintDynamics` ([#2659](https://github.com/stack-of-tasks/pinocchio/pull/2659))
-
 
 ## [3.5.0] - 2025-04-02
 
@@ -1224,7 +1360,8 @@ The model can either be parsed from a URDF format or be created by appendending 
         • Fixed (concatenation of two consecutive bodies)
 
 
-[Unreleased]: https://github.com/stack-of-tasks/pinocchio/compare/v3.9.0...HEAD
+[Unreleased]: https://github.com/stack-of-tasks/pinocchio/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/stack-of-tasks/pinocchio/compare/v3.9.0...v4.0.0
 [3.9.0]: https://github.com/stack-of-tasks/pinocchio/compare/v3.8.0...v3.9.0
 [3.8.0]: https://github.com/stack-of-tasks/pinocchio/compare/v3.7.0...v3.8.0
 [3.7.0]: https://github.com/stack-of-tasks/pinocchio/compare/v3.6.0...v3.7.0

@@ -1,19 +1,19 @@
 //
-// Copyright (c) 2022 INRIA
+// Copyright (c) 2022-2025 INRIA
 //
 
-#ifndef __pinocchio_python_spatial_symmetric3_hpp__
-#define __pinocchio_python_spatial_symmetric3_hpp__
+#pragma once
 
 #include <eigenpy/exception.hpp>
 #include <eigenpy/memory.hpp>
 #include <eigenpy/eigen-to-python.hpp>
+#include <eigenpy/copyable.hpp>
+
 #include <boost/python/tuple.hpp>
 
-#include "pinocchio/spatial/symmetric3.hpp"
+#include "pinocchio/spatial.hpp"
 
 #include "pinocchio/bindings/python/utils/cast.hpp"
-#include "pinocchio/bindings/python/utils/copyable.hpp"
 #include "pinocchio/bindings/python/utils/printable.hpp"
 
 namespace pinocchio
@@ -26,10 +26,7 @@ namespace pinocchio
     struct Symmetric3PythonVisitor
     : public boost::python::def_visitor<Symmetric3PythonVisitor<Symmetric3>>
     {
-      enum
-      {
-        Options = Symmetric3::Options
-      };
+      static constexpr int Options = Symmetric3::Options;
       typedef typename Symmetric3::Scalar Scalar;
       typedef typename Symmetric3::Vector3 Vector3;
       typedef typename Symmetric3::Vector6 Vector6;
@@ -50,16 +47,19 @@ namespace pinocchio
         PINOCCHIO_COMPILER_DIAGNOSTIC_PUSH
         PINOCCHIO_COMPILER_DIAGNOSTIC_IGNORED_SELF_ASSIGN_OVERLOADED
         cl.def(bp::init<>((bp::arg("self")), "Default constructor."))
-          .def(bp::init<const Matrix3 &>(
-            (bp::arg("self"), bp::arg("I")), "Initialize from symmetrical matrix I of size 3x3."))
-          .def(bp::init<const Vector6 &>(
-            (bp::arg("self"), bp::arg("I")), "Initialize from vector I of size 6."))
-          .def(bp::init<
-               const Scalar &, const Scalar &, const Scalar &, const Scalar &, const Scalar &,
-               const Scalar &>(
-            (bp::arg("self"), bp::arg("a0"), bp::arg("a1"), bp::arg("a2"), bp::arg("a3"),
-             bp::arg("a4"), bp::arg("a5")),
-            "Initialize from 6 scalar values."))
+          .def(
+            bp::init<const Matrix3 &>(
+              (bp::arg("self"), bp::arg("I")), "Initialize from symmetrical matrix I of size 3x3."))
+          .def(
+            bp::init<const Vector6 &>(
+              (bp::arg("self"), bp::arg("I")), "Initialize from vector I of size 6."))
+          .def(
+            bp::init<
+              const Scalar &, const Scalar &, const Scalar &, const Scalar &, const Scalar &,
+              const Scalar &>(
+              (bp::arg("self"), bp::arg("a0"), bp::arg("a1"), bp::arg("a2"), bp::arg("a3"),
+               bp::arg("a4"), bp::arg("a5")),
+              "Initialize from 6 scalar values."))
           .def(
             bp::init<const Symmetric3 &>((bp::arg("self"), bp::arg("other")), "Copy constructor."))
           .def("Zero", &Symmetric3::Zero, "Returns a zero 3x3 matrix.")
@@ -85,12 +85,12 @@ namespace pinocchio
           .def(
             "isApprox", &Symmetric3::isApprox,
             (bp::arg("self"), bp::arg("other"), bp::arg("prec") = dummy_precision),
-            "Returns true if *this is approximately equal to other, within the precision given "
-            "by prec.")
+            "Returns true if *this is approximately equal to other, within the precision given by "
+            "prec.")
           .def(
             "isZero", &Symmetric3::isZero, (bp::arg("self"), bp::arg("prec") = dummy_precision),
-            "Returns true if *this is approximately equal to the zero matrix, within the "
-            "precision given by prec.")
+            "Returns true if *this is approximately equal to the zero matrix, within the precision "
+            "given by prec.")
 #endif
           .def(
             "setDiagonal", &Symmetric3::template setDiagonal<Vector3Like>, bp::args("self", "diag"),
@@ -112,8 +112,8 @@ namespace pinocchio
           .def("vtiv", &Symmetric3::vtiv, bp::args("self", "v"))
           .def(
             "vxs", &Symmetric3::template vxs<Vector3>, bp::args("v", "S3"),
-            "Performs the operation \f$ M = [v]_{\times} S_{3} \f$., Apply the cross product of "
-            "v on each column of S and return result matrix M.")
+            "Performs the operation \f$ M = [v]_{\times} S_{3} \f$., Apply the cross product of v "
+            "on each column of S and return result matrix M.")
           .staticmethod("vxs")
           .def(
             "svx", &Symmetric3::template vxs<Vector3>, bp::args("v", "S3"),
@@ -166,7 +166,7 @@ namespace pinocchio
           .def(Symmetric3PythonVisitor<Symmetric3>())
           .def(CastVisitor<Symmetric3>())
           .def(ExposeConstructorByCastVisitor<Symmetric3, ::pinocchio::Symmetric3>())
-          .def(CopyableVisitor<Symmetric3>())
+          .def(::eigenpy::CopyableVisitor<Symmetric3>())
           .def(PrintableVisitor<Symmetric3>());
       }
 
@@ -183,5 +183,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // __pinocchio_python_spatial_symmetric3_hpp__

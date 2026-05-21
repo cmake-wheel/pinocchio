@@ -2,10 +2,9 @@
 // Copyright (c) 2016-2019 CNRS INRIA
 //
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/multibody/sample-models.hpp"
-#include "pinocchio/algorithm/joint-configuration.hpp"
+
 #include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/jacobian.hpp"
 
@@ -141,7 +140,6 @@ struct init<pinocchio::JointModelUniversalTpl<Scalar, Options>>
 
   static JointModel run()
   {
-    typedef typename JointModel::Vector3 Vector3;
     JointModel jmodel(XAxis::vector(), YAxis::vector());
 
     jmodel.setIndexes(0, 0, 0);
@@ -255,7 +253,7 @@ struct FiniteDiffJoint
     SE3 M_ref(jdata.M());
 
     CV q_int(q);
-    const Eigen::DenseIndex nv = jdata.S().nv();
+    const Eigen::Index nv = jdata.S().nv();
     TV v(nv);
     v.setZero();
     double eps = 1e-8;

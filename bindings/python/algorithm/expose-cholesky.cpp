@@ -21,10 +21,7 @@ namespace pinocchio
       {
         typedef context::Scalar Scalar;
         typedef context::VectorXs VectorXs;
-        enum
-        {
-          Options = context::Options
-        };
+        static constexpr int Options = context::Options;
 
         // using the cholesky scope
         bp::scope current_scope = getOrCreatePythonNamespace("cholesky");
@@ -48,8 +45,8 @@ namespace pinocchio
         bp::def(
           "computeMinv", &computeMinv<Scalar, Options, JointCollectionDefaultTpl>,
           bp::args("Model", "Data"),
-          "Returns the inverse of the joint space inertia matrix using the results of the "
-          "Cholesky decomposition\n"
+          "Returns the inverse of the joint space inertia matrix using the results of the Cholesky "
+          "decomposition\n"
           "performed by cholesky.decompose. The result is stored in data.Minv.",
           mimic_not_supported_function<bp::return_value_policy<bp::return_by_value>>(0));
       }

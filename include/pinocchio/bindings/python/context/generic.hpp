@@ -2,25 +2,23 @@
 // Copyright (c) 2021-2024 INRIA
 //
 
-#ifndef __pinocchio_python_context_generic_hpp__
-#define __pinocchio_python_context_generic_hpp__
+#pragma once
 
 #include "pinocchio/fwd.hpp"
 #include "pinocchio/spatial/fwd.hpp"
 #include "pinocchio/multibody/fwd.hpp"
+#include "pinocchio/multibody/joint/fwd.hpp"
 #include "pinocchio/algorithm/fwd.hpp"
-#include "pinocchio/algorithm/constraints/fwd.hpp"
+#include "pinocchio/constraints/fwd.hpp"
 
 #ifdef PINOCCHIO_PYTHON_INTERFACE_WITH_OPENMP
   #include "pinocchio/multibody/pool/fwd.hpp"
-  #ifdef PINOCCHIO_WITH_HPP_FCL
+  #ifdef PINOCCHIO_WITH_COLLISION
     #include "pinocchio/collision/pool/fwd.hpp"
   #endif
 #endif
 
 #include <eigenpy/eigen-typedef.hpp>
-
-#include <Eigen/Sparse>
 
 namespace pinocchio
 {
@@ -35,10 +33,7 @@ namespace pinocchio
     {
 
       typedef PINOCCHIO_PYTHON_SCALAR_TYPE Scalar;
-      enum
-      {
-        Options = 0
-      };
+      static constexpr int Options = 0;
 
       // Eigen
       EIGENPY_MAKE_TYPEDEFS_ALL_SIZES(Scalar, Options, s);
@@ -46,8 +41,14 @@ namespace pinocchio
       typedef Eigen::SparseMatrix<Scalar, Eigen::RowMajor> RowSparseMatrix;
       typedef Eigen::Matrix<Scalar, 1, 1, Options, 1, 1> Matrix1s;
       typedef Eigen::Matrix<Scalar, 7, 1, Options> Vector7s;
+      typedef Eigen::Matrix<Scalar, 6, 6, Options> Matrix6s;
+      typedef Eigen::Matrix<Scalar, 3, 6, Options> Matrix36s;
       typedef Eigen::Quaternion<Scalar, Options> Quaternion;
       typedef Eigen::AngleAxis<Scalar> AngleAxis;
+      typedef Eigen::Ref<VectorXs> RefVectorXs;
+      typedef Eigen::Ref<MatrixXs> RefMatrixXs;
+      typedef Eigen::Ref<const VectorXs> RefConstVectorXs;
+      typedef Eigen::Ref<const MatrixXs> RefConstMatrixXs;
 
       // Spatial
       typedef SE3Tpl<Scalar, Options> SE3;
@@ -62,7 +63,6 @@ namespace pinocchio
       typedef FrameTpl<Scalar, Options> Frame;
       typedef ModelTpl<Scalar, Options> Model;
       typedef DataTpl<Scalar, Options> Data;
-
       typedef JointCollectionDefaultTpl<Scalar, Options> JointCollectionDefault;
 
       // Joints
@@ -146,31 +146,63 @@ namespace pinocchio
 
       // Algorithm
       typedef ProximalSettingsTpl<Scalar> ProximalSettings;
-      typedef ContactCholeskyDecompositionTpl<Scalar, Options> ContactCholeskyDecomposition;
+      typedef ConstraintCholeskyDecompositionTpl<Scalar, Options> ConstraintCholeskyDecomposition;
 
       typedef RigidConstraintModelTpl<Scalar, Options> RigidConstraintModel;
+      typedef std::vector<RigidConstraintModel> RigidConstraintModelVector;
+
       typedef RigidConstraintDataTpl<Scalar, Options> RigidConstraintData;
+      typedef std::vector<RigidConstraintData> RigidConstraintDataVector;
+
+      typedef PointAnchorConstraintModelTpl<Scalar, Options> PointAnchorConstraintModel;
+      typedef std::vector<PointAnchorConstraintModel> PointAnchorConstraintModelVector;
+      typedef PointAnchorConstraintDataTpl<Scalar, Options> PointAnchorConstraintData;
+      typedef std::vector<PointAnchorConstraintData> PointAnchorConstraintDataVector;
+
+      typedef FrameAnchorConstraintModelTpl<Scalar, Options> FrameAnchorConstraintModel;
+      typedef std::vector<FrameAnchorConstraintModel> FrameAnchorConstraintModelVector;
+      typedef FrameAnchorConstraintDataTpl<Scalar, Options> FrameAnchorConstraintData;
+      typedef std::vector<FrameAnchorConstraintData> FrameAnchorConstraintDataVector;
+
+      typedef PointContactConstraintModelTpl<Scalar, Options> PointContactConstraintModel;
+      typedef std::vector<PointContactConstraintModel> PointContactConstraintModelVector;
+      typedef PointContactConstraintDataTpl<Scalar, Options> PointContactConstraintData;
+      typedef std::vector<PointContactConstraintData> PointContactConstraintDataVector;
+
+      typedef JointFrictionConstraintModelTpl<Scalar, Options> JointFrictionConstraintModel;
+      typedef std::vector<JointFrictionConstraintModel> JointFrictionConstraintModelVector;
+      typedef JointFrictionConstraintDataTpl<Scalar, Options> JointFrictionConstraintData;
+      typedef std::vector<JointFrictionConstraintData> JointFrictionConstraintDataVector;
+
+      typedef JointLimitConstraintModelTpl<Scalar, Options> JointLimitConstraintModel;
+      typedef std::vector<JointLimitConstraintModel> JointLimitModelVector;
+      typedef JointLimitConstraintDataTpl<Scalar, Options> JointLimitConstraintData;
+      typedef std::vector<JointLimitConstraintData> JointLimitDataVector;
+
+      typedef ConstraintModelTpl<Scalar, Options> ConstraintModel;
+      typedef std::vector<ConstraintModel> ConstraintModelVector;
+      typedef ConstraintDataTpl<Scalar, Options> ConstraintData;
+      typedef std::vector<ConstraintData> ConstraintDataVector;
 
       typedef CoulombFrictionConeTpl<context::Scalar> CoulombFrictionCone;
+      typedef std::vector<CoulombFrictionCone> CoulombFrictionConeVector;
       typedef DualCoulombFrictionConeTpl<context::Scalar> DualCoulombFrictionCone;
+      typedef std::vector<DualCoulombFrictionCone> DualCoulombFrictionConeVector;
+      typedef BoxSetTpl<context::Scalar> BoxSet;
+      typedef ZeroConeTpl<context::Scalar> ZeroCone;
+      typedef FullSpaceConeTpl<context::Scalar> FullSpaceCone;
+      typedef NonNegativeOrthantConeTpl<context::Scalar> NonNegativeOrthantCone;
+
+      typedef ConstraintCollectionDefaultTpl<Scalar, Options> ConstraintCollectionDefault;
 
       typedef DelassusOperatorDenseTpl<Scalar, Options> DelassusOperatorDense;
       typedef DelassusOperatorSparseTpl<Scalar, Options> DelassusOperatorSparse;
-
-      typedef PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(CoulombFrictionCone)
-        CoulombFrictionConeVector;
-      typedef PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(DualCoulombFrictionCone)
-        DualCoulombFrictionConeVector;
-      typedef PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel)
-        RigidConstraintModelVector;
-      typedef PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData)
-        RigidConstraintDataVector;
 
 // Pool
 #ifdef PINOCCHIO_PYTHON_INTERFACE_WITH_OPENMP
       typedef ModelPoolTpl<Scalar> ModelPool;
 
-  #ifdef PINOCCHIO_WITH_HPP_FCL
+  #ifdef PINOCCHIO_WITH_COLLISION
       typedef GeometryPoolTpl<Scalar> GeometryPool;
   #endif
 
@@ -179,5 +211,3 @@ namespace pinocchio
     } // namespace context
   } // namespace python
 } // namespace pinocchio
-
-#endif // #ifndef __pinocchio_python_context_generic_hpp__

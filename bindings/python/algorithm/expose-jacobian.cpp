@@ -47,17 +47,14 @@ namespace pinocchio
     {
       typedef context::Scalar Scalar;
       typedef context::VectorXs VectorXs;
-      enum
-      {
-        Options = context::Options
-      };
+      using context::Options;
 
       bp::def(
         "computeJointJacobians",
         &computeJointJacobians<Scalar, Options, JointCollectionDefaultTpl, VectorXs>,
         bp::args("model", "data", "q"),
-        "Computes the full model Jacobian, i.e. the stack of all the motion subspaces "
-        "expressed in the coordinate world frame.\n"
+        "Computes the full model Jacobian, i.e. the stack of all the motion subspaces expressed in "
+        "the coordinate world frame.\n"
         "The result is accessible through data.J. This function computes also the forward "
         "kinematics of the model.\n\n"
         "Parameters:\n"
@@ -69,10 +66,10 @@ namespace pinocchio
       bp::def(
         "computeJointJacobians", &computeJointJacobians<Scalar, Options, JointCollectionDefaultTpl>,
         bp::args("model", "data"),
-        "Computes the full model Jacobian, i.e. the stack of all motion subspace expressed "
-        "in the world frame.\n"
-        "The result is accessible through data.J. This function assumes that forward "
-        "kinematics (pinocchio.forwardKinematics) has been called first.\n\n"
+        "Computes the full model Jacobian, i.e. the stack of all motion subspace expressed in the "
+        "world frame.\n"
+        "The result is accessible through data.J. This function assumes that forward kinematics "
+        "(pinocchio.forwardKinematics) has been called first.\n\n"
         "Parameters:\n"
         "\tmodel: model of the kinematic tree\n"
         "\tdata: data related to the model\n",
@@ -80,8 +77,8 @@ namespace pinocchio
 
       bp::def(
         "computeJointJacobian", compute_jacobian_proxy, bp::args("model", "data", "q", "joint_id"),
-        "Computes the Jacobian of a specific joint frame expressed in the local frame of the "
-        "joint according to the given input configuration.\n\n"
+        "Computes the Jacobian of a specific joint frame expressed in the local frame of the joint "
+        "according to the given input configuration.\n\n"
         "Parameters:\n"
         "\tmodel: model of the kinematic tree\n"
         "\tdata: data related to the model\n"
@@ -110,9 +107,9 @@ namespace pinocchio
         computeJointJacobiansTimeVariation<
           Scalar, Options, JointCollectionDefaultTpl, VectorXs, VectorXs>,
         bp::args("model", "data", "q", "v"),
-        "Computes the full model Jacobian variations with respect to time. It corresponds to "
-        "dJ/dt which depends both on q and v. It also computes the joint Jacobian of the "
-        "model (similar to computeJointJacobians)."
+        "Computes the full model Jacobian variations with respect to time. It corresponds to dJ/dt "
+        "which depends both on q and v. It also computes the joint Jacobian of the model (similar "
+        "to computeJointJacobians)."
         "The result is accessible through data.dJ and data.J.\n\n"
         "Parameters:\n"
         "\tmodel: model of the kinematic tree\n"

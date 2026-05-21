@@ -2,8 +2,7 @@
 // Copyright (c) 2019-2021 INRIA
 //
 
-#ifndef __pinocchio_python_utils_namespace_hpp__
-#define __pinocchio_python_utils_namespace_hpp__
+#pragma once
 
 #include <boost/python.hpp>
 #include <string>
@@ -45,5 +44,3 @@ namespace pinocchio
     }
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_utils_namespace_hpp__

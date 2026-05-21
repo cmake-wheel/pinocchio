@@ -2,8 +2,7 @@
 // Copyright (c) 2018 CNRS
 //
 
-#ifndef __pinocchio_python_utils_constant_hpp__
-#define __pinocchio_python_utils_constant_hpp__
+#pragma once
 
 #include <boost/python/scope.hpp>
 
@@ -29,5 +28,3 @@ namespace boost
 
   } // namespace python
 } // namespace boost
-
-#endif // ifndef __pinocchio_python_utils_constant_hpp__

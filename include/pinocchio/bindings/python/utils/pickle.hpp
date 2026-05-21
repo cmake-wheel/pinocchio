@@ -2,8 +2,7 @@
 // Copyright (c) 2023 INRIA
 //
 
-#ifndef __pinocchio_python_utils_pickle_hpp__
-#define __pinocchio_python_utils_pickle_hpp__
+#pragma once
 
 #include <pinocchio/bindings/python/fwd.hpp>
 
@@ -58,5 +57,3 @@ namespace pinocchio
     };
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_utils_pickle_hpp__

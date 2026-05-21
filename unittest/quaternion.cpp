@@ -2,13 +2,10 @@
 // Copyright (c) 2019-2020 INRIA CNRS
 //
 
-#include <pinocchio/math/quaternion.hpp>
-#include <pinocchio/spatial/se3.hpp>
-
-#include <boost/variant.hpp> // to avoid C99 warnings
+#include <pinocchio/math.hpp>
+#include <pinocchio/spatial.hpp>
 
 #include <boost/test/unit_test.hpp>
-#include <boost/utility/binary.hpp>
 
 BOOST_AUTO_TEST_SUITE(BOOST_TEST_MODULE)
 

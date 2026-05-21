@@ -2,16 +2,16 @@
 // Copyright (c) 2016-2024 CNRS INRIA
 //
 
-#ifndef __pinocchio_python_utils_std_aligned_vector_hpp__
-#define __pinocchio_python_utils_std_aligned_vector_hpp__
+#pragma once
 
 #include <boost/python.hpp>
 #include <string>
 
-#include "pinocchio/container/aligned-vector.hpp"
+#include <eigenpy/std-vector.hpp>
 
+#include "pinocchio/deprecated.hpp"
+#include "pinocchio/container/aligned-vector.hpp"
 #include "pinocchio/bindings/python/utils/pickle-vector.hpp"
-#include "pinocchio/bindings/python/utils/std-vector.hpp"
 
 namespace pinocchio
 {
@@ -28,7 +28,7 @@ namespace pinocchio
     /// \sa StdAlignedVectorPythonVisitor
     ///
     template<class T, bool NoProxy = false, bool EnableFromPythonListConverter = true>
-    struct StdAlignedVectorPythonVisitor
+    struct PINOCCHIO_DEPRECATED StdAlignedVectorPythonVisitor
     : public ::boost::python::vector_indexing_suite<
         typename container::aligned_vector<T>,
         NoProxy,
@@ -64,9 +64,10 @@ namespace pinocchio
           bp::class_<vector_type> cl(class_name.c_str(), doc_string.c_str());
           cl.def(StdAlignedVectorPythonVisitor())
 
-            .def(bp::init<size_t, const value_type &>(
-              bp::args("self", "size", "value"),
-              "Constructor from a given size and a given value."))
+            .def(
+              bp::init<size_t, const value_type &>(
+                bp::args("self", "size", "value"),
+                "Constructor from a given size and a given value."))
             .def(bp::init<const vector_type &>(bp::args("self", "other"), "Copy constructor"))
 
             .def(
@@ -87,5 +88,3 @@ namespace pinocchio
     };
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_utils_std_aligned_vector_hpp__

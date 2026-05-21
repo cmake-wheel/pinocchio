@@ -4,8 +4,7 @@
 //
 
 #include "pinocchio/bindings/python/fwd.hpp"
-#include "pinocchio/spatial/se3.hpp"
-#include "pinocchio/spatial/skew.hpp"
+#include "pinocchio/spatial.hpp"
 
 namespace pinocchio
 {
@@ -54,8 +53,8 @@ namespace pinocchio
       bp::def(
         "skewSquare", &skewSquare<Vector3>, bp::args("u", "v"),
         "Computes the skew square representation of two given 3d vectors, "
-        "i.e. the antisymmetric matrix representation of the chained cross product operator, "
-        "u x (v x w), where w is another 3d vector.\n"
+        "i.e. the antisymmetric matrix representation of the chained cross product operator, u x "
+        "(v x w), where w is another 3d vector.\n"
         "Parameters:\n"
         "\tu: the first input vector of dimension 3\n"
         "\tv: the second input vector of dimension 3");

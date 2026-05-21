@@ -1,27 +1,21 @@
 //
-// Copyright (c) 2015-2024 CNRS INRIA
+// Copyright (c) 2015-2018 CNRS
+// Copyright (c) 2018-2025 INRIA
 // Copyright (c) 2016 Wandercraft, 86 rue de Paris 91400 Orsay, France.
 //
 
-#ifndef __pinocchio_python_spatial_inertia_hpp__
-#define __pinocchio_python_spatial_inertia_hpp__
+#pragma once
 
 #include <eigenpy/exception.hpp>
 #include <eigenpy/eigenpy.hpp>
 #include <eigenpy/memory.hpp>
 #include <boost/python/tuple.hpp>
 
-#include "pinocchio/spatial/inertia.hpp"
+#include "pinocchio/spatial.hpp"
 
 #include "pinocchio/bindings/python/utils/cast.hpp"
-#include "pinocchio/bindings/python/utils/copyable.hpp"
+#include <eigenpy/copyable.hpp>
 #include "pinocchio/bindings/python/utils/printable.hpp"
-
-#if EIGENPY_VERSION_AT_MOST(2, 8, 1)
-EIGENPY_DEFINE_STRUCT_ALLOCATOR_SPECIALIZATION(pinocchio::Inertia)
-EIGENPY_DEFINE_STRUCT_ALLOCATOR_SPECIALIZATION(pinocchio::PseudoInertiaTpl)
-EIGENPY_DEFINE_STRUCT_ALLOCATOR_SPECIALIZATION(pinocchio::LogCholeskyParametersTpl)
-#endif
 
 namespace pinocchio
 {
@@ -32,10 +26,7 @@ namespace pinocchio
     template<typename Inertia>
     struct InertiaPythonVisitor : public boost::python::def_visitor<InertiaPythonVisitor<Inertia>>
     {
-      enum
-      {
-        Options = Inertia::Options
-      };
+      static constexpr int Options = Inertia::Options;
       typedef typename Inertia::Scalar Scalar;
       typedef typename Inertia::Vector3 Vector3;
       typedef typename Inertia::Matrix3 Matrix3;
@@ -74,11 +65,11 @@ namespace pinocchio
             "center of mass regarding to the frame where the Spatial Inertia is expressed.")
           .add_property(
             "inertia", &InertiaPythonVisitor::getInertia, &InertiaPythonVisitor::setInertia,
-            "Rotational part of the Spatial Inertia, i.e. a symmetric matrix "
-            "representing the rotational inertia around the center of mass.")
+            "Rotational part of the Spatial Inertia, i.e. a symmetric matrix representing the "
+            "rotational inertia around the center of mass.")
 
-          .def("matrix", (Matrix6(Inertia::*)() const)&Inertia::matrix, bp::arg("self"))
-          .def("inverse", (Matrix6(Inertia::*)() const)&Inertia::inverse, bp::arg("self"))
+          .def("matrix", (Matrix6 (Inertia::*)() const) & Inertia::matrix, bp::arg("self"))
+          .def("inverse", (Matrix6 (Inertia::*)() const) & Inertia::inverse, bp::arg("self"))
           .def(
             "se3Action", &Inertia::template se3Action<Scalar, Options>, bp::args("self", "M"),
             "Returns the result of the action of M on *this.")
@@ -102,7 +93,7 @@ namespace pinocchio
           .def(bp::self -= bp::self)
           .def(bp::self * bp::other<Motion>())
 
-          .add_property("np", (Matrix6(Inertia::*)() const)&Inertia::matrix)
+          .add_property("np", (Matrix6 (Inertia::*)() const) & Inertia::matrix)
           .def(
             "vxiv", &Inertia::template vxiv<Motion>, bp::args("self", "v"),
             "Returns the result of v x Iv.")
@@ -111,16 +102,18 @@ namespace pinocchio
             "Returns the result of v.T * Iv.")
           .def(
             "vxi",
-            (Matrix6(Inertia::*)(const MotionDense<Motion> &) const)&Inertia::template vxi<Motion>,
+            (Matrix6 (Inertia::*)(const MotionDense<Motion> &) const)
+              & Inertia::template vxi<Motion>,
             bp::args("self", "v"), "Returns the result of v x* I, a 6x6 matrix.")
           .def(
             "ivx",
-            (Matrix6(Inertia::*)(const MotionDense<Motion> &) const)&Inertia::template ivx<Motion>,
+            (Matrix6 (Inertia::*)(const MotionDense<Motion> &) const)
+              & Inertia::template ivx<Motion>,
             bp::args("self", "v"), "Returns the result of I vx, a 6x6 matrix.")
           .def(
             "variation",
-            (Matrix6(Inertia::*)(const MotionDense<Motion> &)
-               const)&Inertia::template variation<Motion>,
+            (Matrix6 (Inertia::*)(const MotionDense<Motion> &) const)
+              & Inertia::template variation<Motion>,
             bp::args("self", "v"), "Returns the time derivative of the inertia.")
 
 #ifndef PINOCCHIO_PYTHON_SKIP_COMPARISON_OPERATIONS
@@ -132,8 +125,8 @@ namespace pinocchio
           .def(
             "isApprox", &Inertia::isApprox,
             (bp::arg("self"), bp::arg("other"), bp::arg("prec") = dummy_precision),
-            "Returns true if *this is approximately equal to other, within the precision given "
-            "by prec.")
+            "Returns true if *this is approximately equal to other, within the precision given by "
+            "prec.")
 
           .def(
             "isZero", &Inertia::isZero, (bp::arg("self"), bp::arg("prec") = dummy_precision),
@@ -171,13 +164,13 @@ namespace pinocchio
           .def(
             "FromEllipsoid", &Inertia::FromEllipsoid,
             bp::args("mass", "length_x", "length_y", "length_z"),
-            "Returns the Inertia of an ellipsoid shape defined by a mass and given dimensions "
-            "the semi-axis of values length_{x,y,z}.")
+            "Returns the Inertia of an ellipsoid shape defined by a mass and given dimensions the "
+            "semi-axis of values length_{x,y,z}.")
           .staticmethod("FromEllipsoid")
           .def(
             "FromCylinder", &Inertia::FromCylinder, bp::args("mass", "radius", "length"),
-            "Returns the Inertia of a cylinder defined by its mass, radius and length along the "
-            "Z axis.")
+            "Returns the Inertia of a cylinder defined by its mass, radius and length along the Z "
+            "axis.")
           .staticmethod("FromCylinder")
           .def(
             "FromBox", &Inertia::FromBox, bp::args("mass", "length_x", "length_y", "length_z"),
@@ -186,8 +179,8 @@ namespace pinocchio
           .staticmethod("FromBox")
           .def(
             "FromCapsule", &Inertia::FromCapsule, bp::args("mass", "radius", "height"),
-            "Computes the Inertia of a capsule defined by its mass, radius and length along the "
-            "Z axis. Assumes a uniform density.")
+            "Computes the Inertia of a capsule defined by its mass, radius and length along the Z "
+            "axis. Assumes a uniform density.")
           .staticmethod("FromCapsule")
 
           .def(
@@ -205,7 +198,7 @@ namespace pinocchio
             "Returns the Inertia created from log Cholesky parameters.")
           .staticmethod("FromLogCholeskyParameters")
 
-          .def("__array__", (Matrix6(Inertia::*)() const)&Inertia::matrix)
+          .def("__array__", (Matrix6 (Inertia::*)() const) & Inertia::matrix)
           .def(
             "__array__", &__array__,
             (bp::arg("self"), bp::arg("dtype") = bp::object(), bp::arg("copy") = bp::object()))
@@ -279,11 +272,7 @@ namespace pinocchio
 
       static void expose()
       {
-#if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION == 6 && EIGENPY_VERSION_AT_LEAST(2, 9, 0)
-        typedef PINOCCHIO_SHARED_PTR_HOLDER_TYPE(Inertia) HolderType;
-#else
         typedef ::boost::python::detail::not_specified HolderType;
-#endif
         bp::class_<Inertia, HolderType>(
           "Inertia",
           "This class represenses a sparse version of a Spatial Inertia and its is defined by its "
@@ -294,7 +283,7 @@ namespace pinocchio
           .def(InertiaPythonVisitor<Inertia>())
           .def(CastVisitor<Inertia>())
           .def(ExposeConstructorByCastVisitor<Inertia, ::pinocchio::Inertia>())
-          .def(CopyableVisitor<Inertia>())
+          .def(::eigenpy::CopyableVisitor<Inertia>())
           .def(PrintableVisitor<Inertia>());
       }
 
@@ -323,10 +312,7 @@ namespace pinocchio
     struct PseudoInertiaPythonVisitor
     : public boost::python::def_visitor<PseudoInertiaPythonVisitor<PseudoInertia>>
     {
-      enum
-      {
-        Options = PseudoInertia::Options
-      };
+      static constexpr int Options = PseudoInertia::Options;
       typedef typename PseudoInertia::Scalar Scalar;
       typedef typename PseudoInertia::Vector3 Vector3;
       typedef typename PseudoInertia::Matrix3 Matrix3;
@@ -338,12 +324,14 @@ namespace pinocchio
       template<class PyClass>
       void visit(PyClass & cl) const
       {
-        cl.def(bp::init<const Scalar &, const Vector3 &, const Matrix3 &>(
-                 (bp::arg("self"), bp::arg("mass"), bp::arg("h"), bp::arg("sigma")),
-                 "Initialize from mass, vector part of the pseudo inertia and matrix part of the "
-                 "pseudo inertia."))
-          .def(bp::init<const PseudoInertia &>(
-            (bp::arg("self"), bp::arg("clone")), "Copy constructor"))
+        cl.def(
+            bp::init<const Scalar &, const Vector3 &, const Matrix3 &>(
+              (bp::arg("self"), bp::arg("mass"), bp::arg("h"), bp::arg("sigma")),
+              "Initialize from mass, vector part of the pseudo inertia and matrix part of the "
+              "pseudo inertia."))
+          .def(
+            bp::init<const PseudoInertia &>(
+              (bp::arg("self"), bp::arg("clone")), "Copy constructor"))
           .add_property(
             "mass", &PseudoInertiaPythonVisitor::getMass, &PseudoInertiaPythonVisitor::setMass,
             "Mass of the Pseudo Inertia.")
@@ -437,11 +425,7 @@ namespace pinocchio
 
       static void expose()
       {
-#if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION == 6 && EIGENPY_VERSION_AT_LEAST(2, 9, 0)
-        typedef PINOCCHIO_SHARED_PTR_HOLDER_TYPE(PseudoInertia) HolderType;
-#else
         typedef ::boost::python::detail::not_specified HolderType;
-#endif
         bp::class_<PseudoInertia, HolderType>(
           "PseudoInertia",
           "This class represents a pseudo inertia matrix and it is defined by its mass, vector "
@@ -449,7 +433,7 @@ namespace pinocchio
           "Supported operations ...",
           bp::no_init)
           .def(PseudoInertiaPythonVisitor<PseudoInertia>())
-          .def(CopyableVisitor<PseudoInertia>())
+          .def(::eigenpy::CopyableVisitor<PseudoInertia>())
           .def(PrintableVisitor<PseudoInertia>())
           .def(CastVisitor<PseudoInertia>())
           .def(ExposeConstructorByCastVisitor<PseudoInertia, ::pinocchio::PseudoInertia>());
@@ -480,10 +464,7 @@ namespace pinocchio
     struct LogCholeskyParametersPythonVisitor
     : public boost::python::def_visitor<LogCholeskyParametersPythonVisitor<LogCholeskyParameters>>
     {
-      enum
-      {
-        Options = LogCholeskyParameters::Options
-      };
+      static constexpr int Options = LogCholeskyParameters::Options;
       typedef typename LogCholeskyParameters::Scalar Scalar;
       typedef typename LogCholeskyParameters::Vector10 Vector10;
       typedef typename LogCholeskyParameters::Matrix10 Matrix10;
@@ -500,8 +481,9 @@ namespace pinocchio
               &LogCholeskyParametersPythonVisitor::makeFromParameters, bp::default_call_policies(),
               bp::args("log_cholesky_parameters")),
             "Initialize from log cholesky parameters.")
-          .def(bp::init<const LogCholeskyParameters &>(
-            (bp::arg("self"), bp::arg("clone")), "Copy constructor"))
+          .def(
+            bp::init<const LogCholeskyParameters &>(
+              (bp::arg("self"), bp::arg("clone")), "Copy constructor"))
 
           .add_property(
             "parameters", &LogCholeskyParametersPythonVisitor::getParameters,
@@ -563,22 +545,19 @@ namespace pinocchio
 
       static void expose()
       {
-#if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION == 6 && EIGENPY_VERSION_AT_LEAST(2, 9, 0)
-        typedef PINOCCHIO_SHARED_PTR_HOLDER_TYPE(LogCholeskyParameters) HolderType;
-#else
         typedef ::boost::python::detail::not_specified HolderType;
-#endif
         bp::class_<LogCholeskyParameters, HolderType>(
           "LogCholeskyParameters",
           "This class represents log Cholesky parameters.\n\n"
           "Supported operations ...",
           bp::no_init)
           .def(LogCholeskyParametersPythonVisitor<LogCholeskyParameters>())
-          .def(CopyableVisitor<LogCholeskyParameters>())
+          .def(::eigenpy::CopyableVisitor<LogCholeskyParameters>())
           .def(PrintableVisitor<LogCholeskyParameters>())
           .def(CastVisitor<LogCholeskyParameters>())
-          .def(ExposeConstructorByCastVisitor<
-               LogCholeskyParameters, ::pinocchio::LogCholeskyParameters>());
+          .def(
+            ExposeConstructorByCastVisitor<
+              LogCholeskyParameters, ::pinocchio::LogCholeskyParameters>());
       }
 
     private:
@@ -604,5 +583,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_spatial_inertia_hpp__

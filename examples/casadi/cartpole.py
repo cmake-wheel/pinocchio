@@ -1,7 +1,7 @@
 import sys
 
 import casadi
-import hppfcl as fcl
+import coal
 import numpy as np
 import pinocchio as pin
 import pinocchio.casadi as cpin
@@ -41,14 +41,14 @@ def make_cartpole(ub=True):
 
     # make visual/collision models
     collision_model = pin.GeometryModel()
-    shape_base = fcl.Box(*base_sizes)
+    shape_base = coal.Box(*base_sizes)
     radius = 0.01
-    shape_pole = fcl.Capsule(radius, length)
+    shape_pole = coal.Capsule(radius, length)
     RED_COLOR = np.array([1, 0.0, 0.0, 1.0])
     WHITE_COLOR = np.array([1, 1.0, 1.0, 1.0])
-    geom_base = pin.GeometryObject("link_base", base_id, shape_base, base_body_pl)
+    geom_base = pin.GeometryObject("link_base", base_id, base_body_pl, shape_base)
     geom_base.meshColor = WHITE_COLOR
-    geom_pole = pin.GeometryObject("link_pole", pole_id, shape_pole, pole_body_pl)
+    geom_pole = pin.GeometryObject("link_pole", pole_id, pole_body_pl, shape_pole)
     geom_pole.meshColor = RED_COLOR
 
     collision_model.addGeometryObject(geom_base)

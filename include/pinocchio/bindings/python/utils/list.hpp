@@ -2,8 +2,7 @@
 // Copyright (c) 2019 INRIA
 //
 
-#ifndef __pinocchio_python_utils_list_hpp__
-#define __pinocchio_python_utils_list_hpp__
+#pragma once
 
 #include "pinocchio/bindings/python/fwd.hpp"
 #include "pinocchio/bindings/python/utils/path.hpp"
@@ -46,9 +45,9 @@ namespace pinocchio
     }
 
     template<typename T>
-    std::vector<T, std::allocator<T>> extract(const boost::python::list & list)
+    std::vector<T> extract(const boost::python::list & list)
     {
-      std::vector<T, std::allocator<T>> vec;
+      std::vector<T> vec;
       extract(list, vec);
       return vec;
     }
@@ -63,5 +62,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_utils_list_hpp__

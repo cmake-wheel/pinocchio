@@ -1,15 +1,13 @@
 //
-// Copyright (c) 2020-2021 INRIA
+// Copyright (c) 2020-2025 INRIA
 //
 
 #include "pinocchio/bindings/python/fwd.hpp"
-#include "pinocchio/bindings/python/utils/registration.hpp"
 #include "pinocchio/bindings/python/utils/std-vector.hpp"
 
 #include <eigenpy/eigenpy.hpp>
 #include <eigenpy/memory.hpp>
 
-#include <Eigen/Geometry>
 #include <eigenpy/geometry.hpp>
 #include <eigenpy/quaternion.hpp>
 #include <eigenpy/angle-axis.hpp>
@@ -60,8 +58,11 @@ namespace pinocchio
       if (!register_symbolic_link_to_registered_type<context::AngleAxis>())
         eigenpy::expose<context::AngleAxis>();
 #endif
-
+      typedef Eigen::Matrix<context::Scalar, 7, 6, context::Options> Matrix76s;
+      typedef Eigen::Matrix<context::Scalar, 4, 3, context::Options> Matrix43s;
+      typedef Eigen::Matrix<context::Scalar, 2, 1, context::Options> Vector2s;
       typedef Eigen::Matrix<context::Scalar, 6, 6, context::Options> Matrix6s;
+      typedef Eigen::Matrix<context::Scalar, 6, 3, context::Options> Matrix63s;
       typedef Eigen::Matrix<context::Scalar, 6, 1, context::Options> Vector6s;
       typedef Eigen::Matrix<context::Scalar, 6, Eigen::Dynamic, context::Options> Matrix6xs;
       typedef Eigen::Matrix<context::Scalar, 3, Eigen::Dynamic, context::Options> Matrix3xs;
@@ -69,10 +70,14 @@ namespace pinocchio
       internal::exposeType<context::Scalar>();
       eigenpy::enableEigenPySpecific<context::Matrix1s>();
       eigenpy::enableEigenPySpecific<Matrix6s>();
+      eigenpy::enableEigenPySpecific<Matrix63s>();
       eigenpy::enableEigenPySpecific<Vector6s>();
       eigenpy::enableEigenPySpecific<context::Vector7s>();
       eigenpy::enableEigenPySpecific<Matrix6xs>();
       eigenpy::enableEigenPySpecific<Matrix3xs>();
+      eigenpy::enableEigenPySpecific<Matrix76s>();
+      eigenpy::enableEigenPySpecific<Matrix43s>();
+      eigenpy::enableEigenPySpecific<Vector2s>();
     }
 
   } // namespace python

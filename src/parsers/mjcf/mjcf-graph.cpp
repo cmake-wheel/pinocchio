@@ -1,10 +1,38 @@
 //
 // Copyright (c) 2016-2024 CNRS INRIA
 //
+#include <algorithm>
+#include <array>
+#include <cassert>
+#include <cstddef>
+#include <iostream>
+#include <limits>
+#include <map>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
-#include "pinocchio/parsers/mjcf/mjcf-graph.hpp"
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/algorithm/contact-info.hpp"
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+
+#include <boost/filesystem/path.hpp>
+#include <boost/optional/optional.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/variant/get.hpp>
+
+#include "pinocchio/constraints.hpp"
+#include "pinocchio/algorithm/joint-configuration.hpp"
+#include "pinocchio/algorithm/kinematics.hpp"
+#include "pinocchio/macros.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/parsers/mjcf.hpp"
+#include "pinocchio/parsers/urdf.hpp"
+#include "pinocchio/spatial.hpp"
 
 namespace pinocchio
 {
@@ -13,9 +41,6 @@ namespace pinocchio
     namespace details
     {
       typedef boost::property_tree::ptree ptree;
-      typedef pinocchio::urdf::details::
-        UrdfVisitor<double, 0, ::pinocchio::JointCollectionDefaultTpl>
-          UrdfVisitor;
 
       // supported elements from mjcf
       static const std::array<std::string, 3> ELEMENTS = {"joint", "geom", "site"};
@@ -119,18 +144,21 @@ namespace pinocchio
       template<int Nq, int Nv>
       RangeJoint RangeJoint::setDimension() const
       {
-        typedef UrdfVisitor::Vector Vector;
+        typedef MjcfVisitor::Vector Vector;
         const double infty = std::numeric_limits<double>::infinity();
 
         RangeJoint ret;
+        ret.minEffort = Vector::Constant(Nv, -infty);
         ret.maxEffort = Vector::Constant(Nv, infty);
+        ret.minVel = Vector::Constant(Nv, -infty);
         ret.maxVel = Vector::Constant(Nv, infty);
         ret.maxConfig = Vector::Constant(Nq, 1.01);
         ret.minConfig = Vector::Constant(Nq, -1.01);
-        ret.friction = Vector::Constant(Nv, 0.);
+        ret.configLimitMargin = Vector::Constant(Nq, 0.);
+        ret.maxDryFriction = Vector::Constant(Nv, 0.);
+        ret.minDryFriction = Vector::Constant(Nv, 0.);
         ret.damping = Vector::Constant(Nv, 0.);
         ret.armature = Vector::Constant(Nv, armature[0]);
-        ret.frictionLoss = frictionLoss;
         ret.springStiffness = springStiffness;
         ret.springReference = springReference;
         return ret;
@@ -141,10 +169,15 @@ namespace pinocchio
       {
         assert(range.maxEffort.size() == Nv);
         assert(range.minConfig.size() == Nq);
+        assert(range.configLimitMargin.size() == Nq);
 
         RangeJoint ret(*this);
+        ret.minEffort.conservativeResize(minEffort.size() + Nv);
+        ret.minEffort.tail(Nv) = range.minEffort;
         ret.maxEffort.conservativeResize(maxEffort.size() + Nv);
         ret.maxEffort.tail(Nv) = range.maxEffort;
+        ret.minVel.conservativeResize(minVel.size() + Nv);
+        ret.minVel.tail(Nv) = range.minVel;
         ret.maxVel.conservativeResize(maxVel.size() + Nv);
         ret.maxVel.tail(Nv) = range.maxVel;
 
@@ -152,11 +185,15 @@ namespace pinocchio
         ret.minConfig.tail(Nq) = range.minConfig;
         ret.maxConfig.conservativeResize(maxConfig.size() + Nq);
         ret.maxConfig.tail(Nq) = range.maxConfig;
+        ret.configLimitMargin.conservativeResize(configLimitMargin.size() + Nq);
+        ret.configLimitMargin.tail(Nq) = range.configLimitMargin;
 
         ret.damping.conservativeResize(damping.size() + Nv);
         ret.damping.tail(Nv) = range.damping;
-        ret.friction.conservativeResize(friction.size() + Nv);
-        ret.friction.tail(Nv) = range.friction;
+        ret.minDryFriction.conservativeResize(minDryFriction.size() + Nv);
+        ret.minDryFriction.tail(Nv) = range.minDryFriction;
+        ret.maxDryFriction.conservativeResize(maxDryFriction.size() + Nv);
+        ret.maxDryFriction.tail(Nv) = range.maxDryFriction;
 
         ret.springReference.conservativeResize(springReference.size() + 1);
         ret.springReference.tail(1) = range.springReference;
@@ -187,19 +224,32 @@ namespace pinocchio
         if (ax)
           axis = internal::getVectorFromStream<3>(*ax);
 
-        // Range
+        // Config limits (upper/lower)
         auto range_ = el.get_optional<std::string>("<xmlattr>.range");
+        bool has_range_limits = false;
         if (range_)
         {
           Eigen::Vector2d rangeT = internal::getVectorFromStream<2>(*range_);
           range.minConfig[0] = currentCompiler.convertAngle(rangeT(0));
           range.maxConfig[0] = currentCompiler.convertAngle(rangeT(1));
+          has_range_limits = true;
         }
+
+        // Config limit margins
+        auto margin_ = el.get_optional<double>("<xmlattr>.margin");
+        if (margin_)
+        {
+          PINOCCHIO_THROW_PRETTY_IF(
+            *margin_ < 0, std::invalid_argument, "Negative joint limit margin.");
+          range.configLimitMargin.array() = currentCompiler.convertAngle(*margin_);
+        }
+
         // Effort limit
         range_ = el.get_optional<std::string>("<xmlattr>.actuatorfrcrange");
         if (range_)
         {
           Eigen::Vector2d rangeT = internal::getVectorFromStream<2>(*range_);
+          range.minEffort[0] = rangeT(0);
           range.maxEffort[0] = rangeT(1);
         }
 
@@ -220,19 +270,33 @@ namespace pinocchio
         // friction loss
         value = el.get_optional<double>("<xmlattr>.frictionloss");
         if (value)
-          range.frictionLoss = *value;
-
+        {
+          range.maxDryFriction.array() = *value;
+          range.minDryFriction = -range.maxDryFriction;
+        }
         value = el.get_optional<double>("<xmlattr>.ref");
         if (value)
         {
+          bool has_pos_ref = false;
           if (jointType == "slide")
+          {
             posRef = *value;
+            has_pos_ref = true;
+          }
           else if (jointType == "hinge")
+          {
             posRef = currentCompiler.convertAngle(*value);
+            has_pos_ref = true;
+          }
           else
             PINOCCHIO_THROW_PRETTY(
               std::invalid_argument,
               "Reference position can only be used with hinge or slide joints.");
+          if (has_range_limits && has_pos_ref)
+          {
+            range.minConfig[0] -= posRef;
+            range.maxConfig[0] -= posRef;
+          }
         }
       }
 
@@ -520,26 +584,35 @@ namespace pinocchio
         auto file = el.get_optional<std::string>("<xmlattr>.file");
         auto name_ = el.get_optional<std::string>("<xmlattr>.name");
         auto type = el.get_optional<std::string>("<xmlattr>.type");
+        auto builtin = el.get_optional<std::string>("<xmlattr>.builtin");
 
         std::string name;
         if (name_)
           name = *name_;
         else if (type && *type == "skybox")
           name = *type;
-        if (!file)
+        if (!builtin || *builtin == "none")
         {
-          std::cout << "Warning - Only texture with files are supported" << std::endl;
-          if (name.empty())
-            PINOCCHIO_THROW_PRETTY(std::invalid_argument, "Textures need a name.");
+          if (!file)
+          {
+            std::cout << "Warning - Only texture with files are supported" << std::endl;
+            if (name.empty())
+              PINOCCHIO_THROW_PRETTY(std::invalid_argument, "Textures need a name.");
+          }
+          else
+          {
+            fs::path filePath(*file);
+            name = getName(el, filePath);
+
+            text.filePath =
+              updatePath(compilerInfo.strippath, compilerInfo.texturedir, modelPath, filePath)
+                .string();
+          }
         }
         else
         {
-          fs::path filePath(*file);
-          name = getName(el, filePath);
-
-          text.filePath =
-            updatePath(compilerInfo.strippath, compilerInfo.texturedir, modelPath, filePath)
-              .string();
+          if (name.empty())
+            PINOCCHIO_THROW_PRETTY(std::invalid_argument, "Textures need a name.");
         }
         auto str_v = el.get_optional<std::string>("<xmlattr>.type");
         if (str_v)
@@ -812,9 +885,9 @@ namespace pinocchio
 
           // The constraints below are not supported and will be ignored with the following
           // warning: joint, flex, distance, weld
-          if (type != "connect")
+          if ((type != "connect") && (type != "weld"))
           {
-            // TODO(jcarpent): support extra constraint types such as joint, flex, distance, weld.
+            // TODO(jcarpent): support extra constraint types such as joint, flex, distance.
             continue;
           }
 
@@ -825,27 +898,58 @@ namespace pinocchio
           auto body1 = v.second.get_optional<std::string>("<xmlattr>.body1");
           if (body1)
             eq.body1 = *body1;
-          else
-            PINOCCHIO_THROW_PRETTY(std::invalid_argument, "Equality constraint needs a first body");
 
           // get the name of second body
           auto body2 = v.second.get_optional<std::string>("<xmlattr>.body2");
           if (body2)
             eq.body2 = *body2;
 
+          // get the name of first site
+          auto site1 = v.second.get_optional<std::string>("<xmlattr>.site1");
+          if (site1)
+            eq.site1 = *site1;
+
+          // get the name of second site
+          auto site2 = v.second.get_optional<std::string>("<xmlattr>.site2");
+          if (site2)
+            eq.site2 = *site2;
+
           // get the name of the constraint (if it exists)
           auto name = v.second.get_optional<std::string>("<xmlattr>.name");
           if (name)
             eq.name = *name;
-          else
-            eq.name = eq.body1 + "_" + eq.body2 + "_constraint";
 
+          // TODO: argument torqscale present in MJCF for energy base solve
           // get the anchor position
           auto anchor = v.second.get_optional<std::string>("<xmlattr>.anchor");
           if (anchor)
             eq.anchor = internal::getVectorFromStream<3>(*anchor);
 
-          mapOfEqualities.insert(std::make_pair(eq.name, eq));
+          // get the relative pose
+          auto relpose = v.second.get_optional<std::string>("<xmlattr>.relpose");
+          if (relpose)
+          {
+            Eigen::Matrix<double, 7, 1> pos_quat = internal::getVectorFromStream<7>(*relpose);
+            Eigen::Vector4d quat_vec = pos_quat.tail(4);
+            Eigen::Quaterniond quaternion(pos_quat(3), pos_quat(4), pos_quat(5), pos_quat(6));
+            if (quat_vec.isZero(0))
+              // Weird default behavior from Mujoco
+              // If quat is four 0, use the relpose in the reference configuration qref
+              // then relpose is ignored
+              // See: https://mujoco.readthedocs.io/en/latest/XMLreference.html#equality-weld
+              eq.use_qref_relpose = true;
+            else
+            {
+              // We will use relpose argument so we store it as SE3 placement
+              eq.use_qref_relpose = false;
+              quaternion.normalize();
+              eq.relpose.translation() = pos_quat.head(3);
+              eq.relpose.rotation() = quaternion.toRotationMatrix();
+            }
+          }
+
+          mapOfEqualities.insert(
+            std::make_pair(eq.name + eq.body1 + eq.site1 + eq.body2 + eq.site2, eq));
         }
       }
 
@@ -886,12 +990,28 @@ namespace pinocchio
           if (v.first == "worldbody")
           {
             boost::optional<std::string> childClass;
+            parseWorldBodyGeoms(el.get_child("worldbody"));
             parseJointAndBody(el.get_child("worldbody").get_child("body"), childClass);
           }
 
           if (v.first == "equality")
           {
             parseEquality(el.get_child("equality"));
+          }
+        }
+      }
+
+      void MjcfGraph::parseWorldBodyGeoms(const ptree & el)
+      {
+        // in pinocchio, the worldbody is called "universe"
+        worldBody.bodyName = "universe";
+        for (const ptree::value_type & v : el)
+        {
+          if (v.first == "geom")
+          {
+            MjcfGeom currentGeom;
+            currentGeom.fill(v.second, worldBody, *this);
+            worldBody.geomChildren.push_back(currentGeom);
           }
         }
       }
@@ -921,70 +1041,77 @@ namespace pinocchio
 
         FrameIndex parentFrameId = 0;
         if (!currentBody.bodyParent.empty())
-          parentFrameId = urdfVisitor.getBodyId(currentBody.bodyParent);
+          parentFrameId = mjcfVisitor.getBodyId(currentBody.bodyParent);
 
         // get body pose in body parent
         const SE3 bodyPose = currentBody.bodyPlacement;
         Inertia inert = currentBody.bodyInertia;
         SE3 jointInParent = bodyPose * joint.jointPlacement;
         bodyInJoint = joint.jointPlacement.inverse();
-        UrdfVisitor::JointType jType;
+        JointType jType;
 
         RangeJoint range;
         if (joint.jointType == "free")
         {
-          urdfVisitor << "Free Joint " << '\n';
+          mjcfVisitor << "Free Joint " << '\n';
           range = joint.range.setDimension<7, 6>();
-          jType = UrdfVisitor::FLOATING;
+          jType = JointType::FLOATING;
         }
         else if (joint.jointType == "slide")
         {
-          urdfVisitor << "joint prismatic with axis " << joint.axis << '\n';
+          mjcfVisitor << "joint prismatic with axis " << joint.axis << '\n';
           range = joint.range;
-          jType = UrdfVisitor::PRISMATIC;
+          jType = JointType::PRISMATIC;
         }
         else if (joint.jointType == "ball")
         {
-          urdfVisitor << "Sphere Joint " << '\n';
+          mjcfVisitor << "Sphere Joint " << '\n';
           range = joint.range.setDimension<4, 3>();
-          jType = UrdfVisitor::SPHERICAL;
+          jType = JointType::SPHERICAL;
         }
         else if (joint.jointType == "hinge")
         {
-          urdfVisitor << "joint revolute with axis " << joint.axis << '\n';
+          mjcfVisitor << "joint revolute with axis " << joint.axis << '\n';
           range = joint.range;
-          jType = UrdfVisitor::REVOLUTE;
+          jType = JointType::REVOLUTE;
         }
         else
           PINOCCHIO_THROW_PRETTY(std::invalid_argument, "Unknown joint type");
 
-        urdfVisitor.addJointAndBody(
+        mjcfVisitor.addJointAndBody(
           jType, joint.axis, parentFrameId, jointInParent, joint.jointName, inert, bodyInJoint,
-          currentBody.bodyName, range.maxEffort, range.maxVel, range.minConfig, range.maxConfig,
-          range.friction, range.damping);
+          currentBody.bodyName, range.minEffort, range.maxEffort, range.minVel, range.maxVel,
+          range.minConfig, range.maxConfig, range.configLimitMargin, range.minDryFriction,
+          range.maxDryFriction, range.damping);
 
         // Add armature info
-        JointIndex j_id = urdfVisitor.getJointId(joint.jointName);
-        urdfVisitor.model.armature.segment(
-          urdfVisitor.model.joints[j_id].idx_v(), urdfVisitor.model.joints[j_id].nv()) =
+        JointIndex j_id = mjcfVisitor.getJointId(joint.jointName);
+        mjcfVisitor.model.armature.segment(
+          mjcfVisitor.model.joints[j_id].idx_v(), mjcfVisitor.model.joints[j_id].nv()) =
           range.armature;
       }
 
       void MjcfGraph::fillModel(const std::string & nameOfBody)
       {
-        typedef UrdfVisitor::SE3 SE3;
+        typedef MjcfVisitor::SE3 SE3;
 
+        if (mapOfBodies.find(nameOfBody) == mapOfBodies.end())
+        {
+          std::stringstream ss;
+          ss << "Cannot find body " << nameOfBody;
+          PINOCCHIO_THROW_PRETTY(std::invalid_argument, ss.str());
+        }
         MjcfBody currentBody = mapOfBodies.at(nameOfBody);
 
         // get parent body frame
         FrameIndex parentFrameId = 0;
         if (!currentBody.bodyParent.empty())
-          parentFrameId = urdfVisitor.getBodyId(currentBody.bodyParent);
+          parentFrameId = mjcfVisitor.getBodyId(currentBody.bodyParent);
 
-        Frame frame = urdfVisitor.model.frames[parentFrameId];
+        Frame frame = mjcfVisitor.model.frames[parentFrameId];
         // get body pose in body parent
         const SE3 bodyPose = currentBody.bodyPlacement;
-        Inertia inert = currentBody.bodyInertia;
+        Inertia inertia = currentBody.bodyInertia;
 
         // Fixed Joint
         if (currentBody.jointChildren.size() == 0)
@@ -993,17 +1120,17 @@ namespace pinocchio
             return;
 
           std::string jointName = nameOfBody + "_fixed";
-          urdfVisitor << jointName << " being parsed." << '\n';
+          mjcfVisitor << jointName << " being parsed." << '\n';
 
-          urdfVisitor.addFixedJointAndBody(parentFrameId, bodyPose, jointName, inert, nameOfBody);
+          mjcfVisitor.addFixedJointAndBody(parentFrameId, bodyPose, jointName, inertia, nameOfBody);
 
           // Attach child site frame to parent joint
-          FrameIndex bodyId = urdfVisitor.model.getFrameId(nameOfBody, BODY);
-          JointIndex parentJoint = urdfVisitor.model.frames[bodyId].parentJoint;
+          FrameIndex bodyId = mjcfVisitor.model.getFrameId(nameOfBody, BODY);
+          JointIndex parentJoint = mjcfVisitor.model.frames[bodyId].parentJoint;
           for (const auto & site : currentBody.siteChildren)
           {
             SE3 placement = bodyPose * site.sitePlacement;
-            urdfVisitor.model.addFrame(
+            mjcfVisitor.model.addFrame(
               Frame(site.siteName, parentJoint, bodyId, placement, OP_FRAME));
           }
           return;
@@ -1081,25 +1208,26 @@ namespace pinocchio
           }
           JointIndex joint_id;
 
-          joint_id = urdfVisitor.model.addJoint(
+          joint_id = mjcfVisitor.model.addJoint(
             frame.parentJoint, jointM, frame.placement * firstJointPlacement, jointName,
-            rangeCompo.maxEffort, rangeCompo.maxVel, rangeCompo.minConfig, rangeCompo.maxConfig,
-            rangeCompo.friction, rangeCompo.damping);
-          FrameIndex jointFrameId = urdfVisitor.model.addJointFrame(joint_id, (int)parentFrameId);
-          urdfVisitor.appendBodyToJoint(jointFrameId, inert, bodyInJoint, nameOfBody);
+            rangeCompo.minEffort, rangeCompo.maxEffort, rangeCompo.minVel, rangeCompo.maxVel,
+            rangeCompo.minConfig, rangeCompo.maxConfig, rangeCompo.configLimitMargin,
+            rangeCompo.minDryFriction, rangeCompo.maxDryFriction, rangeCompo.damping);
+          FrameIndex jointFrameId = mjcfVisitor.model.addJointFrame(joint_id, (int)parentFrameId);
+          mjcfVisitor.appendBodyToJoint(jointFrameId, inertia, bodyInJoint, nameOfBody);
 
-          urdfVisitor.model.armature.segment(
-            urdfVisitor.model.joints[joint_id].idx_v(), urdfVisitor.model.joints[joint_id].nv()) =
+          mjcfVisitor.model.armature.segment(
+            mjcfVisitor.model.joints[joint_id].idx_v(), mjcfVisitor.model.joints[joint_id].nv()) =
             rangeCompo.armature;
         }
 
         // Attach child site frame to parent joint
-        FrameIndex bodyId = urdfVisitor.model.getFrameId(nameOfBody, BODY);
-        frame = urdfVisitor.model.frames[bodyId];
+        FrameIndex bodyId = mjcfVisitor.model.getFrameId(nameOfBody, BODY);
+        frame = mjcfVisitor.model.frames[bodyId];
         for (const auto & site : currentBody.siteChildren)
         {
           SE3 placement = bodyInJoint * site.sitePlacement;
-          urdfVisitor.model.addFrame(
+          mjcfVisitor.model.addFrame(
             Frame(site.siteName, frame.parentJoint, bodyId, placement, OP_FRAME));
         }
       }
@@ -1108,20 +1236,46 @@ namespace pinocchio
       {
         for (const auto & joint : currentBody.jointChildren)
         {
+          assert(qpos0.size() == referenceConfig.size());
           if (joint.jointType == "free")
           {
             referenceConfig.conservativeResize(referenceConfig.size() + 7);
-            referenceConfig.tail(7) << Eigen::Matrix<double, 7, 1>::Zero();
+            // In FK of mujoco, the placement of a freeflyer w.r.t its parent is ignored.
+            // Instead, the freeflyer's components of the configuration vector are used directly in
+            // the FK. For other joints, the placement w.r.t the parent is taken into consideration.
+            // In pinocchio, the placement w.r.t the parent is always taken into consideration.
+            // So for the special case of freeflyers, we apply the opposite transformation
+            // of the mujoco's freeflyer.
+            // Consequently, when we adjust the joint placements (see @ref
+            // updateJointPlacementsFromReferenceConfig), we obtain the same result given a mujoco
+            // configuration vector.
+            const SE3::Quaternion q(currentBody.bodyPlacement.rotation());
+            const SE3::Quaternion qinv = q.inverse();
+            const Eigen::Vector3d t(-currentBody.bodyPlacement.translation());
+            referenceConfig.tail(7) << t(0), t(1), t(2), qinv.x(), qinv.y(), qinv.z(), qinv.w();
+
+            // We store qpos0 in the convention of mujoco.
+            // The function `addKeyFrame` will convert this qpos0 to the pinocchio's convention.
+            // The `addKeyFrame` function also deals with composite joints, which is something we
+            // can't do in this function.
+            qpos0.conservativeResize(qpos0.size() + 7);
+            qpos0.tail(7) << -t(0), -t(1), -t(2), q.w(), q.x(), q.y(), q.z();
           }
           else if (joint.jointType == "ball")
           {
             referenceConfig.conservativeResize(referenceConfig.size() + 4);
-            referenceConfig.tail(4) << Eigen::Vector4d::Zero();
+            referenceConfig.tail(4) << Eigen::Vector4d(0, 0, 0, 1);
+
+            qpos0.conservativeResize(qpos0.size() + 4);
+            qpos0.tail(4) << Eigen::Vector4d(1, 0, 0, 0);
           }
           else if (joint.jointType == "slide" || joint.jointType == "hinge")
           {
             referenceConfig.conservativeResize(referenceConfig.size() + 1);
-            referenceConfig.tail(1) << joint.posRef;
+            referenceConfig.tail(1) << -joint.posRef;
+
+            qpos0.conservativeResize(qpos0.size() + 1);
+            qpos0.tail(1) << joint.posRef;
           }
         }
       }
@@ -1129,101 +1283,223 @@ namespace pinocchio
       void MjcfGraph::addKeyFrame(const Eigen::VectorXd & keyframe, const std::string & keyName)
       {
         // Check config vectors and add them if size is right
-        const int model_nq = urdfVisitor.model.nq;
-        if (keyframe.size() == model_nq)
-        {
-          Eigen::VectorXd qpos(model_nq);
-          for (std::size_t i = 1; i < urdfVisitor.model.joints.size(); i++)
-          {
-            const auto & joint = urdfVisitor.model.joints[i];
-            int idx_q = joint.idx_q();
-            int nq = joint.nq();
+        const int model_nq = mjcfVisitor.model.nq;
 
-            Eigen::VectorXd qpos_j = keyframe.segment(idx_q, nq);
-            Eigen::VectorXd q_ref = referenceConfig.segment(idx_q, nq);
-            if (joint.shortname() == "JointModelFreeFlyer")
+        PINOCCHIO_CHECK_INPUT_ARGUMENT(
+          keyframe.size() == model_nq, "Keyframe size does not match model size");
+
+        Eigen::VectorXd qpos(model_nq);
+        for (std::size_t i = 1; i < mjcfVisitor.model.joints.size(); i++)
+        {
+          const auto & joint = mjcfVisitor.model.joints[i];
+          int idx_q = joint.idx_q();
+          int nq = joint.nq();
+
+          Eigen::VectorXd qpos_j = keyframe.segment(idx_q, nq);
+          if (joint.shortname() == "JointModelFreeFlyer")
+          {
+            Eigen::Vector4d new_quat(qpos_j(4), qpos_j(5), qpos_j(6), qpos_j(3));
+            qpos_j.tail(4) = new_quat;
+          }
+          else if (joint.shortname() == "JointModelSpherical")
+          {
+            Eigen::Vector4d new_quat(qpos_j(1), qpos_j(2), qpos_j(3), qpos_j(0));
+            qpos_j = new_quat;
+          }
+          else if (joint.shortname() == "JointModelComposite")
+          {
+            for (const auto & joint_ : boost::get<JointModelComposite>(joint.toVariant()).joints)
             {
-              Eigen::Vector4d new_quat(qpos_j(4), qpos_j(5), qpos_j(6), qpos_j(3));
-              qpos_j.tail(4) = new_quat;
-            }
-            else if (joint.shortname() == "JointModelSpherical")
-            {
-              Eigen::Vector4d new_quat(qpos_j(1), qpos_j(2), qpos_j(3), qpos_j(0));
-              qpos_j = new_quat;
-            }
-            else if (joint.shortname() == "JointModelComposite")
-            {
-              for (const auto & joint_ : boost::get<JointModelComposite>(joint.toVariant()).joints)
+              int idx_q_ = joint_.idx_q() - idx_q;
+              int nq_ = joint_.nq();
+              if (joint_.shortname() == "JointModelSpherical")
               {
-                int idx_q_ = joint_.idx_q() - idx_q;
-                int nq_ = joint_.nq();
-                if (joint_.shortname() == "JointModelSpherical")
-                {
-                  Eigen::Vector4d new_quat(
-                    qpos_j(idx_q_ + 1), qpos_j(idx_q_ + 2), qpos_j(idx_q_ + 3), qpos_j(idx_q_));
-                  qpos_j.segment(idx_q_, nq_) = new_quat;
-                }
-                else
-                  qpos_j.segment(idx_q_, nq_) -= q_ref.segment(idx_q_, nq_);
+                Eigen::Vector4d new_quat(
+                  qpos_j(idx_q_ + 1), qpos_j(idx_q_ + 2), qpos_j(idx_q_ + 3), qpos_j(idx_q_));
+                qpos_j.segment(idx_q_, nq_) = new_quat;
               }
             }
-            else
-              qpos_j -= q_ref;
-
-            qpos.segment(idx_q, nq) = qpos_j;
           }
-
-          urdfVisitor.model.referenceConfigurations.insert(std::make_pair(keyName, qpos));
+          qpos.segment(idx_q, nq) = qpos_j;
         }
-        else
-          PINOCCHIO_THROW_PRETTY(std::invalid_argument, "Keyframe size does not match model size");
+
+        // we normalize in case parsed qpos has numerical errors
+        ::pinocchio::normalize(mjcfVisitor.model, qpos);
+        mjcfVisitor.model.referenceConfigurations.insert(std::make_pair(keyName, qpos));
       }
 
       void MjcfGraph::parseContactInformation(
         const Model & model,
-        PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) & contact_models)
+        std::vector<PointAnchorConstraintModel> & point_anchor_constraint_models,
+        std::vector<FrameAnchorConstraintModel> & frame_anchor_constraint_models)
       {
-        for (const auto & entry : mapOfEqualities)
+        Data data(model);
+        Eigen::VectorXd qref;
+        if (!model.referenceConfigurations.empty())
         {
-          const MjcfEquality & eq = entry.second;
-
-          SE3 jointPlacement;
-          jointPlacement.setIdentity();
-          jointPlacement.translation() = eq.anchor;
-
-          // Get Joint Indices from the model
-          const JointIndex body1 = urdfVisitor.getParentId(eq.body1);
-
-          // when body2 is not specified, we link to the world
-          if (eq.body2 == "")
+          // If possible, it's always preferable to select qpos0 to construct the point anchor
+          // constraints as the mujoco equality constraints are defined w.r.t the default
+          // configuration of the model (qpos0).
+          if (model.referenceConfigurations.find("qpos0") != model.referenceConfigurations.end())
           {
-            RigidConstraintModel rcm(CONTACT_3D, model, body1, jointPlacement, LOCAL);
-            contact_models.push_back(rcm);
+            mjcfVisitor << "Using qpos0 (default configuration defined by the XML file) to "
+                           "construct point anchor constraints.\n";
+            qref = model.referenceConfigurations.at("qpos0");
           }
           else
           {
-            const JointIndex body2 = urdfVisitor.getParentId(eq.body2);
-            RigidConstraintModel rcm(
-              CONTACT_3D, model, body1, jointPlacement, body2, jointPlacement.inverse(), LOCAL);
-            contact_models.push_back(rcm);
+            mjcfVisitor << "Could not find qpos0 in referenceConfigurations. Using keyframe "
+                        << model.referenceConfigurations.begin()->first
+                        << " to construct point anchor constraints.\n";
+            qref = model.referenceConfigurations.begin()->second;
+          }
+        }
+        else
+        {
+          mjcfVisitor << "WARNING: Could not find qpos0 nor other keyframes in "
+                         "referenceConfigurations.\n"
+                      << "This is unexpected and may lead to issues for point anchor constraints.\n"
+                      << "Using ::pinocchio::neutral to construct point anchor constraints.\n";
+          qref = ::pinocchio::neutral(model);
+        }
+        ::pinocchio::forwardKinematics(model, data, qref);
+        for (const auto & entry : mapOfEqualities)
+        {
+          const MjcfEquality & eq = entry.second;
+          // Retireve parent joints and relative pose
+          SE3 i1Mc, i2Mc;
+          JointIndex joint1, joint2;
+          if (eq.body1 == "")
+          {
+            if ((eq.site1 == "") || (eq.site2 == ""))
+            {
+              std::stringstream ss;
+              ss << "Body 1 or both site1 and site2 must be specified for constraint"
+                 << entry.first;
+              PINOCCHIO_THROW_PRETTY(std::invalid_argument, ss.str());
+            }
+            // It is Mujoco site convention common for weld or connect
+            const Frame & frame1 = model.frames[model.getFrameId(eq.site1)];
+            const Frame & frame2 = model.frames[model.getFrameId(eq.site2)];
+            joint1 = frame1.parentJoint;
+            joint2 = frame2.parentJoint;
+            i1Mc = frame1.placement;
+            i2Mc = frame2.placement;
+          }
+          else
+          {
+            joint1 = mjcfVisitor.getParentId(eq.body1);
+            const SE3 & oMi1 = data.oMi[joint1];
+            // Body 2 default to world joint
+            joint2 = (eq.body2 == "") ? 0 : mjcfVisitor.getParentId(eq.body2);
+            const SE3 & oMi2 = data.oMi[joint2];
+            if (eq.type == "connect")
+            {
+              // For connect, anchor is relative to joint1
+              i1Mc.setIdentity();
+              i1Mc.translation() = eq.anchor;
+              // Constaint relative to joint 2 is obtaint thanks to qref pose
+              i2Mc = (joint2 == 0) ? oMi1 * i1Mc : oMi2.inverse() * oMi1 * i1Mc;
+            }
+            else if (eq.type == "weld")
+            {
+              // For weld constraint, anchor is relative to joint2
+              i2Mc.setIdentity();
+              i2Mc.translation() = eq.anchor;
+              // Constraint location relative to joint 1: i1Mc is calculated using i2Mc and given
+              // the relative pose i1Mi2.
+              // Using weird default behavior of mujoco, use qref relative pose if quat is four 0
+              // and relpose argument otherwise
+              SE3 i1Mi2 = eq.use_qref_relpose
+                            ? ((joint2 == 0) ? oMi1.inverse() : oMi1.inverse() * oMi2)
+                            : eq.relpose;
+              i1Mc = i1Mi2 * i2Mc;
+            }
+          }
+
+          // Create the constraints
+          if (eq.type == "connect")
+          {
+            PointAnchorConstraintModel bpcm(model, joint1, i1Mc, joint2, i2Mc);
+            point_anchor_constraint_models.push_back(bpcm);
+          }
+          else if (eq.type == "weld")
+          {
+            FrameAnchorConstraintModel wcm(model, joint1, i1Mc, joint2, i2Mc);
+            frame_anchor_constraint_models.push_back(wcm);
           }
         }
       }
 
-      void MjcfGraph::parseRootTree()
+      void MjcfGraph::updateJointPlacementsFromReferenceConfig()
       {
-        urdfVisitor.setName(modelName);
+        Data data(mjcfVisitor.model);
+        ::pinocchio::forwardKinematics(mjcfVisitor.model, data, referenceConfig);
+        for (std::size_t i = 1; i < mjcfVisitor.model.joints.size(); i++)
+        {
+          auto & joint = mjcfVisitor.model.joints[i];
+          if (joint.shortname() == "JointModelComposite")
+          {
+            JointModelComposite & jmodel = boost::get<JointModelComposite>(joint.toVariant());
+            JointDataComposite & jdata = boost::get<JointDataComposite>(data.joints[i]);
+            for (std::size_t j = 1; j < jmodel.joints.size(); j++)
+            {
+              jmodel.jointPlacements[j] = jdata.pjMi[j];
+            }
+          }
+          else
+          {
+            const std::size_t parenti = mjcfVisitor.model.parents[i];
+            const ::pinocchio::SE3 oMparenti = data.oMi[parenti];
+            const ::pinocchio::SE3 oMi = data.oMi[i];
+            mjcfVisitor.model.jointPlacements[i] = oMparenti.inverse() * oMi;
+          }
+        }
+      }
+
+      void MjcfGraph::parseRootTree(
+        const boost::optional<const JointModel &> rootJoint,
+        const boost::optional<const std::string &> rootJointName)
+      {
+        mjcfVisitor.setName(modelName);
         // get name and inertia of first root link
+        PINOCCHIO_THROW_PRETTY_IF(
+          bodiesList.empty(), std::invalid_argument, "MJCF parser: no body found in parsed tree.");
         std::string rootLinkName = bodiesList.at(0);
         MjcfBody rootBody = mapOfBodies.find(rootLinkName)->second;
         if (rootBody.jointChildren.size() == 0)
-          urdfVisitor.addRootJoint(rootBody.bodyInertia, rootLinkName);
+        {
+          // We only add the root joint if we have a fixed base
+          // (first body doesn't have any joint). Otherwise, the root joint is ignored.
+          mjcfVisitor.addRootJoint(
+            rootBody.bodyInertia, rootLinkName, referenceConfig, qpos0, rootJoint, rootJointName);
+        }
+        else
+        {
+          if (rootJoint.has_value())
+          {
+            PINOCCHIO_THROW_IF(
+              !rootJointName.has_value(), std::invalid_argument,
+              "if root_joint is provided, root_joint_name must be also be provided.");
 
-        fillReferenceConfig(rootBody);
+            mjcfVisitor << "WARNING: trying to add root joint '" << rootJointName.get()
+                        << "' to a model which doesn't have a fixed base."
+                        << " The provided root joint is therefore ignored.\n";
+          }
+        }
+
         for (const auto & entry : bodiesList)
         {
           fillModel(entry);
         }
+
+        // We store the default configuration, obtained by parsing the <worldbody/>.
+        // Equality constraints are typically defined w.r.t this default configuration qpos0.
+        mapOfConfigs.insert(std::make_pair("qpos0", qpos0));
+
+        // We update the joint placements so their base placement is matching with the
+        // referenceConfig
+        updateJointPlacementsFromReferenceConfig();
 
         for (const auto & entry : mapOfConfigs)
         {

@@ -1,15 +1,28 @@
-#include "pinocchio/parsers/graph/model-graph.hpp"
-#include "pinocchio/parsers/graph/model-graph-algo.hpp"
-#include "pinocchio/parsers/graph/model-configuration-converter.hpp"
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
-#include "pinocchio/spatial/se3.hpp"
-#include "pinocchio/spatial/inertia.hpp"
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
-#include "pinocchio/algorithm/kinematics.hpp"
-#include "pinocchio/algorithm/frames.hpp"
+#include <boost/core/ref.hpp>
+#include <boost/fusion/algorithm.hpp>
+#include <boost/fusion/functional.hpp>
+#include <boost/variant.hpp>
 
+#include <cstddef>
 #include <iostream>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "pinocchio/algorithm/check-data.hpp"
+#include "pinocchio/algorithm/frames.hpp"
+#include "pinocchio/algorithm/joint-configuration.hpp"
+#include "pinocchio/algorithm/kinematics.hpp"
+#include "pinocchio/eigen-common.hpp"
+#include "pinocchio/math.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/parsers/graph.hpp"
+#include "pinocchio/spatial.hpp"
+#include "pinocchio/utils/check.hpp"
 
 /// This example show how to:
 ///  - Construct a kinematics chain with ModelGraph API

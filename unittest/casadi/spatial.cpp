@@ -4,18 +4,17 @@
 
 #include <pinocchio/autodiff/casadi.hpp>
 
-#include <pinocchio/math/quaternion.hpp>
-#include <pinocchio/spatial/se3.hpp>
-#include <pinocchio/spatial/motion.hpp>
-#include "pinocchio/spatial/explog.hpp"
+#include <pinocchio/math.hpp>
+#include <pinocchio/spatial.hpp>
 
-#include <pinocchio/spatial/explog.hpp>
+#include <casadi/casadi.hpp>
 
-#include <boost/variant.hpp> // to avoid C99 warnings
+#include <Eigen/Core>
 
-#include <iostream>
 #include <boost/test/unit_test.hpp>
-#include <boost/utility/binary.hpp>
+
+#include <string>
+#include <vector>
 
 BOOST_AUTO_TEST_SUITE(BOOST_TEST_MODULE)
 
@@ -31,8 +30,8 @@ BOOST_AUTO_TEST_CASE(test_se3)
   ::casadi::SX trans;
   pinocchio::casadi::copy(M1.translation(), trans);
 
-  const Eigen::DenseIndex col = 0;
-  for (Eigen::DenseIndex k = 0; k < 3; ++k)
+  const Eigen::Index col = 0;
+  for (Eigen::Index k = 0; k < 3; ++k)
   {
     BOOST_CHECK(casadi::SX::is_equal(trans(k, col), M1.translation()[k]));
   }

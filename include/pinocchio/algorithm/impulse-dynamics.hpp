@@ -1,25 +1,47 @@
 //
 // Copyright (c) 2020 CNRS INRIA
 //
+#pragma once
 
-#ifndef __pinocchio_algorithm_impulse_dynamics_hpp__
-#define __pinocchio_algorithm_impulse_dynamics_hpp__
+// IWYU pragma: begin_keep
+#include <cassert>
+#include <cstddef>
+#include <vector>
 
+#include <Eigen/Core>
+
+#include "pinocchio/config.hpp"
+#include "pinocchio/context.hpp"
+#include "pinocchio/macros.hpp"
+#include "pinocchio/unsupported.hpp"
+
+#include "pinocchio/spatial.hpp"
+
+#include "pinocchio/multibody.hpp"
+
+#include "pinocchio/utils/check.hpp"
+
+#include "pinocchio/constraints.hpp"
+#include "pinocchio/algorithm/check.hpp"
 #include "pinocchio/algorithm/constrained-dynamics.hpp"
-#include "pinocchio/algorithm/contact-info.hpp"
-
 #include "pinocchio/algorithm/proximal.hpp"
+#include "pinocchio/algorithm/constraint-cholesky.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
 
   ///
   /// \brief Compute the impulse dynamics with contact constraints. Internally, pinocchio::crba is
-  /// called. \note It computes the following problem: <BR>
-  ///       <CENTER> \f$ \begin{eqnarray} \underset{\dot{q}^{+}}{\min} & & \| \dot{q}^{+} -
-  ///       \dot{q}^{-} \|_{M(q)} \\\
-  ///           \text{s.t.} & & J (q) \dot{q}^{+} = - \epsilon J (q) \dot{q}^{-}  \end{eqnarray} \f$
-  ///           </CENTER> <BR>
+  /// called.
+  /**
+   * It computes the following problem: \f[
+   *       \begin{eqnarray}
+   *           \underset{\dot{q}^{+}}{\min} & & \| \dot{q}^{+} - \dot{q}^{-} \|_{M(q)} \\
+   *           \text{s.t.} & & J (q) \dot{q}^{+} = - \epsilon J (q) \dot{q}^{-}
+   *       \end{eqnarray}
+   *       \f]
+   */
   ///       where \f$ \dot{q}^{-} \f$ is the generalized velocity before impact,
   ///       \f$ M \f$ is the joint space mass matrix, \f$ J \f$ the constraint Jacobian and \f$
   ///       \epsilon \f$ is the coefficient of restitution (1 for a fully elastic impact or 0 for a
@@ -36,9 +58,8 @@ namespace pinocchio
   /// \param[in] v_before The joint velocity (size model.nv).
   /// \param[in] contact_models Vector of contact information related to the problem.
   /// \param[in] contact_datas Vector of contact datas related to the contact models.
-  /// \param[in] r_coeff coefficient of restitution: must be in [0.,1.]
-  /// \param[in] mu Damping factor for cholesky decomposition. Set to zero if constraints are full
-  /// rank.
+  /// \param[in] r_coeff coefficient of restitution: must be in [0.,1.].
+  /// \param[in] settings Proximal solver settings.
   ///
   /// \note A hint: a typical value for mu is 1e-12 when two contact constraints are redundant.
   ///
@@ -67,10 +88,6 @@ namespace pinocchio
 
 } // namespace pinocchio
 
-#include "pinocchio/algorithm/impulse-dynamics.hxx"
-
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/algorithm/impulse-dynamics.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-
-#endif // ifndef __pinocchio_algorithm_impulse_dynamics_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/impulse-dynamics.hxx"
+// IWYU pragma: end_exports

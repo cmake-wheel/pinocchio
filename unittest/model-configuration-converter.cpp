@@ -4,15 +4,12 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "pinocchio/algorithm/frames.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
 
+#include "pinocchio/algorithm/frames.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
 
-#include "pinocchio/parsers/graph/model-configuration-converter.hpp"
-#include "pinocchio/parsers/graph/joints.hpp"
-#include "pinocchio/parsers/graph/model-graph.hpp"
-#include "pinocchio/parsers/graph/model-graph-algo.hpp"
+#include "pinocchio/parsers/graph.hpp"
 
 BOOST_AUTO_TEST_SUITE(ModelConfigurationConverter)
 

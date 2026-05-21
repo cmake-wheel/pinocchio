@@ -2,8 +2,7 @@
 // Copyright (c) 2020 CNRS
 //
 
-#ifndef __pinocchio_python_parsers_sdf_hpp__
-#define __pinocchio_python_parsers_sdf_hpp__
+#pragma once
 
 namespace pinocchio
 {
@@ -19,5 +18,3 @@ namespace pinocchio
     }
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_parsers_sdf_hpp__

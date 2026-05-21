@@ -2,12 +2,31 @@
 // Copyright (c) 2018-2021 INRIA
 //
 
-#ifndef __pinocchio_algorithm_centroidal_derivatives_hpp__
-#define __pinocchio_algorithm_centroidal_derivatives_hpp__
+#pragma once
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+// IWYU pragma: begin_keep
+#include <Eigen/Core>
+
+#include <cassert>
+#include <type_traits>
+#include <vector>
+
+#include <boost/fusion/container/vector.hpp>
+
+#include "pinocchio/macros.hpp"
+#include "pinocchio/eigen-common.hpp"
+#include "pinocchio/fwd.hpp"
+
+#include "pinocchio/math.hpp"
+
+#include "pinocchio/spatial.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/multibody/visitor.hpp"
+
 #include "pinocchio/algorithm/check.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -41,8 +60,8 @@ namespace pinocchio
   /// (dim 6 x model.nv). \param[out] dhdot_da The partial derivative of the centroidal dynamics
   /// with respect to the acceleration vector (dim 6 x model.nv).
   ///
-  /// \result It also computes the current centroidal dynamics and its time derivative.
-  ///         For information, the centroidal momentum matrix is equivalent to dhdot_da.
+  /// \note It also computes the current centroidal dynamics and its time derivative.
+  ///       For information, the centroidal momentum matrix is equivalent to dhdot_da.
   ///
   template<
     typename Scalar,
@@ -87,8 +106,8 @@ namespace pinocchio
   /// velocity vector (dim 6 x model.nv). \param[out] dhdot_da The partial derivative of the
   /// centroidal dynamics with respect to the acceleration vector (dim 6 x model.nv).
   ///
-  /// \result It also computes the current centroidal dynamics and its time derivative.
-  ///         For information, the centroidal momentum matrix is equivalent to dhdot_da.
+  /// \note It also computes the current centroidal dynamics and its time derivative.
+  ///       For information, the centroidal momentum matrix is equivalent to dhdot_da.
   ///
   template<
     typename Scalar,
@@ -107,12 +126,6 @@ namespace pinocchio
     const Eigen::MatrixBase<Matrix6xLike3> & dhdot_da);
 
 } // namespace pinocchio
-
-/* --- Details -------------------------------------------------------------------- */
-#include "pinocchio/algorithm/centroidal-derivatives.hxx"
-
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/algorithm/centroidal-derivatives.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-
-#endif // ifndef __pinocchio_algorithm_centroidal_derivatives_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/centroidal-derivatives.hxx"
+// IWYU pragma: end_exports

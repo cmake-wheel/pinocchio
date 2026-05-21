@@ -24,8 +24,8 @@ namespace pinocchio
       bp::def(
         "updateGeometryPlacements", &updateGeometryPlacements<double, 0, JointCollectionDefaultTpl>,
         bp::args("model", "data", "geometry_model", "geometry_data"),
-        "Update the placement of the collision objects according to the current joint "
-        "placement stored in data.");
+        "Update the placement of the collision objects according to the current joint placement "
+        "stored in data.");
     }
   } // namespace python
 } // namespace pinocchio

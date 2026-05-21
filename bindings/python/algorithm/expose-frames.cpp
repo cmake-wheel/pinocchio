@@ -151,78 +151,75 @@ namespace pinocchio
     {
       typedef context::Scalar Scalar;
       typedef context::VectorXs VectorXs;
-      enum
-      {
-        Options = context::Options
-      };
+      using context::Options;
 
       bp::def(
         "updateFramePlacements", &updateFramePlacements<Scalar, Options, JointCollectionDefaultTpl>,
         bp::args("model", "data"),
-        "Computes the placements of all the operational frames according to the current "
-        "joint placement stored in data"
+        "Computes the placements of all the operational frames according to the current joint "
+        "placement stored in data"
         "and puts the results in data.");
 
       bp::def(
         "updateFramePlacement", &updateFramePlacement<Scalar, Options, JointCollectionDefaultTpl>,
         bp::args("model", "data", "frame_id"),
-        "Computes the placement of the given operational frame (frame_id) according to the "
-        "current joint placement stored in data, stores the results in data and returns it.",
+        "Computes the placement of the given operational frame (frame_id) according to the current "
+        "joint placement stored in data, stores the results in data and returns it.",
         bp::return_value_policy<bp::return_by_value>());
 
       bp::def(
         "getFrameVelocity", &get_frame_velocity_proxy1,
         (bp::arg("model"), bp::arg("data"), bp::arg("frame_id"),
          bp::arg("reference_frame") = LOCAL),
-        "Returns the spatial velocity of the frame expressed in the coordinate system given "
-        "by reference_frame.\n"
-        "forwardKinematics(model,data,q,v[,a]) should be called first to compute the joint "
-        "spatial velocity stored in data.v");
+        "Returns the spatial velocity of the frame expressed in the coordinate system given by "
+        "reference_frame.\n"
+        "forwardKinematics(model,data,q,v[,a]) should be called first to compute the joint spatial "
+        "velocity stored in data.v");
 
       bp::def(
         "getFrameVelocity", &get_frame_velocity_proxy2,
         (bp::arg("model"), bp::arg("data"), bp::arg("joint_id"), bp::arg("placement"),
          bp::arg("reference_frame") = LOCAL),
-        "Returns the spatial velocity of the frame expressed in the coordinate system given "
-        "by reference_frame.\n"
-        "forwardKinematics(model,data,q,v[,a]) should be called first to compute the joint "
-        "spatial velocity stored in data.v");
+        "Returns the spatial velocity of the frame expressed in the coordinate system given by "
+        "reference_frame.\n"
+        "forwardKinematics(model,data,q,v[,a]) should be called first to compute the joint spatial "
+        "velocity stored in data.v");
 
       bp::def(
         "getFrameAcceleration", &get_frame_acceleration_proxy1,
         (bp::arg("model"), bp::arg("data"), bp::arg("frame_id"),
          bp::arg("reference_frame") = LOCAL),
-        "Returns the spatial acceleration of the frame expressed in the coordinate system "
-        "given by reference_frame.\n"
-        "forwardKinematics(model,data,q,v,a) should be called first to compute the joint "
-        "spatial acceleration stored in data.a .");
+        "Returns the spatial acceleration of the frame expressed in the coordinate system given by "
+        "reference_frame.\n"
+        "forwardKinematics(model,data,q,v,a) should be called first to compute the joint spatial "
+        "acceleration stored in data.a .");
 
       bp::def(
         "getFrameAcceleration", &get_frame_acceleration_proxy2,
         (bp::arg("model"), bp::arg("data"), bp::arg("joint_id"), bp::arg("placement"),
          bp::arg("reference_frame") = LOCAL),
-        "Returns the spatial acceleration of the frame expressed in the coordinate system "
-        "given by reference_frame.\n"
-        "forwardKinematics(model,data,q,v,a) should be called first to compute the joint "
-        "spatial acceleration stored in data.a .");
+        "Returns the spatial acceleration of the frame expressed in the coordinate system given by "
+        "reference_frame.\n"
+        "forwardKinematics(model,data,q,v,a) should be called first to compute the joint spatial "
+        "acceleration stored in data.a .");
 
       bp::def(
         "getFrameClassicalAcceleration", &get_frame_classical_acceleration_proxy1,
         (bp::arg("model"), bp::arg("data"), bp::arg("frame_id"),
          bp::arg("reference_frame") = LOCAL),
-        "Returns the \"classical\" acceleration of the frame expressed in the coordinate "
-        "system given by reference_frame.\n"
-        "forwardKinematics(model,data,q,v,a) should be called first to compute the joint "
-        "spatial acceleration stored in data.a .");
+        "Returns the \"classical\" acceleration of the frame expressed in the coordinate system "
+        "given by reference_frame.\n"
+        "forwardKinematics(model,data,q,v,a) should be called first to compute the joint spatial "
+        "acceleration stored in data.a .");
 
       bp::def(
         "getFrameClassicalAcceleration", &get_frame_classical_acceleration_proxy2,
         (bp::arg("model"), bp::arg("data"), bp::arg("joint_id"), bp::arg("placement"),
          bp::arg("reference_frame") = LOCAL),
-        "Returns the \"classical\" acceleration of the frame expressed in the coordinate "
-        "system given by reference_frame.\n"
-        "forwardKinematics(model,data,q,v,a) should be called first to compute the joint "
-        "spatial acceleration stored in data.a .");
+        "Returns the \"classical\" acceleration of the frame expressed in the coordinate system "
+        "given by reference_frame.\n"
+        "forwardKinematics(model,data,q,v,a) should be called first to compute the joint spatial "
+        "acceleration stored in data.a .");
 
       bp::def(
         "framesForwardKinematics",
@@ -233,16 +230,16 @@ namespace pinocchio
 
       bp::def(
         "computeFrameJacobian",
-        (context::Data::Matrix6x(*)(
+        (context::Data::Matrix6x (*)(
           const context::Model &, context::Data &, const context::VectorXs &,
           context::Data::FrameIndex, ReferenceFrame))&compute_frame_jacobian_proxy,
         bp::args("model", "data", "q", "frame_id", "reference_frame"),
-        "Computes the Jacobian of the frame given by its frame_id in the coordinate system "
-        "given by reference_frame.\n");
+        "Computes the Jacobian of the frame given by its frame_id in the coordinate system given "
+        "by reference_frame.\n");
 
       bp::def(
         "computeFrameJacobian",
-        (context::Data::Matrix6x(*)(
+        (context::Data::Matrix6x (*)(
           const context::Model &, context::Data &, const context::VectorXs &,
           context::Data::FrameIndex))&compute_frame_jacobian_proxy,
         bp::args("model", "data", "q", "frame_id"),
@@ -257,33 +254,33 @@ namespace pinocchio
         bp::args("model", "data", "frame_id", "reference_frame"),
         "Computes the Jacobian of the frame given by its ID either in the LOCAL, "
         "LOCAL_WORLD_ALIGNED or the WORLD coordinates systems.\n"
-        "In other words, the velocity of the frame vF expressed in the reference frame is "
-        "given by J*v,"
+        "In other words, the velocity of the frame vF expressed in the reference frame is given by "
+        "J*v,"
         "where v is the joint velocity vector.\n"
         "remarks: computeJointJacobians(model,data,q) must have been called first.");
 
       bp::def(
         "getFrameJacobian", &get_frame_jacobian_proxy2,
         bp::args("model", "data", "joint_id", "placement", "reference_frame"),
-        "Computes the Jacobian of the frame given by its placement with respect to the Joint "
-        "frame and expressed the solution either in the LOCAL, LOCAL_WORLD_ALIGNED or the "
-        "WORLD coordinates systems.\n"
-        "In other words, the velocity of the frame vF expressed in the reference frame is "
-        "given by J*v,"
+        "Computes the Jacobian of the frame given by its placement with respect to the Joint frame "
+        "and expressed the solution either in the LOCAL, LOCAL_WORLD_ALIGNED or the WORLD "
+        "coordinates systems.\n"
+        "In other words, the velocity of the frame vF expressed in the reference frame is given by "
+        "J*v,"
         "where v is the joint velocity vector.\n\n"
         "remarks: computeJointJacobians(model,data,q) must have been called first.");
 
       bp::def(
         "frameJacobianTimeVariation", &frame_jacobian_time_variation_proxy,
         bp::args("model", "data", "q", "v", "frame_id", "reference_frame"),
-        "Computes the Jacobian Time Variation of the frame given by its frame_id either in "
-        "the reference frame provided by reference_frame.\n");
+        "Computes the Jacobian Time Variation of the frame given by its frame_id either in the "
+        "reference frame provided by reference_frame.\n");
 
       bp::def(
         "getFrameJacobianTimeVariation", get_frame_jacobian_time_variation_proxy,
         bp::args("model", "data", "frame_id", "reference_frame"),
-        "Returns the Jacobian time variation of the frame given by its frame_id either in "
-        "the reference frame provided by reference_frame.\n"
+        "Returns the Jacobian time variation of the frame given by its frame_id either in the "
+        "reference frame provided by reference_frame.\n"
         "You have to call computeJointJacobiansTimeVariation(model,data,q,v) and "
         "updateFramePlacements(model,data) first.");
 
@@ -302,8 +299,8 @@ namespace pinocchio
         &computeSupportedForceByFrame<double, 0, JointCollectionDefaultTpl>,
         bp::args("model", "data", "frame_id"),
         "Computes the supported force of the frame (given by frame_id) and returns it.\n"
-        "The supported force corresponds to the sum of all the forces experienced after the "
-        "given frame.\n"
+        "The supported force corresponds to the sum of all the forces experienced after the given "
+        "frame.\n"
         "You must first call pinocchio::rnea to update placement values in data structure.");
     }
   } // namespace python

@@ -2,8 +2,7 @@
 // Copyright (c) 2019-2022 INRIA
 //
 
-#ifndef __pinocchio_python_algorithm_proximal_hpp__
-#define __pinocchio_python_algorithm_proximal_hpp__
+#pragma once
 
 #include "pinocchio/algorithm/proximal.hpp"
 
@@ -26,13 +25,15 @@ namespace pinocchio
       void visit(PyClass & cl) const
       {
         cl.def(bp::init<>("Default constructor.", bp::arg("self")))
-          .def(bp::init<const Scalar, const Scalar, int>(
-            (bp::arg("self"), bp::arg("accuracy"), bp::arg("mu"), bp::arg("max_iter")),
-            "Structure containing all the settings parameters for the proximal algorithms."))
-          .def(bp::init<const Scalar, const Scalar, const Scalar, int>(
-            (bp::arg("self"), bp::arg("absolute_accuracy"), bp::arg("relative_accuracy"),
-             bp::arg("mu"), bp::arg("max_iter")),
-            "Structure containing all the settings parameters for the proximal algorithms."))
+          .def(
+            bp::init<const Scalar, const Scalar, int>(
+              (bp::arg("self"), bp::arg("accuracy"), bp::arg("mu"), bp::arg("max_iter")),
+              "Structure containing all the settings parameters for the proximal algorithms."))
+          .def(
+            bp::init<const Scalar, const Scalar, const Scalar, int>(
+              (bp::arg("self"), bp::arg("absolute_accuracy"), bp::arg("relative_accuracy"),
+               bp::arg("mu"), bp::arg("max_iter")),
+              "Structure containing all the settings parameters for the proximal algorithms."))
 
           .add_property(
             "absolute_accuracy", &ProximalSettings::absolute_accuracy,
@@ -83,5 +84,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_algorithm_proximal_hpp__

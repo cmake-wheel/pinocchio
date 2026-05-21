@@ -1,8 +1,8 @@
 //
 // Copyright (c) 2024-2025 INRIA
 //
-#ifndef __pinocchio_python_extra_extras_hpp__
-#define __pinocchio_python_extra_extras_hpp__
+
+#pragma once
 
 #include "pinocchio/visualizers/base-visualizer.hpp"
 #include "pinocchio/bindings/python/fwd.hpp"
@@ -21,7 +21,7 @@ namespace pinocchio
     {
       typedef ::pinocchio::visualizers::BaseVisualizer Base;
       static_assert(
-        std::is_base_of<Base, Visualizer>::value,
+        std::is_base_of_v<Base, Visualizer>,
         "Visualizer class must be derived from pinocchio::visualizers::BaseVisualizer.");
 
       static void setCameraPose_proxy(Visualizer & vis, const Base::Matrix4 & pose)
@@ -65,11 +65,12 @@ namespace pinocchio
     bp::make_function(                                                                             \
       +[](Visualizer & v) -> auto & { return v.name(); }, bp::return_internal_reference<>()))
 
-        cl.def("initViewer", &Visualizer::initViewer)
-          .def("loadViewerModel", &Visualizer::loadViewerModel)
-          .def("rebuildData", &Visualizer::rebuildData)
+        cl.def("initViewer", &Visualizer::initViewer, bp::arg("self"))
+          .def("loadViewerModel", &Visualizer::loadViewerModel, bp::arg("self"))
+          .def("rebuildData", &Visualizer::rebuildData, bp::arg("self"))
           .def(
-            "display", +[](Visualizer & v, const ConstVectorRef & q) { v.display(q); },
+            "display",
+            +[](Visualizer & v, const boost::optional<ConstVectorRef> & q) { v.display(q); },
             (bp::arg("self"), bp::arg("q") = boost::none))
           .def("play", play_proxy, (bp::arg("self"), "qs", "dt"))
           .def("play", play_proxy2, (bp::arg("self"), "qs", "dt"))
@@ -79,7 +80,7 @@ namespace pinocchio
           .def("setCameraPose", setCameraPose_proxy2, (bp::arg("self"), "pose"))
           .def("setCameraZoom", &Visualizer::setCameraZoom, (bp::arg("self"), "value"))
           .def("clean", &Visualizer::clean, bp::arg("self"))
-          .def("hasExternalData", &Visualizer::hasExternalData)
+          .def("hasExternalData", &Visualizer::hasExternalData, bp::arg("self"))
           .DEF_PROP_PROXY(model)
           .DEF_PROP_PROXY(visualModel)
           .DEF_PROP_PROXY(collisionModel)
@@ -92,5 +93,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // #ifndef __pinocchio_python_extra_extras_hpp__

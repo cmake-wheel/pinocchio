@@ -71,7 +71,7 @@ for frame_id in frame_ids:
 num_constraints = len(frame_ids)
 contact_dim = 6 * num_constraints
 
-pin.initConstraintDynamics(model, data_sim, contact_models)
+pin.initConstraintDynamics(model, data_sim, contact_models, contact_datas)
 
 t = 0
 dt = 5e-3
@@ -118,6 +118,10 @@ while t <= T:
     )
 
     prox_settings = pin.ProximalSettings(1e-12, 1e-12, 10)
+    pin.computeJointJacobians(model, data_sim, q)
+    data_sim.q_in = q
+    for cm, cd in zip(contact_models, contact_datas):
+        cm.calc(model, data_sim, cd)
     a = pin.constraintDynamics(
         model, data_sim, q, v, tau, contact_models, contact_datas, prox_settings
     )

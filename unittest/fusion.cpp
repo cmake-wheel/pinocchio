@@ -2,8 +2,6 @@
 // Copyright (c) 2015 CNRS
 //
 
-#define BOOST_FUSION_INVOKE_MAX_ARITY 10
-
 // #include "pinocchio/spatial/fwd.hpp"
 // #include "pinocchio/spatial/se3.hpp"
 // #include "pinocchio/multibody/joint.hpp"
@@ -12,7 +10,6 @@
 #include <iostream>
 
 #include "pinocchio/tools/timer.hpp"
-#include <Eigen/Core>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>

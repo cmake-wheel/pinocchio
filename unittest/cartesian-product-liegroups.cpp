@@ -2,13 +2,7 @@
 // Copyright (c) 2020 INRIA
 //
 
-#include "pinocchio/multibody/liegroup/liegroup.hpp"
-#include "pinocchio/multibody/liegroup/liegroup-collection.hpp"
-#include "pinocchio/multibody/liegroup/liegroup-generic.hpp"
-#include "pinocchio/multibody/liegroup/cartesian-product-variant.hpp"
-#include "pinocchio/multibody/liegroup/cartesian-product.hpp"
-
-#include "pinocchio/multibody/joint/joint-generic.hpp"
+#include "pinocchio/multibody/liegroup.hpp"
 
 #include <iostream>
 #include <boost/test/unit_test.hpp>

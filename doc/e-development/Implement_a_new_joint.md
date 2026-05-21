@@ -792,7 +792,7 @@ bp::class_<JointMyJoint>("JointMyJoint", bp::init<>())
 - `unittest/CMakeLists.txt` (register your test)
 - `unittest/model-graph.cpp` (add graph test)
 - `unittest/model-configuration-converter.cpp` (add converter test, if reversible)
-- `unittest/serialization.cpp` (add serialization test, modify only if your test take parameters)
+- `unittest/serialization-multibody-joint.cpp` (add serialization test, modify only if your test take parameters)
 - `unittest/all-joints.cpp` (add to joint list, modify only if your test take parameters)
 - `unittest/joint-generic.cpp` (add to generic tests, modify only if your test take parameters)
 - `unittest/finite-differences.cpp` (add to finite-diff tests, modify only if your test take parameters)
@@ -944,7 +944,7 @@ converter.convert(q, q_converted);
 ```
 ### 5.5 Test Serialization
 
-**Location:** `unittest/serialization.cpp`
+**Location:** `unittest/serialization-multibody-joint.cpp`
 
 Ensure your joint can be serialized and deserialized:
 
@@ -1023,7 +1023,7 @@ Use this checklist to track your implementation progress:
 - [ ] Test equivalence with composite joints (if applicable)
 - [ ] Update `unittest/model-graph.cpp` with graph tests
 - [ ] Update `unittest/model-configuration-converter.cpp` with converter tests
-- [ ] Update `unittest/serialization.cpp` with serialization tests
+- [ ] Update `unittest/serialization-multibody-joint.cpp` with serialization tests
 - [ ] Add joint to `unittest/all-joints.cpp`
 - [ ] Add joint to `unittest/joint-generic.cpp`
 - [ ] Add joint to `unittest/finite-differences.cpp`

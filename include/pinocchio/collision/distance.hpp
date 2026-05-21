@@ -2,16 +2,29 @@
 // Copyright (c) 2015-2021 CNRS INRIA
 //
 
-#ifndef __pinocchio_collision_distance_hpp__
-#define __pinocchio_collision_distance_hpp__
+#pragma once
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
-#include "pinocchio/multibody/geometry.hpp"
+// IWYU pragma: begin_keep
+#include <Eigen/Core>
+
+#include <cassert>
+#include <cstddef>
+#include <limits>
+#include <sstream>
+#include <stdexcept>
+#include <vector>
+
+#include <coal/collision_data.h>
+#include <coal/math/transform.h>
+
+#include "pinocchio/macros.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/algorithm/geometry.hpp"
 
 #include "pinocchio/collision/config.hpp"
-
-#include <hpp/fcl/collision_data.h>
+#include "pinocchio/collision/coal-pinocchio-conversions.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -71,22 +84,22 @@ namespace pinocchio
   ///
   /// \brief Compute the minimal distance between collision objects of a *SINGLE* collison pair
   ///
-  /// \param[in] GeomModel the geometry model (const)
-  /// \param[out] GeomData the corresponding geometry data, where computations are done.
+  /// \param[in] geom_model the geometry model (const)
+  /// \param[out] geom_data the corresponding geometry data, where computations are done.
   /// \param[in] pair_id The index of the collision pair in geom model.
   ///
-  /// \return A reference on fcl struct containing the distance result, referring an element
+  /// \return A reference on coal struct containing the distance result, referring an element
   /// of vector geom_data::distanceResults.
   /// \note The complete distance result is also available in geom_data.distanceResults[pair_id]
   ///
-  fcl::DistanceResult & computeDistance(
+  coal::DistanceResult & computeDistance(
     const GeometryModel & geom_model, GeometryData & geom_data, const PairIndex pair_id);
 
   ///
   /// \brief Compute the minimal distance between collision objects of a *ALL* collison pair
   ///
-  /// \param[in] GeomModel the geometry model (const)
-  /// \param[out] GeomData the corresponding geometry data, where computations are done.
+  /// \param[in] geom_model the geometry model (const)
+  /// \param[out] geom_data the corresponding geometry data, where computations are done.
   /// \return Index of the minimal pair distance in geom_data.DistanceResult
   ///
   /// \note The complete distance result is available by pair in geom_data.distanceResults
@@ -95,10 +108,6 @@ namespace pinocchio
 
 } // namespace pinocchio
 
-/* --- Details -------------------------------------------------------------------- */
-#include "pinocchio/collision/distance.hxx"
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/collision/distance.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-
-#endif // ifndef __pinocchio_collision_distance_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/collision/distance.hxx"
+// IWYU pragma: end_exports

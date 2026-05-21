@@ -23,21 +23,44 @@ Installing **RViz**:
 conda install ros-noetic-rviz -c RoboStack
 ```
 
+## C++ build
+
+To build individual example in C++ you must create this minimal CMakeLists.txt:
+```cmake
+cmake_minimum_required(VERSION 3.22)
+
+project(examples CXX)
+
+find_package(pinocchio REQUIRED)
+
+add_executable(example1 example1.cpp)
+target_link_libraries(example1 -PUBLIC pinocchio::pinocchio)
+```
+
+Replace `example1` by the example you want to build.
+
+Then, build it using CMake:
+
+```bash
+cmake -B build
+cmake --build build
+```
+
 ## Loading a model
 
-- Loading an embeded Model: `python -i overview-simple.py` and in C++ `g++ overview-simple.cpp -o overview-simple $(pkg-config --cflags --libs pinocchio) && ./overview-simple`
-- Loading a URDF model: `python -i overview-urdf.py` and in C++ `g++ -g overview-urdf.cpp -o overview-urdf $(pkg-config --cflags --libs pinocchio) && ./overview-urdf`
+- Loading an embeded Model: `python -i overview-simple.py` and in C++ `./build/overview-simple`
+- Loading a URDF model: `python -i overview-urdf.py` and in C++ `./build/overview-urdf`
 - Using RobotWrapper to encapsulate a URDF model: `python -i robot-wrapper-viewer.py`
 
 ## Simulating a model
 
--  Simulating a multiple pendulum: `python -i simulation-pendulum.py --with-cart -N=2`
+- Simulating a multiple pendulum: `python -i simulation-pendulum.py --with-cart -N=2`
 
 ## Computes analytical derivatives of rigid body dynamics algorithms
 
-- Computing forward kinematics derivatives: `python -i kinematics-derivatives.py` and in C++ `g++ kinematics-derivatives.cpp -o kinematics-derivatives $(pkg-config --cflags --libs pinocchio) && ./kinematics-derivatives`
-- Computing forward dynamics derivatives: `python -i forward-dynamics-derivatives.py` and in C++ `g++ -I -g forward-dynamics-derivatives.cpp -o forward-dynamics-derivatives $(pkg-config --cflags --libs pinocchio) && ./forward-dynamics-derivatives`
-- Computing inverse dynamics derivatives: `python -i inverse-dynamics-derivatives.py` and in C++ `g++ inverse-dynamics-derivatives.cpp -o inverse-dynamics-derivatives $(pkg-config --cflags --libs pinocchio) && ./inverse-derivatives`
+- Computing forward kinematics derivatives: `python -i kinematics-derivatives.py` and in C++ `./build/kinematics-derivatives`
+- Computing forward dynamics derivatives: `python -i forward-dynamics-derivatives.py` and in C++ `./build/forward-dynamics-derivatives`
+- Computing inverse dynamics derivatives: `python -i inverse-dynamics-derivatives.py` and in C++ `./build/inverse-derivatives`
 
 ## Displaying the models
 
@@ -49,15 +72,15 @@ For the following examples, you should have [gepetto-gui](https://github.com/Gep
 
 ## Collision checking
 
-**Pinocchio** encapsulates  [FCL](https://github.com/humanoid-path-planner/hpp-fcl) in it. You can then do collision checking or distance computations with only few lines of code.
+**Pinocchio** encapsulates [coal](https://github.com/coal-library/coal) in it. You can then do collision checking or distance computations with only few lines of code.
 
-- Check collisions using [FCL](https://github.com/humanoid-path-planner/hpp-fcl): `python -i collisions.py` and in C++ `g++ collision.cpp -o collision $(pkg-config --cflags --libs pinocchio) && ./collision`
+- Check collisions using [coal](https://github.com/coal-library/coal): `python -i collisions.py` and in C++ `./build/collision`
 
 ## Multiprecision arithmetic
 
 Thanks to the full templatization of the project, **Pinocchio** is able to perform full precision arithmetic (via Boost.Multiprecision for instance).
 
-- Multiprecision example: `g++ multiprecision.cpp -o multiprecision $(pkg-config --cflags --libs pinocchio) && ./multiprecision`
+- Multiprecision example: `./build/multiprecision`
 
 ## Adding new examples
 

@@ -4,7 +4,7 @@
 
 #include "pinocchio/bindings/python/fwd.hpp"
 #include "pinocchio/bindings/python/utils/namespace.hpp"
-#include "pinocchio/math/rpy.hpp"
+#include "pinocchio/math.hpp"
 
 namespace pinocchio
 {
@@ -65,8 +65,8 @@ namespace pinocchio
 
         bp::def(
           "matrixToRpy",
-          //                &matrixToRpy<context::Matrix3s>, TODO: change internal routines to
-          //                make them compliant with Autodiff Frameworks
+          //                &matrixToRpy<context::Matrix3s>, TODO: change internal routines to make
+          //                them compliant with Autodiff Frameworks
           &matrixToRpy<Eigen::Matrix3d>, bp::arg("R"),
           "Given a rotation matrix R, the angles (r, p, y) are given so that R = "
           "R_z(y)R_y(p)R_x(r),"

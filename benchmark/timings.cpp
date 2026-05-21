@@ -4,10 +4,8 @@
 
 #include "model-fixture.hpp"
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
 
-#include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/algorithm/frames.hpp"
 #include "pinocchio/algorithm/crba.hpp"
 #include "pinocchio/algorithm/centroidal.hpp"
@@ -19,12 +17,7 @@
 #include "pinocchio/algorithm/compute-all-terms.hpp"
 #include "pinocchio/algorithm/kinematics.hpp"
 
-#include "pinocchio/parsers/urdf.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
-
 #include <benchmark/benchmark.h>
-
-#include <iostream>
 
 using JointCollectionDefault =
   pinocchio::JointCollectionDefaultTpl<pinocchio::context::Scalar, pinocchio::context::Options>;

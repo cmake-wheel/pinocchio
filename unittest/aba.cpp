@@ -2,15 +2,13 @@
 // Copyright (c) 2016-2021 CNRS INRIA
 //
 
+#include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/aba.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
 #include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/algorithm/crba.hpp"
 #include "pinocchio/multibody/sample-models.hpp"
-
-#include "pinocchio/algorithm/compute-all-terms.hpp"
-#include "pinocchio/utils/timer.hpp"
 
 #include <iostream>
 
@@ -200,7 +198,7 @@ BOOST_AUTO_TEST_CASE(test_aba_with_fext)
   VectorXd v = VectorXd::Random(model.nv);
   VectorXd a = VectorXd::Random(model.nv);
 
-  PINOCCHIO_ALIGNED_STD_VECTOR(Force) fext(model.joints.size(), Force::Random());
+  std::vector<Force> fext(model.joints.size(), Force::Random());
 
   crba(model, data, q, Convention::WORLD);
   computeJointJacobians(model, data, q);

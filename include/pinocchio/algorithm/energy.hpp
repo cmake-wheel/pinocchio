@@ -2,13 +2,23 @@
 // Copyright (c) 2016-2020 CNRS INRIA
 //
 
-#ifndef __pinocchio_algorithm_energy_hpp__
-#define __pinocchio_algorithm_energy_hpp__
+#pragma once
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
-#include "pinocchio/algorithm/kinematics.hpp"
+// IWYU pragma: begin_keep
+#include <Eigen/Core>
+
+#include <cassert>
+#include <vector>
+
+#include <boost/fusion/container/vector.hpp>
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/multibody/visitor.hpp"
+
 #include "pinocchio/algorithm/check.hpp"
+#include "pinocchio/algorithm/kinematics.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -155,10 +165,6 @@ namespace pinocchio
 
 } // namespace pinocchio
 
-#include "pinocchio/algorithm/energy.hxx"
-
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/algorithm/energy.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-
-#endif // __pinocchio_algorithm_energy_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/energy.hxx"
+// IWYU pragma: end_exports

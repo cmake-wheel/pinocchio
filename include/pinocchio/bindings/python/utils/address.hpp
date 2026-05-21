@@ -2,8 +2,7 @@
 // Copyright (c) 2022 INRIA
 //
 
-#ifndef __pinocchio_python_utils_address_hpp__
-#define __pinocchio_python_utils_address_hpp__
+#pragma once
 
 #include <eigenpy/eigenpy.hpp>
 
@@ -35,5 +34,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_utils_address_hpp__

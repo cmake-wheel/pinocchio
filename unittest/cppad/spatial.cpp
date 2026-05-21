@@ -4,11 +4,7 @@
 
 #include "pinocchio/autodiff/cppad.hpp"
 
-#include "pinocchio/spatial/se3.hpp"
-#include "pinocchio/spatial/motion.hpp"
-#include "pinocchio/spatial/explog.hpp"
-
-#include <iostream>
+#include "pinocchio/spatial.hpp"
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>

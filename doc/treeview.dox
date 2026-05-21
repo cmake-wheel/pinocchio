@@ -15,9 +15,14 @@ namespace pinocchio {
   // Pages/ tutorials organization
   //
 
-  // \page md_doc__porting
+  /** \page md_doc__porting_intro
+        - \subpage md_doc__porting-3-to-4
+        - \subpage md_doc__porting-2-to-3
+        - \subpage md_doc__porting-1-to-2
+  */
 
-  /** \page md_doc_a-features_intro Features
+
+  /** \page md_doc_a-features_intro
         - \subpage md_doc_a-features_a-spatial
         - \subpage md_doc_a-features_b-model-data
         - \subpage md_doc_a-features_c-joints
@@ -48,13 +53,13 @@ namespace pinocchio {
         - \subpage md_doc_b-examples_display_c-robot-wrapper-viewer
   */
 
-  /** \page md_doc_c-maths_intro Mathematical Formulation
+  /** \page md_doc_c-maths_intro
         - \subpage md_doc_c-maths_a-rigid-bodies
         - \subpage md_doc_c-maths_b-joints
         - \subpage md_doc_c-maths_se3
   */
 
-  /** \page md_doc_d-practical-exercises_intro Practical Exercises
+  /** \page md_doc_d-practical-exercises_intro
        - \subpage md_doc_d-practical-exercises_1-directgeom
        - \subpage md_doc_d-practical-exercises_2-invgeom
        - \subpage md_doc_d-practical-exercises_3-invkine
@@ -62,6 +67,9 @@ namespace pinocchio {
        - \subpage md_doc_d-practical-exercises_5-planner
        - \subpage md_doc_d-practical-exercises_6-wpg
        - \subpage md_doc_d-practical-exercises_7-learn
+  */
+
+  /** \page pybind11_helper
   */
 
   /** \page md_doc_e-dev_intro Development

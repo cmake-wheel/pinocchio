@@ -2,17 +2,13 @@
 // Copyright (c) 2020-2021 CNRS INRIA
 //
 
-#include "pinocchio/algorithm/jacobian.hpp"
-#include "pinocchio/algorithm/frames.hpp"
-#include "pinocchio/algorithm/kinematics.hpp"
-#include "pinocchio/algorithm/rnea.hpp"
+#include "pinocchio/multibody/sample-models.hpp"
+#include "pinocchio/constraints.hpp"
+
 #include "pinocchio/algorithm/rnea-derivatives.hpp"
 #include "pinocchio/algorithm/impulse-dynamics.hpp"
 #include "pinocchio/algorithm/impulse-dynamics-derivatives.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
-
-#include <iostream>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
@@ -39,15 +35,15 @@ BOOST_AUTO_TEST_CASE(test_sparse_impulse_dynamics_derivatives_no_contact)
   VectorXd v = VectorXd::Random(model.nv);
 
   // Contact models and data
-  const PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) empty_contact_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) empty_contact_data;
+  const std::vector<RigidConstraintModel> empty_contact_models;
+  std::vector<RigidConstraintData> empty_contact_data;
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
 
   const double r_coeff = 0.5;
 
-  initConstraintDynamics(model, data, empty_contact_models);
+  initConstraintDynamics(model, data, empty_contact_models, empty_contact_data);
   impulseDynamics(
     model, data, q, v, empty_contact_models, empty_contact_data, r_coeff, prox_settings);
 
@@ -55,7 +51,6 @@ BOOST_AUTO_TEST_CASE(test_sparse_impulse_dynamics_derivatives_no_contact)
   computeImpulseDynamicsDerivatives(
     model, data, empty_contact_models, empty_contact_data, r_coeff, prox_settings);
 
-  Motion gravity_bk = model.gravity;
   model.gravity.setZero();
   computeRNEADerivatives(model, data_ref, q, Eigen::VectorXd::Zero(model.nv), dv);
   // Reference values
@@ -81,8 +76,8 @@ BOOST_AUTO_TEST_CASE(test_sparse_impulse_dynamics_derivatives)
   const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) contact_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) contact_data;
+  std::vector<RigidConstraintModel> contact_models;
+  std::vector<RigidConstraintData> contact_data;
 
   RigidConstraintModel ci_LF(CONTACT_6D, model, LF_id, LOCAL);
   RigidConstraintModel ci_RF(CONTACT_3D, model, RF_id, LOCAL);
@@ -92,20 +87,16 @@ BOOST_AUTO_TEST_CASE(test_sparse_impulse_dynamics_derivatives)
   contact_models.push_back(ci_RF);
   contact_data.push_back(RigidConstraintData(ci_RF));
 
-  Eigen::DenseIndex constraint_dim = 0;
-  for (size_t k = 0; k < contact_models.size(); ++k)
-    constraint_dim += contact_models[k].size();
-
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
   const double r_coeff = 0.5;
 
-  initConstraintDynamics(model, data, contact_models);
+  initConstraintDynamics(model, data, contact_models, contact_data);
   impulseDynamics(model, data, q, v, contact_models, contact_data, r_coeff, prox_settings);
   computeImpulseDynamicsDerivatives(
     model, data, contact_models, contact_data, r_coeff, prox_settings);
 
-  typedef PINOCCHIO_ALIGNED_STD_VECTOR(Force) ForceVector;
+  typedef std::vector<Force> ForceVector;
 
   ForceVector iext((size_t)model.njoints);
   for (ForceVector::iterator it = iext.begin(); it != iext.end(); ++it)
@@ -171,8 +162,8 @@ BOOST_AUTO_TEST_CASE(test_impulse_dynamics_derivatives_LOCAL_fd)
   const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) contact_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) contact_data;
+  std::vector<RigidConstraintModel> contact_models;
+  std::vector<RigidConstraintData> contact_data;
 
   RigidConstraintModel ci_LF(CONTACT_6D, model, LF_id, SE3::Random(), LOCAL);
   RigidConstraintModel ci_RF(CONTACT_3D, model, RF_id, SE3::Random(), LOCAL);
@@ -182,30 +173,31 @@ BOOST_AUTO_TEST_CASE(test_impulse_dynamics_derivatives_LOCAL_fd)
   contact_models.push_back(ci_RF);
   contact_data.push_back(RigidConstraintData(ci_RF));
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < contact_models.size(); ++k)
-    constraint_dim += contact_models[k].size();
+    constraint_size += contact_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
   const double r_coeff = 0.5;
 
-  initConstraintDynamics(model, data, contact_models);
+  initConstraintDynamics(model, data, contact_models, contact_data);
   impulseDynamics(model, data, q, v, contact_models, contact_data, r_coeff, prox_settings);
   computeImpulseDynamicsDerivatives(
     model, data, contact_models, contact_data, r_coeff, prox_settings);
 
   // Data_fd
-  initConstraintDynamics(model, data_fd, contact_models);
+  auto constraint_datas_fd = createData(contact_models);
+  initConstraintDynamics(model, data_fd, contact_models, contact_data);
 
   MatrixXd dqafter_partial_dq_fd(model.nv, model.nv);
   dqafter_partial_dq_fd.setZero();
   MatrixXd dqafter_partial_dv_fd(model.nv, model.nv);
   dqafter_partial_dv_fd.setZero();
 
-  MatrixXd impulse_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd impulse_partial_dq_fd(constraint_size, model.nv);
   impulse_partial_dq_fd.setZero();
-  MatrixXd impulse_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd impulse_partial_dv_fd(constraint_size, model.nv);
   impulse_partial_dv_fd.setZero();
 
   const VectorXd dqafter0 =
@@ -215,13 +207,14 @@ BOOST_AUTO_TEST_CASE(test_impulse_dynamics_derivatives_LOCAL_fd)
   VectorXd q_plus(model.nq);
   VectorXd dqafter_plus(model.nv);
 
-  const Eigen::MatrixXd Jc = data.contact_chol.matrix().topRightCorner(constraint_dim, model.nv);
+  const Eigen::MatrixXd Jc =
+    data.constraint_chol.matrix().topRightCorner(constraint_size, model.nv);
   const Eigen::VectorXd vel_jump = Jc * (dqafter0 + r_coeff * v);
 
   Data data_plus(model);
-  VectorXd impulse_plus(constraint_dim);
+  VectorXd impulse_plus(constraint_size);
 
-  Eigen::MatrixXd dvc_dq_fd(constraint_dim, model.nv);
+  Eigen::MatrixXd dvc_dq_fd(constraint_size, model.nv);
   const double alpha = 1e-8;
   for (int k = 0; k < model.nv; ++k)
   {
@@ -231,7 +224,7 @@ BOOST_AUTO_TEST_CASE(test_impulse_dynamics_derivatives_LOCAL_fd)
       model, data_fd, q_plus, v, contact_models, contact_data, r_coeff, prox_settings);
 
     const Eigen::MatrixXd Jc_plus =
-      data_fd.contact_chol.matrix().topRightCorner(constraint_dim, model.nv);
+      data_fd.constraint_chol.matrix().topRightCorner(constraint_size, model.nv);
     const Eigen::VectorXd vel_jump_plus = Jc_plus * (dqafter0 + r_coeff * v);
 
     dqafter_partial_dq_fd.col(k) = (dqafter_plus - dqafter0) / alpha;
@@ -282,8 +275,8 @@ BOOST_AUTO_TEST_CASE(test_impulse_dynamics_derivatives_LOCAL_WORLD_ALIGNED_fd)
   const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintModel) contact_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(RigidConstraintData) contact_data;
+  std::vector<RigidConstraintModel> contact_models;
+  std::vector<RigidConstraintData> contact_data, contact_data_fd;
 
   RigidConstraintModel ci_LF(CONTACT_6D, model, LF_id, SE3::Random(), LOCAL_WORLD_ALIGNED);
   RigidConstraintModel ci_RF(CONTACT_3D, model, RF_id, SE3::Random(), LOCAL_WORLD_ALIGNED);
@@ -293,30 +286,31 @@ BOOST_AUTO_TEST_CASE(test_impulse_dynamics_derivatives_LOCAL_WORLD_ALIGNED_fd)
   contact_models.push_back(ci_RF);
   contact_data.push_back(RigidConstraintData(ci_RF));
 
-  Eigen::DenseIndex constraint_dim = 0;
+  Eigen::Index constraint_size = 0;
   for (size_t k = 0; k < contact_models.size(); ++k)
-    constraint_dim += contact_models[k].size();
+    constraint_size += contact_models[k].residualSize();
 
   const double mu0 = 0.;
   ProximalSettings prox_settings(1e-12, mu0, 1);
   const double r_coeff = 0.5;
 
-  initConstraintDynamics(model, data, contact_models);
+  initConstraintDynamics(model, data, contact_models, contact_data);
   impulseDynamics(model, data, q, v, contact_models, contact_data, r_coeff, prox_settings);
   computeImpulseDynamicsDerivatives(
     model, data, contact_models, contact_data, r_coeff, prox_settings);
 
   // Data_fd
-  initConstraintDynamics(model, data_fd, contact_models);
+  contact_data_fd = contact_data; // copy
+  initConstraintDynamics(model, data_fd, contact_models, contact_data_fd);
 
   MatrixXd dqafter_partial_dq_fd(model.nv, model.nv);
   dqafter_partial_dq_fd.setZero();
   MatrixXd dqafter_partial_dv_fd(model.nv, model.nv);
   dqafter_partial_dv_fd.setZero();
 
-  MatrixXd impulse_partial_dq_fd(constraint_dim, model.nv);
+  MatrixXd impulse_partial_dq_fd(constraint_size, model.nv);
   impulse_partial_dq_fd.setZero();
-  MatrixXd impulse_partial_dv_fd(constraint_dim, model.nv);
+  MatrixXd impulse_partial_dv_fd(constraint_size, model.nv);
   impulse_partial_dv_fd.setZero();
 
   const VectorXd dqafter0 =
@@ -326,7 +320,7 @@ BOOST_AUTO_TEST_CASE(test_impulse_dynamics_derivatives_LOCAL_WORLD_ALIGNED_fd)
   VectorXd q_plus(model.nq);
   VectorXd dqafter_plus(model.nv);
 
-  VectorXd impulse_plus(constraint_dim);
+  VectorXd impulse_plus(constraint_size);
   const double alpha = 1e-8;
   for (int k = 0; k < model.nv; ++k)
   {

@@ -6,7 +6,7 @@
 
 #include <iostream>
 
-#include "pinocchio/multibody/model.hpp"
+#include "pinocchio/multibody.hpp"
 
 #ifdef PINOCCHIO_WITH_URDFDOM
   #include "pinocchio/parsers/urdf.hpp"

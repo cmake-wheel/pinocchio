@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(test_against_rnea)
   forwardKinematics(model, data, q);
   const SE3 oM1 = data.oMi[1];
   Data data_plus(model);
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     VectorXd q_plus = integrate(model, q, VectorXd::Unit(model.nv, k) * eps);
     computeMechanicalEnergy(model, data_plus, q_plus, v);

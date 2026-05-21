@@ -6,29 +6,17 @@
 #include "model-fixture.hpp"
 
 #include "pinocchio/codegen/cppadcg.hpp"
+#include "pinocchio/codegen/cppadcg-algo.hpp"
 
-#include "pinocchio/algorithm/joint-configuration.hpp"
+#include "pinocchio/constraints.hpp"
+
 #include "pinocchio/algorithm/crba.hpp"
-#include "pinocchio/algorithm/centroidal.hpp"
 #include "pinocchio/algorithm/aba.hpp"
 #include "pinocchio/algorithm/constrained-dynamics-derivatives.hpp"
 #include "pinocchio/algorithm/constrained-dynamics.hpp"
-#include "pinocchio/algorithm/contact-info.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
-#include "pinocchio/algorithm/cholesky.hpp"
-#include "pinocchio/algorithm/jacobian.hpp"
-#include "pinocchio/algorithm/center-of-mass.hpp"
-#include "pinocchio/algorithm/compute-all-terms.hpp"
-#include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/macros.hpp"
 #include "pinocchio/multibody/fwd.hpp"
-#include "pinocchio/parsers/urdf.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
-#include "pinocchio/container/aligned-vector.hpp"
-
-#include "pinocchio/codegen/code-generator-algo.hpp"
-
-#include <iostream>
 
 struct CGFixture : ModelFixture
 {
@@ -42,10 +30,8 @@ struct CGFixture : ModelFixture
     ModelFixture::TearDown(st);
   }
 
-  static PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel)
-    CONTACT_MODELS_6D6D;
-  static PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintData)
-    CONTACT_DATAS_6D6D;
+  static std::vector<pinocchio::RigidConstraintModel> CONTACT_MODELS_6D6D;
+  static std::vector<pinocchio::RigidConstraintData> CONTACT_DATAS_6D6D;
 
   // Initialize all as a global variable to avoid long running time
   static std::unique_ptr<pinocchio::CodeGenRNEA<double>> RNEA_CODE_GEN;
@@ -106,10 +92,8 @@ struct CGFixture : ModelFixture
   }
 };
 
-PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel)
-CGFixture::CONTACT_MODELS_6D6D;
-PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintData)
-CGFixture::CONTACT_DATAS_6D6D;
+std::vector<pinocchio::RigidConstraintModel> CGFixture::CONTACT_MODELS_6D6D;
+std::vector<pinocchio::RigidConstraintData> CGFixture::CONTACT_DATAS_6D6D;
 std::unique_ptr<pinocchio::CodeGenRNEA<double>> CGFixture::RNEA_CODE_GEN;
 std::unique_ptr<pinocchio::CodeGenABA<double>> CGFixture::ABA_CODE_GEN;
 std::unique_ptr<pinocchio::CodeGenCRBA<double>> CGFixture::CRBA_CODE_GEN;
@@ -292,9 +276,8 @@ PINOCCHIO_DONT_INLINE void constraintDynamicsDerivativeCall(
   const Eigen::VectorXd & q,
   const Eigen::VectorXd & v,
   const Eigen::VectorXd & tau,
-  const PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel)
-    & contact_models_6d6d,
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintData) & contact_datas_6d6d)
+  const std::vector<pinocchio::RigidConstraintModel> & contact_models_6d6d,
+  std::vector<pinocchio::RigidConstraintData> & contact_datas_6d6d)
 {
   pinocchio::constraintDynamics(model, data, q, v, tau, contact_models_6d6d, contact_datas_6d6d);
   pinocchio::computeConstraintDynamicsDerivatives(
@@ -302,7 +285,7 @@ PINOCCHIO_DONT_INLINE void constraintDynamicsDerivativeCall(
 }
 BENCHMARK_DEFINE_F(CGFixture, CONSTRAINT_DYNAMICS_DERIVATIVES)(benchmark::State & st)
 {
-  pinocchio::initConstraintDynamics(model, data, CONTACT_MODELS_6D6D);
+  pinocchio::initConstraintDynamics(model, data, CONTACT_MODELS_6D6D, CONTACT_DATAS_6D6D);
   for (auto _ : st)
   {
     constraintDynamicsDerivativeCall(

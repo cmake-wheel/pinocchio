@@ -2,15 +2,14 @@
 // Copyright (c) 2020 INRIA
 //
 
+#include "pinocchio/multibody/sample-models.hpp"
+
 #include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/kinematics-derivatives.hpp"
 #include "pinocchio/algorithm/frames.hpp"
 #include "pinocchio/algorithm/frames-derivatives.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
-
-#include <iostream>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>

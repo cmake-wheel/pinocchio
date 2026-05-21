@@ -1,16 +1,12 @@
 //
-// Copyright (c) 2018 CNRS
+// Copyright (c) 2026 INRIA
 //
 
-#ifndef __pinocchio_lie_group_fwd_hpp__
-#define __pinocchio_lie_group_fwd_hpp__
+#pragma once
 
-#include "pinocchio/fwd.hpp"
+// IWYU pragma: begin_keep
+// IWYU pragma: end_keep
 
-namespace pinocchio
-{
-  template<typename LieGroupCollection>
-  struct LieGroupGenericTpl;
-}
-
-#endif // ifndef __pinocchio_lie_group_fwd_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/multibody/liegroup/fwd.hxx"
+// IWYU pragma: end_exports

@@ -2,17 +2,14 @@
 // Copyright (c) 2015-2022 CNRS INRIA
 //
 
-#include <iostream>
 #include <fstream>
-#include <streambuf>
 
-#include "pinocchio/multibody/model.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/parsers/urdf.hpp"
-#include "pinocchio/algorithm/frames.hpp"
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
-  #include <hpp/fcl/collision_object.h>
-#endif // PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
+  #include <coal/collision_object.h>
+#endif // PINOCCHIO_WITH_COLLISION
 
 #include <boost/filesystem.hpp>
 #include <boost/test/unit_test.hpp>
@@ -67,20 +64,11 @@ BOOST_AUTO_TEST_CASE(build_model_simple_humanoid)
   pinocchio::urdf::buildGeom(model, filename, pinocchio::COLLISION, geomModel, dir);
   BOOST_CHECK_EQUAL(geomModel.ngeoms, 2);
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
   // Check that cylinder is converted into capsule.
-  #ifdef PINOCCHIO_URDFDOM_COLLISION_WITH_GROUP_NAME
-  BOOST_CHECK_EQUAL(geomModel.geometryObjects[0].geometry->getNodeType(), hpp::fcl::GEOM_CYLINDER);
-  #else // PINOCCHIO_URDFDOM_COLLISION_WITH_GROUP_NAME
-  BOOST_CHECK_EQUAL(geomModel.geometryObjects[0].geometry->getNodeType(), hpp::fcl::GEOM_CAPSULE);
-  #endif
-
-  #ifndef PINOCCHIO_URDFDOM_COLLISION_WITH_GROUP_NAME
-  BOOST_CHECK_EQUAL(geomModel.geometryObjects[1].geometry->getNodeType(), hpp::fcl::GEOM_CONVEX);
-  #else // PINOCCHIO_URDFDOM_COLLISION_WITH_GROUP_NAME
-  BOOST_CHECK_EQUAL(geomModel.geometryObjects[1].geometry->getObjectType(), hpp::fcl::OT_BVH);
-  #endif
-#endif // PINOCCHIO_WITH_HPP_FCL
+  BOOST_CHECK_EQUAL(geomModel.geometryObjects[0].geometry->getNodeType(), coal::GEOM_CAPSULE);
+  BOOST_CHECK_EQUAL(geomModel.geometryObjects[1].geometry->getNodeType(), coal::GEOM_CONVEX);
+#endif // PINOCCHIO_WITH_COLLISION
 
   pinocchio::Model model_ff;
   pinocchio::urdf::buildModel(filename, pinocchio::JointModelFreeFlyer(), model_ff);
@@ -130,24 +118,25 @@ BOOST_AUTO_TEST_CASE(build_model_from_XML)
 BOOST_AUTO_TEST_CASE(check_tree_from_XML)
 {
   // Read file as XML
-  std::string filestr("<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                      "<robot name=\"test\">"
-                      "  <link name=\"base_link\"/>"
-                      "  <link name=\"link_1\"/>"
-                      "  <link name=\"link_2\"/>"
-                      "  <joint name=\"joint_1\" type=\"fixed\">"
-                      "    <origin xyz=\"1 0 0\"/>"
-                      "    <axis xyz=\"0 0 1\"/>"
-                      "    <parent link=\"base_link\"/>"
-                      "    <child link=\"link_1\"/>"
-                      "  </joint>"
-                      "  <joint name=\"joint_2\" type=\"fixed\">"
-                      "    <origin xyz=\"0 1 0\"/>"
-                      "    <axis xyz=\"0 0 1\"/>"
-                      "    <parent link=\"link_1\"/>"
-                      "    <child link=\"link_2\"/>"
-                      "  </joint>"
-                      "</robot>");
+  std::string filestr(
+    "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+    "<robot name=\"test\">"
+    "  <link name=\"base_link\"/>"
+    "  <link name=\"link_1\"/>"
+    "  <link name=\"link_2\"/>"
+    "  <joint name=\"joint_1\" type=\"fixed\">"
+    "    <origin xyz=\"1 0 0\"/>"
+    "    <axis xyz=\"0 0 1\"/>"
+    "    <parent link=\"base_link\"/>"
+    "    <child link=\"link_1\"/>"
+    "  </joint>"
+    "  <joint name=\"joint_2\" type=\"fixed\">"
+    "    <origin xyz=\"0 1 0\"/>"
+    "    <axis xyz=\"0 0 1\"/>"
+    "    <parent link=\"link_1\"/>"
+    "    <child link=\"link_2\"/>"
+    "  </joint>"
+    "</robot>");
 
   pinocchio::Model model;
   pinocchio::urdf::buildModelFromXML(filestr, model);
@@ -231,10 +220,11 @@ BOOST_AUTO_TEST_CASE(append_two_URDF_models)
 
   BOOST_CHECK(model.njoints == 30);
   const int nframes = model.nframes;
-  const std::string filestr("<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                            "<robot name=\"test\">"
-                            "  <link name=\"box\"/>"
-                            "</robot>");
+  const std::string filestr(
+    "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+    "<robot name=\"test\">"
+    "  <link name=\"box\"/>"
+    "</robot>");
 
   pinocchio::urdf::buildModelFromXML(filestr, model);
   BOOST_CHECK(model.njoints == 30);
@@ -249,10 +239,11 @@ BOOST_AUTO_TEST_CASE(append_two_URDF_models_with_root_joint)
   pinocchio::urdf::buildModel(filename, pinocchio::JointModelFreeFlyer(), model);
 
   BOOST_CHECK(model.njoints == 31);
-  const std::string filestr("<?xml version=\"1.0\" encoding=\"utf-8\"?>"
-                            "<robot name=\"test\">"
-                            "  <link name=\"box\"/>"
-                            "</robot>");
+  const std::string filestr(
+    "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+    "<robot name=\"test\">"
+    "  <link name=\"box\"/>"
+    "</robot>");
 
   BOOST_CHECK_THROW(
     pinocchio::urdf::buildModelFromXML(filestr, pinocchio::JointModelFreeFlyer(), model),
@@ -267,7 +258,7 @@ BOOST_AUTO_TEST_CASE(check_specific_models)
   pinocchio::urdf::buildModel(filename, model);
 }
 
-#if defined(PINOCCHIO_WITH_HPP_FCL)
+#if defined(PINOCCHIO_WITH_COLLISION)
 BOOST_AUTO_TEST_CASE(test_geometry_parsing)
 {
   typedef pinocchio::Model Model;
@@ -290,7 +281,7 @@ BOOST_AUTO_TEST_CASE(test_geometry_parsing)
     pinocchio::urdf::buildGeom(model, filename, pinocchio::COLLISION, geomModel, packageDirs);
   BOOST_CHECK(geomModelOther == geomModel);
 }
-#endif // if defined(PINOCCHIO_WITH_HPP_FCL)
+#endif // if defined(PINOCCHIO_WITH_COLLISION)
 
 BOOST_AUTO_TEST_CASE(test_getFrameId_identical_link_and_joint_name)
 {
@@ -457,8 +448,9 @@ BOOST_AUTO_TEST_CASE(test_mimic_parsing)
   // RU
   auto j4 = boost::get<pinocchio::JointModelMimic>(model_mimic.joints[5]);
   BOOST_CHECK(boost::get<pinocchio::JointModelRevoluteUnaligned>(&j4.jmodel()));
-  BOOST_CHECK(boost::get<pinocchio::JointModelRevoluteUnaligned>(j4.jmodel())
-                .axis.isApprox(-1 * Eigen::Vector3d::UnitZ()));
+  BOOST_CHECK(
+    boost::get<pinocchio::JointModelRevoluteUnaligned>(j4.jmodel())
+      .axis.isApprox(-1 * Eigen::Vector3d::UnitZ()));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

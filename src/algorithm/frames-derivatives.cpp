@@ -2,6 +2,7 @@
 // Copyright (c) 2022 INRIA
 //
 
+#include "pinocchio/src/context/template-instantiation.hxx"
 #include "pinocchio/algorithm/frames-derivatives.hpp"
 
 namespace pinocchio
@@ -13,8 +14,8 @@ namespace pinocchio
     JointCollectionDefaultTpl,
     context::Matrix6xs,
     context::Matrix6xs>(
-    const context::Model &,
-    const context::Data &,
+    const Model &,
+    const Data &,
     const JointIndex,
     const SE3Tpl<context::Scalar, context::Options> &,
     const ReferenceFrame,
@@ -27,8 +28,8 @@ namespace pinocchio
     JointCollectionDefaultTpl,
     context::Matrix6xs,
     context::Matrix6xs>(
-    const context::Model &,
-    context::Data &,
+    const Model &,
+    Data &,
     const FrameIndex,
     const ReferenceFrame,
     const Eigen::MatrixBase<context::Matrix6xs> &,
@@ -42,8 +43,8 @@ namespace pinocchio
     context::Matrix6xs,
     context::Matrix6xs,
     context::Matrix6xs>(
-    const context::Model &,
-    context::Data &,
+    const Model &,
+    Data &,
     const JointIndex,
     const SE3Tpl<context::Scalar, context::Options> &,
     const ReferenceFrame,
@@ -60,8 +61,8 @@ namespace pinocchio
     context::Matrix6xs,
     context::Matrix6xs,
     context::Matrix6xs>(
-    const context::Model &,
-    context::Data &,
+    const Model &,
+    Data &,
     const FrameIndex,
     const ReferenceFrame,
     const Eigen::MatrixBase<context::Matrix6xs> &,
@@ -78,8 +79,8 @@ namespace pinocchio
     context::Matrix6xs,
     context::Matrix6xs,
     context::Matrix6xs>(
-    const context::Model &,
-    context::Data &,
+    const Model &,
+    Data &,
     const JointIndex,
     const SE3Tpl<context::Scalar, context::Options> &,
     const ReferenceFrame,
@@ -98,8 +99,8 @@ namespace pinocchio
     context::Matrix6xs,
     context::Matrix6xs,
     context::Matrix6xs>(
-    const context::Model &,
-    context::Data &,
+    const Model &,
+    Data &,
     const FrameIndex,
     const ReferenceFrame,
     const Eigen::MatrixBase<context::Matrix6xs> &,

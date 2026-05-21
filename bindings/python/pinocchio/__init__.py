@@ -47,26 +47,27 @@ for module_info in submodules:
 sys.modules["pinocchio.rpy"] = rpy
 sys.modules["pinocchio.cholesky"] = cholesky
 
-if WITH_HPP_FCL:
-    try:
-        import hppfcl
-        from hppfcl import (
-            CachedMeshLoader,
-            CollisionGeometry,
-            CollisionResult,
-            Contact,
-            DistanceResult,
-            MeshLoader,
-            StdVec_CollisionResult,
-            StdVec_Contact,
-            StdVec_DistanceResult,
-        )
+if WITH_COLLISION:
+    import coal
+    from coal import (
+        CachedMeshLoader,
+        CollisionGeometry,
+        CollisionResult,
+        Contact,
+        DistanceResult,
+        MeshLoader,
+        StdVec_CollisionResult,
+        StdVec_Contact,
+        StdVec_DistanceResult,
+    )
 
-        WITH_HPP_FCL_BINDINGS = True
-    except ImportError:
-        WITH_HPP_FCL_BINDINGS = False
-else:
-    WITH_HPP_FCL_BINDINGS = False
+    # Pickling support becauso Vec3s is registered by
+    # coal and pinocchio (see pinocchio/binding/python/multibody/data.hpp)
+    coal.StdVec_Vec3s.__safe_for_unpickling__ = True
+    coal.StdVec_Vec3s.__getstate_manages_dict__ = True
+
+    # Deprecated, should be removed in next major release
+    hppfcl = coal
 
 from .deprecated import *
 from .robot_wrapper import RobotWrapper

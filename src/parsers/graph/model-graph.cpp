@@ -2,17 +2,24 @@
 // Copyright (c) 2025 INRIA
 //
 
-#include "pinocchio/parsers/graph/model-graph.hpp"
+#include <cassert>
+#include <cstddef>
+#include <limits>
+#include <stdexcept>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
-#include "pinocchio/parsers/graph/fwd.hpp"
+#include <Eigen/Core>
 
-#include "pinocchio/parsers/graph/joints.hpp"
-#include "pinocchio/parsers/graph/frames.hpp"
-#include "pinocchio/parsers/graph/graph-visitor.hpp"
-
+#include <boost/optional.hpp>
+#include <boost/variant.hpp>
 #include <boost/graph/adjacency_list.hpp>
 
-#include <boost/variant/apply_visitor.hpp>
+#include "pinocchio/macros.hpp"
+#include "pinocchio/spatial.hpp"
+#include "pinocchio/parsers/graph.hpp"
 
 namespace pinocchio
 {

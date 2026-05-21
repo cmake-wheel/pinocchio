@@ -2,8 +2,7 @@
 // Copyright (c) 2015-2019 CNRS INRIA
 //
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/multibody/visitor.hpp"
 
 #include <iostream>

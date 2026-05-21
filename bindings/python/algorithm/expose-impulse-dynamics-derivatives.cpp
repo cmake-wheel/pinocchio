@@ -15,10 +15,8 @@ namespace pinocchio
   namespace python
   {
 
-    typedef PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(context::RigidConstraintModel)
-      RigidConstraintModelVector;
-    typedef PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(context::RigidConstraintData)
-      RigidConstraintDataVector;
+    typedef std::vector<context::RigidConstraintModel> RigidConstraintModelVector;
+    typedef std::vector<context::RigidConstraintData> RigidConstraintDataVector;
 
     static void impulseDynamicsDerivatives_proxy(
       const context::Model & model,

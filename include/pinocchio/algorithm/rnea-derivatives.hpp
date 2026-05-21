@@ -2,13 +2,32 @@
 // Copyright (c) 2017-2019 CNRS INRIA
 //
 
-#ifndef __pinocchio_algorithm_rnea_derivatives_hpp__
-#define __pinocchio_algorithm_rnea_derivatives_hpp__
+#pragma once
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+// IWYU pragma: begin_keep
+#include <Eigen/Core>
 
-#include "pinocchio/container/aligned-vector.hpp"
+#include <cassert>
+#include <cstddef>
+#include <type_traits>
+#include <vector>
+
+#include <boost/fusion/container/vector.hpp>
+
+#include "pinocchio/macros.hpp"
+#include "pinocchio/eigen-common.hpp"
+#include "pinocchio/fwd.hpp"
+
+#include "pinocchio/math.hpp"
+
+#include "pinocchio/spatial.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/multibody/visitor.hpp"
+
+#include "pinocchio/algorithm/check.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -75,7 +94,7 @@ namespace pinocchio
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     DataTpl<Scalar, Options, JointCollectionTpl> & data,
     const Eigen::MatrixBase<ConfigVectorType> & q,
-    const container::aligned_vector<ForceTpl<Scalar, Options>> & fext,
+    const std::vector<ForceTpl<Scalar, Options>> & fext,
     const Eigen::MatrixBase<ReturnMatrixType> & static_torque_partial_dq);
 
   ///
@@ -174,7 +193,7 @@ namespace pinocchio
     const Eigen::MatrixBase<ConfigVectorType> & q,
     const Eigen::MatrixBase<TangentVectorType1> & v,
     const Eigen::MatrixBase<TangentVectorType2> & a,
-    const container::aligned_vector<ForceTpl<Scalar, Options>> & fext,
+    const std::vector<ForceTpl<Scalar, Options>> & fext,
     const Eigen::MatrixBase<MatrixType1> & rnea_partial_dq,
     const Eigen::MatrixBase<MatrixType2> & rnea_partial_dv,
     const Eigen::MatrixBase<MatrixType3> & rnea_partial_da);
@@ -194,7 +213,7 @@ namespace pinocchio
   /// \param[in] v The joint velocity vector (dim model.nv).
   /// \param[in] a The joint acceleration vector (dim model.nv).
   ///
-  /// \returns The results are stored in data.dtau_dq, data.dtau_dv and data.M which respectively
+  /// \note The results are stored in data.dtau_dq, data.dtau_dv and data.M which respectively
   /// correspond
   ///          to the partial derivatives of the joint torque vector with respect to the joint
   ///          configuration, velocity and acceleration. As for pinocchio::crba, only the upper
@@ -233,7 +252,7 @@ namespace pinocchio
   /// \param[in] fext External forces expressed in the local frame of the joints (dim
   /// model.njoints).
   ///
-  /// \returns The results are stored in data.dtau_dq, data.dtau_dv and data.M which respectively
+  /// \note The results are stored in data.dtau_dq, data.dtau_dv and data.M which respectively
   /// correspond
   ///          to the partial derivatives of the joint torque vector with respect to the joint
   ///          configuration, velocity and acceleration. As for pinocchio::crba, only the upper
@@ -254,14 +273,10 @@ namespace pinocchio
     const Eigen::MatrixBase<ConfigVectorType> & q,
     const Eigen::MatrixBase<TangentVectorType1> & v,
     const Eigen::MatrixBase<TangentVectorType2> & a,
-    const container::aligned_vector<ForceTpl<Scalar, Options>> & fext);
+    const std::vector<ForceTpl<Scalar, Options>> & fext);
 
 } // namespace pinocchio
 
-#include "pinocchio/algorithm/rnea-derivatives.hxx"
-
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/algorithm/rnea-derivatives.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-
-#endif // ifndef __pinocchio_algorithm_rnea_derivatives_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/rnea-derivatives.hxx"
+// IWYU pragma: end_exports

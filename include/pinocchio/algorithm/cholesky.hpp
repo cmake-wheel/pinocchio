@@ -2,11 +2,23 @@
 // Copyright (c) 2015-2019 CNRS INRIA
 //
 
-#ifndef __pinocchio_cholesky_hpp__
-#define __pinocchio_cholesky_hpp__
+#pragma once
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+// IWYU pragma: begin_keep
+#include <cassert>
+#include <cstddef>
+#include <vector>
+#include <algorithm>
+
+#include <Eigen/Core>
+
+#include "pinocchio/macros.hpp"
+#include "pinocchio/eigen-common.hpp"
+
+#include "pinocchio/multibody.hpp"
+
+#include "pinocchio/algorithm/check-model.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -232,30 +244,6 @@ namespace pinocchio
       const Eigen::MatrixBase<Mat> & v);
 
     ///
-    /// \brief Perform the sparse inversion \f$ M^{-1}v \f$ using the Cholesky decomposition stored
-    /// in data and acting in place.
-    ///
-    /// \tparam JointCollection Collection of Joint types.
-    ///
-    /// \param[in] model The model structure of the rigid body system.
-    /// \param[in] data The data structure of the rigid body system.
-    /// \param[inout] v The input matrix to multiply with data.M^{-1} and also storing the result.
-    ///
-    /// \return A reference to the result of \f$ M^{-1}v \f$ stored in v.
-    ///
-
-    // TODO Clearify, it seems it is exactly the same as solve in l. 54
-    template<
-      typename Scalar,
-      int Options,
-      template<typename, int> class JointCollectionTpl,
-      typename Mat>
-    Mat & solve(
-      const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
-      const DataTpl<Scalar, Options, JointCollectionTpl> & data,
-      const Eigen::MatrixBase<Mat> & v);
-
-    ///
     /// \brief Computes the inverse of the joint space inertia matrix M from its Cholesky
     /// factorization.
     ///
@@ -303,10 +291,6 @@ namespace pinocchio
 /* --- Details -------------------------------------------------------------------- */
 /* --- Details -------------------------------------------------------------------- */
 /* --- Details -------------------------------------------------------------------- */
-#include "pinocchio/algorithm/cholesky.hxx"
-
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/algorithm/cholesky.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-
-#endif // ifndef __pinocchio_cholesky_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/cholesky.hxx"
+// IWYU pragma: end_exports

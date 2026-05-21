@@ -22,11 +22,7 @@ namespace pinocchio
       const context::VectorXs & gamma,
       const context::Scalar inv_damping = context::Scalar(0.0))
     {
-
-      PINOCCHIO_COMPILER_DIAGNOSTIC_PUSH
-      PINOCCHIO_COMPILER_DIAGNOSTIC_IGNORED_DEPRECECATED_DECLARATIONS
       return forwardDynamics(model, data, q, v, tau, J, gamma, inv_damping);
-      PINOCCHIO_COMPILER_DIAGNOSTIC_POP
     }
 
     static const context::VectorXs forwardDynamics_proxy_no_q(
@@ -37,11 +33,7 @@ namespace pinocchio
       const context::VectorXs & gamma,
       const context::Scalar inv_damping = context::Scalar(0.0))
     {
-
-      PINOCCHIO_COMPILER_DIAGNOSTIC_PUSH
-      PINOCCHIO_COMPILER_DIAGNOSTIC_IGNORED_DEPRECECATED_DECLARATIONS
       return forwardDynamics(model, data, tau, J, gamma, inv_damping);
-      PINOCCHIO_COMPILER_DIAGNOSTIC_POP
     }
 
     static const context::VectorXs impulseDynamics_proxy(
@@ -53,11 +45,7 @@ namespace pinocchio
       const context::Scalar r_coeff = context::Scalar(0.),
       const context::Scalar inv_damping = context::Scalar(0.))
     {
-
-      PINOCCHIO_COMPILER_DIAGNOSTIC_PUSH
-      PINOCCHIO_COMPILER_DIAGNOSTIC_IGNORED_DEPRECECATED_DECLARATIONS
       return impulseDynamics(model, data, q, v_before, J, r_coeff, inv_damping);
-      PINOCCHIO_COMPILER_DIAGNOSTIC_POP
     }
 
     static const context::VectorXs impulseDynamics_proxy_no_q(
@@ -68,11 +56,7 @@ namespace pinocchio
       const context::Scalar r_coeff = context::Scalar(0.),
       const context::Scalar inv_damping = context::Scalar(0.))
     {
-
-      PINOCCHIO_COMPILER_DIAGNOSTIC_PUSH
-      PINOCCHIO_COMPILER_DIAGNOSTIC_IGNORED_DEPRECECATED_DECLARATIONS
       return impulseDynamics(model, data, v_before, J, r_coeff, inv_damping);
-      PINOCCHIO_COMPILER_DIAGNOSTIC_POP
     }
 
     static context::MatrixXs computeKKTContactDynamicMatrixInverse_proxy(
@@ -92,10 +76,7 @@ namespace pinocchio
     {
       context::MatrixXs MJtJ_inv(model.nv + J.rows(), model.nv + J.rows());
 
-      PINOCCHIO_COMPILER_DIAGNOSTIC_PUSH
-      PINOCCHIO_COMPILER_DIAGNOSTIC_IGNORED_DEPRECECATED_DECLARATIONS
       getKKTContactDynamicMatrixInverse(model, data, J, MJtJ_inv);
-      PINOCCHIO_COMPILER_DIAGNOSTIC_POP
 
       return MJtJ_inv;
     }

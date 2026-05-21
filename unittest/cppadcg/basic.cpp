@@ -4,7 +4,7 @@
 
 #include "pinocchio/codegen/cppadcg.hpp"
 
-#include "pinocchio/multibody/model.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/multibody/sample-models.hpp"
 
 #include <iostream>

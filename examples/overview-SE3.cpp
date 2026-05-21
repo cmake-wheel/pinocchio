@@ -1,5 +1,11 @@
+#include <Eigen/Core>
+
 #include <iostream>
-#include "pinocchio/multibody/liegroup/liegroup.hpp"
+
+#include "pinocchio/math.hpp"
+#include "pinocchio/multibody/liegroup.hpp"
+#include "pinocchio/spatial.hpp"
+#include "pinocchio/utils/static-if.hpp"
 
 using namespace pinocchio;
 int main()

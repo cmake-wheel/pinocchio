@@ -3,7 +3,7 @@
 //
 
 #include "pinocchio/bindings/python/fwd.hpp"
-#include "pinocchio/spatial/classic-acceleration.hpp"
+#include "pinocchio/spatial.hpp"
 
 namespace pinocchio
 {

@@ -1,4 +1,7 @@
-#include "pinocchio/parsers/urdf/utils.hpp"
+#include <urdf_model/pose.h>
+
+#include "pinocchio/spatial.hpp"
+#include "pinocchio/parsers/urdf.hpp"
 
 namespace pinocchio
 {

@@ -1,5 +1,6 @@
 //
-// Copyright (c) 2018-2021 CNRS INRIA
+// Copyright (c) 2018-2021 CNRS
+// Copyright (c) 2018-2026 INRIA
 //
 #include "pinocchio/bindings/python/algorithm/algorithms.hpp"
 #include "pinocchio/algorithm/kinematics-derivatives.hpp"
@@ -101,19 +102,31 @@ namespace pinocchio
     {
       typedef context::Scalar Scalar;
       typedef context::VectorXs VectorXs;
-      enum
-      {
-        Options = context::Options
-      };
+      using context::Options;
+
+      bp::def(
+        "computeForwardKinematicsDerivatives",
+        &computeForwardKinematicsDerivatives<
+          Scalar, Options, JointCollectionDefaultTpl, VectorXs, VectorXs>,
+        bp::args("model", "data", "q", "v"),
+        "Computes all the terms required to compute the derivatives of the placement and spatial "
+        "velocities\n"
+        "for any joint/frame of the model.\n"
+        "The results are stored in data.\n\n"
+        "Parameters:\n"
+        "\tmodel: model of the kinematic tree\n"
+        "\tdata: data related to the model\n"
+        "\tq: the joint configuration vector (size model.nq)\n"
+        "\tv: the joint velocity vector (size model.nv)\n");
 
       bp::def(
         "computeForwardKinematicsDerivatives",
         &computeForwardKinematicsDerivatives<
           Scalar, Options, JointCollectionDefaultTpl, VectorXs, VectorXs, VectorXs>,
         bp::args("model", "data", "q", "v", "a"),
-        "Computes all the terms required to compute the derivatives of the placement, "
-        "spatial velocity and acceleration\n"
-        "for any joint of the model.\n"
+        "Computes all the terms required to compute the derivatives of the placement, spatial "
+        "velocities and accelerations\n"
+        "for any joint/frame of the model.\n"
         "The results are stored in data.\n\n"
         "Parameters:\n"
         "\tmodel: model of the kinematic tree\n"
@@ -201,6 +214,69 @@ namespace pinocchio
         "Parameters:\n"
         "\tmodel: model of the kinematic tree\n"
         "\tdata: data related to the model\n",
+        mimic_not_supported_function<>(0));
+
+      bp::def(
+        "computeJointKinematicHessians",
+        &computeJointKinematicHessians<Scalar, Options, JointCollectionDefaultTpl>,
+        bp::args("model", "data"),
+        "Computes all the terms required to compute the second order derivatives of the placement "
+        "information, also know as the kinematic Hessian. This function assumes that the joint "
+        "Jacobians (a.k.a data.J) has been computed first. See also computeJointJacobians for such "
+        "a function.",
+        mimic_not_supported_function<>(0));
+
+      bp::def(
+        "computeJointKinematicHessians",
+        &computeJointKinematicHessians<Scalar, Options, JointCollectionDefaultTpl, VectorXs>,
+        bp::args("model", "data", "q"),
+        "Computes all the terms required to compute the second order derivatives of the placement "
+        "information, also know as the kinematic Hessian.",
+        mimic_not_supported_function<>(0));
+
+      typedef Eigen::Tensor<Scalar, 3, Options> Tensor3;
+
+      bp::def(
+        "getJointKinematicHessian",
+        (Tensor3 (*)(
+          const context::Model &, const context::Data &, const JointIndex,
+          const ReferenceFrame))&getJointKinematicHessian<Scalar, Options, JointCollectionDefaultTpl>,
+        bp::args("model", "data", "joint_id", "reference_frame"),
+        "Retrieves the kinematic Hessian of a given joint according to the values aleardy computed "
+        "by computeJointKinematicHessians and stored in data.\n"
+        "While the kinematic Jacobian of a given joint frame corresponds to the first order "
+        "derivative of the placement variation with respect to \f$ q \f$, the kinematic Hessian "
+        "corresponds to the second order derivation of placement variation, which in turns also "
+        "corresponds to the first order derivative of the kinematic Jacobian.",
+        mimic_not_supported_function<>(0));
+
+      bp::def(
+        "getFrameKinematicHessian",
+        (Tensor3 (*)(
+          const context::Model &, const context::Data &, const FrameIndex,
+          const ReferenceFrame))&getFrameKinematicHessian<Scalar, Options, JointCollectionDefaultTpl>,
+        bp::args("model", "data", "frame_id", "reference_frame"),
+        "Retrieves the kinematic Hessian of a given frame according to the values aleardy computed "
+        "by computeJointKinematicHessians and stored in data.\n"
+        "While the kinematic Jacobian of a given joint frame corresponds to the first order "
+        "derivative of the placement variation with respect to \f$ q \f$, the kinematic Hessian "
+        "corresponds to the second order derivation of placement variation, which in turns also "
+        "corresponds to the first order derivative of the kinematic Jacobian.",
+        mimic_not_supported_function<>(0));
+
+      bp::def(
+        "getFrameKinematicHessian",
+        (Tensor3 (*)(
+          const context::Model &, const context::Data &, const JointIndex, const context::SE3 &,
+          const ReferenceFrame))&getFrameKinematicHessian<Scalar, Options, JointCollectionDefaultTpl>,
+        bp::args("model", "data", "joint_id", "frame_placement", "reference_frame"),
+        "Retrieves the kinematic Hessian of a given frame, given by the related joint_id and "
+        "frame_placement, leveraging to the values aleardy computed "
+        "by computeJointKinematicHessians and stored in data.\n"
+        "While the kinematic Jacobian of a given joint frame corresponds to the first order "
+        "derivative of the placement variation with respect to \f$ q \f$, the kinematic Hessian "
+        "corresponds to the second order derivation of placement variation, which in turns also "
+        "corresponds to the first order derivative of the kinematic Jacobian.",
         mimic_not_supported_function<>(0));
     }
 

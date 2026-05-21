@@ -18,9 +18,8 @@
 #endif
 
 #include <pinocchio/bindings/python/pybind11.hpp>
-#include <pinocchio/multibody/data.hpp>
-#include <pinocchio/multibody/geometry.hpp>
-#include <pinocchio/multibody/model.hpp>
+#include <pinocchio/multibody.hpp>
+#include <pinocchio/geometry.hpp>
 
 // Required to be able to pass argument with commas to macros
 #define _SINGLE_ARG(...) __VA_ARGS__

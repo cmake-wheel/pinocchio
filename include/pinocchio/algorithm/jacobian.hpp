@@ -2,11 +2,32 @@
 // Copyright (c) 2015-2020 CNRS INRIA
 //
 
-#ifndef __pinocchio_algorithm_jacobian_hpp__
-#define __pinocchio_algorithm_jacobian_hpp__
+#pragma once
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+// IWYU pragma: begin_keep
+#include <Eigen/Core>
+
+#include <cassert>
+#include <cstddef>
+#include <type_traits>
+#include <vector>
+
+#include <boost/fusion/container/vector.hpp>
+
+#include "pinocchio/macros.hpp"
+#include "pinocchio/eigen-common.hpp"
+#include "pinocchio/fwd.hpp"
+
+#include "pinocchio/math.hpp"
+
+#include "pinocchio/spatial.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/multibody/visitor.hpp"
+
+#include "pinocchio/algorithm/check.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -152,9 +173,6 @@ namespace pinocchio
   /// \param[out] J A reference on the Jacobian matrix where the results will be stored in (dim 6 x
   /// model.nv). You must fill J with zero elements, e.g. J.setZero().
   ///
-  /// \return The Jacobian of the specific joint frame expressed in the local frame of the joint
-  /// (matrix 6 x model.nv).
-  ///
   /// \remarks The result of this function is equivalent to call first
   /// computeJointJacobians(model,data,q) and then call
   /// getJointJacobian(model,data,jointId,LOCAL,J),
@@ -236,14 +254,6 @@ namespace pinocchio
 
 } // namespace pinocchio
 
-/* --- Details -------------------------------------------------------------------- */
-/* --- Details -------------------------------------------------------------------- */
-/* --- Details -------------------------------------------------------------------- */
-
-#include "pinocchio/algorithm/jacobian.hxx"
-
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/algorithm/jacobian.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-
-#endif // ifndef __pinocchio_algorithm_jacobian_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/jacobian.hxx"
+// IWYU pragma: end_exports

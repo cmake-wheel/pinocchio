@@ -4,9 +4,8 @@
 
 #include "pinocchio/autodiff/casadi.hpp"
 
-#include "pinocchio/multibody/joint/joint-generic.hpp"
-#include "pinocchio/multibody/liegroup/liegroup.hpp"
-#include "pinocchio/multibody/liegroup/liegroup-algo.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/multibody/liegroup.hpp"
 
 #include <iostream>
 #include <boost/test/unit_test.hpp>
@@ -52,7 +51,7 @@ BOOST_AUTO_TEST_CASE(test_jointRX_motion_space)
 
   casadi::SX cs_q = casadi::SX::sym("q", jmodel.nq());
   ConfigVectorAD q_ad(jmodel.nq());
-  for (Eigen::DenseIndex k = 0; k < jmodel.nq(); ++k)
+  for (Eigen::Index k = 0; k < jmodel.nq(); ++k)
   {
     q_ad[k] = cs_q(k);
   }
@@ -65,14 +64,14 @@ BOOST_AUTO_TEST_CASE(test_jointRX_motion_space)
   SE3AD M2(jdata_ad.M);
 
   casadi::SX cs_trans(3, 1);
-  for (Eigen::DenseIndex k = 0; k < 3; ++k)
+  for (Eigen::Index k = 0; k < 3; ++k)
   {
     cs_trans(k) = M2.translation()[k];
   }
   casadi::SX cs_rot(3, 3);
-  for (Eigen::DenseIndex i = 0; i < 3; ++i)
+  for (Eigen::Index i = 0; i < 3; ++i)
   {
-    for (Eigen::DenseIndex j = 0; j < 3; ++j)
+    for (Eigen::Index j = 0; j < 3; ++j)
     {
       cs_rot(i, j) = M2.rotation()(i, j);
     }
@@ -98,7 +97,7 @@ BOOST_AUTO_TEST_CASE(test_jointRX_motion_space)
   std::vector<double> v_vec((size_t)jmodel.nv());
   Eigen::Map<TangentVector>(v_vec.data(), jmodel.nv(), 1) = v;
 
-  for (Eigen::DenseIndex k = 0; k < jmodel.nv(); ++k)
+  for (Eigen::Index k = 0; k < jmodel.nv(); ++k)
   {
     v_ad[k] = cs_v(k);
   }
@@ -112,7 +111,7 @@ BOOST_AUTO_TEST_CASE(test_jointRX_motion_space)
   MotionAD m_ad(jdata_ad.v);
 
   casadi::SX cs_vel(6, 1);
-  for (Eigen::DenseIndex k = 0; k < 6; ++k)
+  for (Eigen::Index k = 0; k < 6; ++k)
   {
     cs_vel(k) = m_ad.toVector()[k];
   }
@@ -134,9 +133,9 @@ BOOST_AUTO_TEST_CASE(test_jointRX_motion_space)
   std::cout << "res_S:" << res_S << std::endl;
   JointMotionSubspaceXd::DenseBase Sref_mat = Sref.matrix();
 
-  for (Eigen::DenseIndex i = 0; i < 6; ++i)
+  for (Eigen::Index i = 0; i < 6; ++i)
   {
-    for (Eigen::DenseIndex j = 0; i < Sref.nv(); ++i)
+    for (Eigen::Index j = 0; i < Sref.nv(); ++i)
       BOOST_CHECK(
         std::fabs(Sref_mat(i, j) - (double)res_S[0](i, j))
         <= Eigen::NumTraits<double>::dummy_precision());
@@ -435,7 +434,7 @@ struct TestADOnJoints
 
     casadi::SX cs_q = casadi::SX::sym("q", jmodel.nq());
     ConfigVectorAD q_ad(jmodel.nq());
-    for (Eigen::DenseIndex k = 0; k < jmodel.nq(); ++k)
+    for (Eigen::Index k = 0; k < jmodel.nq(); ++k)
     {
       q_ad[k] = cs_q(k);
     }
@@ -448,14 +447,14 @@ struct TestADOnJoints
     SE3AD M2(jdata_ad_base.M());
 
     casadi::SX cs_trans(3, 1);
-    for (Eigen::DenseIndex k = 0; k < 3; ++k)
+    for (Eigen::Index k = 0; k < 3; ++k)
     {
       cs_trans(k) = M2.translation()[k];
     }
     casadi::SX cs_rot(3, 3);
-    for (Eigen::DenseIndex i = 0; i < 3; ++i)
+    for (Eigen::Index i = 0; i < 3; ++i)
     {
-      for (Eigen::DenseIndex j = 0; j < 3; ++j)
+      for (Eigen::Index j = 0; j < 3; ++j)
       {
         cs_rot(i, j) = M2.rotation()(i, j);
       }
@@ -481,7 +480,7 @@ struct TestADOnJoints
     std::vector<double> v_vec((size_t)jmodel.nv());
     Eigen::Map<TangentVector>(v_vec.data(), jmodel.nv(), 1) = v;
 
-    for (Eigen::DenseIndex k = 0; k < jmodel.nv(); ++k)
+    for (Eigen::Index k = 0; k < jmodel.nv(); ++k)
     {
       v_ad[k] = cs_v(k);
     }
@@ -495,7 +494,7 @@ struct TestADOnJoints
     MotionAD m_ad(jdata_ad_base.v());
 
     casadi::SX cs_vel(6, 1);
-    for (Eigen::DenseIndex k = 0; k < 6; ++k)
+    for (Eigen::Index k = 0; k < 6; ++k)
     {
       cs_vel(k) = m_ad.toVector()[k];
     }
@@ -517,9 +516,9 @@ struct TestADOnJoints
     std::cout << "res_S:" << res_S << std::endl;
     JointMotionSubspaceXd::DenseBase Sref_mat = Sref.matrix();
 
-    for (Eigen::DenseIndex i = 0; i < 6; ++i)
+    for (Eigen::Index i = 0; i < 6; ++i)
     {
-      for (Eigen::DenseIndex j = 0; i < Sref.nv(); ++i)
+      for (Eigen::Index j = 0; i < Sref.nv(); ++i)
         BOOST_CHECK(
           std::fabs(Sref_mat(i, j) - (double)res_S[0](i, j))
           <= Eigen::NumTraits<double>::dummy_precision());

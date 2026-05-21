@@ -2,6 +2,7 @@
 // Copyright (c) 2022 INRIA
 //
 
+#include "pinocchio/src/context/template-instantiation.hxx"
 #include "pinocchio/algorithm/crba.hpp"
 
 namespace pinocchio
@@ -11,8 +12,8 @@ namespace pinocchio
     context::Options,
     JointCollectionDefaultTpl,
     Eigen::Ref<const context::VectorXs>>(
-    const context::Model &,
-    context::Data &,
+    const Model &,
+    Data &,
     const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
     const Convention convention);
 } // namespace pinocchio

@@ -25,6 +25,7 @@ namespace pinocchio
       exposeConstraintDynamics();
       exposeConstraintDynamicsDerivatives();
       exposeContactDynamics();
+      exposeLcaba();
       exposeContactInverseDynamics();
       exposeDelassus();
       exposeCAT();
@@ -48,7 +49,7 @@ namespace pinocchio
 
       exposeCones();
 
-      exposeContactSolvers();
+      exposeConstraintSolvers();
     }
 
   } // namespace python

@@ -3,10 +3,32 @@
 // Copyright (c) 2023 KU Leuven
 //
 
-#ifndef __pinocchio_algorithm_pv_hpp__
-#define __pinocchio_algorithm_pv_hpp__
+#pragma once
 
-#include "pinocchio/algorithm/contact-info.hpp"
+// IWYU pragma: begin_keep
+#include <cassert>
+#include <cstddef>
+#include <algorithm>
+#include <vector>
+
+#include <Eigen/Core>
+#include <Eigen/Cholesky>
+#include <boost/fusion/container/vector.hpp>
+
+#include "pinocchio/macros.hpp"
+
+#include "pinocchio/spatial.hpp"
+
+#include "pinocchio/utils/check.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+
+#include "pinocchio/constraints.hpp"
+#include "pinocchio/algorithm/fwd.hpp"
+#include "pinocchio/algorithm/check.hpp"
+#include "pinocchio/algorithm/aba.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -28,12 +50,12 @@ namespace pinocchio
     typename Scalar,
     int Options,
     template<typename, int> class JointCollectionTpl,
-    class Allocator>
-  PINOCCHIO_UNSUPPORTED_MESSAGE("The API will change towards more flexibility")
+    class ConstraintModel,
+    class ConstraintModelAllocator>
   inline void initPvSolver(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     DataTpl<Scalar, Options, JointCollectionTpl> & data,
-    const std::vector<RigidConstraintModelTpl<Scalar, Options>, Allocator> & contact_models);
+    const std::vector<ConstraintModel, ConstraintModelAllocator> & contact_models);
 
   ///
   /// \brief The Popov-Vereshchagin algorithm. It computes constrained forward dynamics, aka the
@@ -68,18 +90,18 @@ namespace pinocchio
     typename ConfigVectorType,
     typename TangentVectorType1,
     typename TangentVectorType2,
-    class ContactModelAllocator,
-    class ContactDataAllocator>
-  PINOCCHIO_UNSUPPORTED_MESSAGE("The API will change towards more flexibility")
+    class ConstraintModel,
+    class ConstraintModelAllocator,
+    class ConstraintData,
+    class ConstraintDataAllocator>
   inline const typename DataTpl<Scalar, Options, JointCollectionTpl>::TangentVectorType & pv(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     DataTpl<Scalar, Options, JointCollectionTpl> & data,
     const Eigen::MatrixBase<ConfigVectorType> & q,
     const Eigen::MatrixBase<TangentVectorType1> & v,
     const Eigen::MatrixBase<TangentVectorType2> & tau,
-    const std::vector<RigidConstraintModelTpl<Scalar, Options>, ContactModelAllocator> &
-      contact_models,
-    std::vector<RigidConstraintDataTpl<Scalar, Options>, ContactDataAllocator> & contact_datas,
+    const std::vector<ConstraintModel, ConstraintModelAllocator> & contact_models,
+    std::vector<ConstraintData, ConstraintDataAllocator> & contact_datas,
     ProximalSettingsTpl<Scalar> & settings);
 
   ///
@@ -116,24 +138,23 @@ namespace pinocchio
     typename ConfigVectorType,
     typename TangentVectorType1,
     typename TangentVectorType2,
-    class ContactModelAllocator,
-    class ContactDataAllocator>
-  PINOCCHIO_UNSUPPORTED_MESSAGE("The API will change towards more flexibility")
-  inline const
-    typename DataTpl<Scalar, Options, JointCollectionTpl>::TangentVectorType & constrainedABA(
-      const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
-      DataTpl<Scalar, Options, JointCollectionTpl> & data,
-      const Eigen::MatrixBase<ConfigVectorType> & q,
-      const Eigen::MatrixBase<TangentVectorType1> & v,
-      const Eigen::MatrixBase<TangentVectorType2> & tau,
-      const std::vector<RigidConstraintModelTpl<Scalar, Options>, ContactModelAllocator> &
-        contact_models,
-      std::vector<RigidConstraintDataTpl<Scalar, Options>, ContactDataAllocator> & contact_datas,
-      ProximalSettingsTpl<Scalar> & settings);
+    class ConstraintModel,
+    class ConstraintModelAllocator,
+    class ConstraintData,
+    class ConstraintDataAllocator>
+  inline const typename DataTpl<Scalar, Options, JointCollectionTpl>::TangentVectorType &
+  constrainedABA(
+    const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+    DataTpl<Scalar, Options, JointCollectionTpl> & data,
+    const Eigen::MatrixBase<ConfigVectorType> & q,
+    const Eigen::MatrixBase<TangentVectorType1> & v,
+    const Eigen::MatrixBase<TangentVectorType2> & tau,
+    const std::vector<ConstraintModel, ConstraintModelAllocator> & contact_models,
+    std::vector<ConstraintData, ConstraintDataAllocator> & contact_datas,
+    ProximalSettingsTpl<Scalar> & settings);
 
 } // namespace pinocchio
 
-/* --- Details -------------------------------------------------------------------- */
-#include "pinocchio/algorithm/pv.hxx"
-
-#endif // ifndef __pinocchio_algorithm_pv_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/pv.hxx"
+// IWYU pragma: end_exports

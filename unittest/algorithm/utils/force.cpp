@@ -2,8 +2,6 @@
 // Copyright (c) 2020 INRIA
 //
 
-#include <iostream>
-
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
 

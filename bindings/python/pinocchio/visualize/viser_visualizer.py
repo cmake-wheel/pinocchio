@@ -2,9 +2,9 @@ import time
 from pathlib import Path
 
 try:
-    import hppfcl
+    import coal
 except ImportError:
-    raise ImportError("hppfcl not found, but it is currently required by this viewer.")
+    raise ImportError("coal not found, but it is currently required by this viewer.")
 
 import numpy as np
 
@@ -20,7 +20,7 @@ else:
     import_viser_succeed = True
 
 
-MESH_TYPES = (hppfcl.BVHModelBase, hppfcl.HeightFieldOBBRSS, hppfcl.HeightFieldAABB)
+MESH_TYPES = (coal.BVHModelBase, coal.HeightFieldOBBRSS, coal.HeightFieldAABB)
 
 
 class ViserVisualizer(BaseVisualizer):
@@ -173,21 +173,21 @@ class ViserVisualizer(BaseVisualizer):
         geom = geometry_object.geometry
         color_override = color or geometry_object.meshColor
 
-        if isinstance(geom, hppfcl.Box):
+        if isinstance(geom, coal.Box):
             frame = self.viewer.scene.add_box(
                 name,
                 dimensions=geom.halfSide * 2.0,
                 color=color_override[:3],
                 opacity=color_override[3],
             )
-        elif isinstance(geom, hppfcl.Sphere):
+        elif isinstance(geom, coal.Sphere):
             frame = self.viewer.scene.add_icosphere(
                 name,
                 radius=geom.radius,
                 color=color_override[:3],
                 opacity=color_override[3],
             )
-        elif isinstance(geom, hppfcl.Cylinder):
+        elif isinstance(geom, coal.Cylinder):
             mesh = trimesh.creation.cylinder(
                 radius=geom.radius,
                 height=geom.halfLength * 2.0,
@@ -203,7 +203,7 @@ class ViserVisualizer(BaseVisualizer):
             frame = self._add_mesh_from_path(
                 name, geometry_object.meshPath, color_override
             )
-        elif isinstance(geom, hppfcl.Convex):
+        elif isinstance(geom, coal.Convex):
             if len(geometry_object.meshPath) > 0:
                 frame = self._add_mesh_from_path(
                     name, geometry_object.meshPath, color_override
@@ -235,7 +235,7 @@ class ViserVisualizer(BaseVisualizer):
 
     def _add_mesh_from_convex(self, name, geom, color):
         """
-        Load a mesh from triangles stored inside a hppfcl.Convex.
+        Load a mesh from triangles stored inside a coal.Convex.
         """
         num_tris = geom.num_polygons
         call_triangles = geom.polygons

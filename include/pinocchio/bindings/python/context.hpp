@@ -2,8 +2,7 @@
 // Copyright (c) 2020 INRIA
 //
 
-#ifndef __pinocchio_python_context_hpp__
-#define __pinocchio_python_context_hpp__
+#pragma once
 
 #define PINOCCHIO_PYTHON_SCALAR_TYPE_DEFAULT double
 
@@ -14,5 +13,3 @@
 #endif
 
 #include PINOCCHIO_PYTHON_CONTEXT_FILE
-
-#endif // #ifndef __pinocchio_python_context_hpp__

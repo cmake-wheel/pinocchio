@@ -22,9 +22,9 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-24.04", "ubuntu-24.04-arm", "macos-15-intel", "macos-15"]
-        python: ["cp39", "cp310", "cp311", "cp312", "cp313", "cp314"]
+        python: ["cp310", "cp311", "cp312", "cp313", "cp314"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: 'true'
       - run: pipx install cibuildwheel
@@ -41,7 +41,7 @@ jobs:
           CIBW_REPAIR_WHEEL_COMMAND: ""
           CIBW_ENVIRONMENT: CMEEL_LOG_LEVEL="DEBUG" CMEEL_JOBS="1" CMEEL_TEST_JOBS="1" CMEEL_RUN_TESTS="false" CMEEL_CMAKE_ARGS="-DBUILD_WITH_OPENMP_SUPPORT=${{
             env.OPENMP }}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: "artifact-${{ matrix.os }}-${{ matrix.python }}"
           path: wheelhouse
@@ -53,9 +53,9 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu-24.04", "ubuntu-24.04-arm", "macos-15-intel", "macos-15"]
-        python: ["cp39", "cp310", "cp311", "cp312", "cp313", "cp314"]
+        python: ["cp310", "cp311", "cp312", "cp313", "cp314"]
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: "artifact-${{ matrix.os }}-${{ matrix.python }}"
           path: wheelhouse
@@ -76,7 +76,7 @@ jobs:
   sdist:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           submodules: 'true'
       - uses: actions/setup-python@v6
@@ -88,7 +88,7 @@ jobs:
           python -m pip install build cmeel[build] $DEPS
       - name: build sdist
         run: python -m build -nso dist .
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: artifact-sdist
           path: dist
@@ -98,11 +98,11 @@ jobs:
     needs: ["sdist"]
     name: "Test sdist"
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: "artifact-sdist"
           path: dist
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: 3.13
       - name: setup
@@ -121,7 +121,7 @@ jobs:
       id-token: write
       contents: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.ref_name }}
       - run: curl https://github.com/nim65s.gpg | gpg --import
@@ -129,7 +129,7 @@ jobs:
         run: >
           git verify-tag --raw ${{ github.ref_name }} 2>&1
           | grep -q 'VALIDSIG 9B1A79065D2F2B806C8A5A1C7D2ACDAF4653CF28'
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           merge-multiple: true
           path: dist

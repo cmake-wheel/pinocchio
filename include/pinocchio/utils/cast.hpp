@@ -1,19 +1,10 @@
 //
-// Copyright (c) 2020 INRIA
+// Copyright (c) 2026 INRIA
 //
+#pragma once
 
-#ifndef __pinocchio_utils_cast_hpp__
-#define __pinocchio_utils_cast_hpp__
-
+// IWYU pragma: begin_keep
 #include <Eigen/Core>
+// IWYU pragma: end_keep
 
-namespace pinocchio
-{
-  template<typename NewScalar, typename Scalar>
-  NewScalar cast(const Scalar & value)
-  {
-    return Eigen::internal::cast_impl<Scalar, NewScalar>::run(value);
-  }
-} // namespace pinocchio
-
-#endif // ifndef __pinocchio_utils_cast_hpp__
+#include "pinocchio/src/utils/cast.hxx" // IWYU pragma: export

@@ -1,15 +1,16 @@
 //
-// Copyright (c) 2015-2023 CNRS INRIA
+// Copyright (c) 2015-2018 CNRS
+// Copyright (c) 2018-2025 INRIA
 // Copyright (c) 2015 Wandercraft, 86 rue de Paris 91400 Orsay, France.
 //
 
-#ifndef __pinocchio_python_multibody_model_hpp__
-#define __pinocchio_python_multibody_model_hpp__
+#pragma once
 
 #include <eigenpy/eigen-to-python.hpp>
+#include <eigenpy/copyable.hpp>
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/serialization/model.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/serialization.hpp"
 
 #include <boost/python/overloads.hpp>
 #include <eigenpy/memory.hpp>
@@ -20,16 +21,11 @@
 #include "pinocchio/bindings/python/utils/cast.hpp"
 #include "pinocchio/bindings/python/utils/macros.hpp"
 #include "pinocchio/bindings/python/utils/printable.hpp"
-#include "pinocchio/bindings/python/utils/copyable.hpp"
 #include "pinocchio/bindings/python/utils/std-map.hpp"
 #include "pinocchio/bindings/python/utils/pickle.hpp"
 #include "pinocchio/bindings/python/utils/pickle-map.hpp"
 #include "pinocchio/bindings/python/utils/std-vector.hpp"
 #include "pinocchio/bindings/python/serialization/serializable.hpp"
-
-#if EIGENPY_VERSION_AT_MOST(2, 8, 1)
-EIGENPY_DEFINE_STRUCT_ALLOCATOR_SPECIALIZATION(pinocchio::Model)
-#endif
 
 namespace pinocchio
 {
@@ -97,12 +93,12 @@ namespace pinocchio
             "nvExtendeds", &Model::nvExtendeds, "Dimension of the *i*th joint jacobian subspace.")
           .add_property(
             "parents", &Model::parents,
-            "Vector of parent joint indexes. The parent of joint *i*, denoted *li*, "
-            "corresponds to li==parents[i].")
+            "Vector of parent joint indexes. The parent of joint *i*, denoted *li*, corresponds to "
+            "li==parents[i].")
           .add_property(
             "children", &Model::children,
-            "Vector of children index. Chidren of the *i*th joint, denoted *mu(i)* "
-            "corresponds to the set (i==parents[k] for k in mu(i)).")
+            "Vector of children index. Chidren of the *i*th joint, denoted *mu(i)* corresponds to "
+            "the set (i==parents[k] for k in mu(i)).")
           .add_property("names", &Model::names, "Name of the joints.")
           .def_readwrite("name", &Model::name, "Name of the model.")
           .def_readwrite(
@@ -114,21 +110,37 @@ namespace pinocchio
             "rotorInertia", &Model::rotorInertia, "Vector of rotor inertia parameters.")
           .def_readwrite(
             "rotorGearRatio", &Model::rotorGearRatio, "Vector of rotor gear ratio parameters.")
-          .def_readwrite("friction", &Model::friction, "Vector of joint friction parameters.")
+          .def_readwrite(
+            "friction", &Model::upperDryFrictionLimit,
+            "Deprecated member. Vector of joint friction parameters.")
+          .def_readwrite(
+            "upperDryFrictionLimit", &Model::upperDryFrictionLimit,
+            "Vector of maximum joint friction.")
+          .def_readwrite(
+            "lowerDryFrictionLimit", &Model::lowerDryFrictionLimit,
+            "Vector of minimum joint friction.")
           .def_readwrite("damping", &Model::damping, "Vector of joint damping parameters.")
-          .def_readwrite("effortLimit", &Model::effortLimit, "Joint max effort.")
-          .def_readwrite("velocityLimit", &Model::velocityLimit, "Joint max velocity.")
+          .def_readwrite(
+            "effortLimit", &Model::upperEffortLimit, "Deprecated member. Joint max effort.")
+          .def_readwrite("upperEffortLimit", &Model::upperEffortLimit, "Joint max effort.")
+          .def_readwrite("lowerEffortLimit", &Model::lowerEffortLimit, "Joint min effort.")
+          .def_readwrite(
+            "velocityLimit", &Model::upperVelocityLimit, "Deprecated member. Joint max velocity.")
+          .def_readwrite("lowerVelocityLimit", &Model::lowerVelocityLimit, "Joint min velocity.")
+          .def_readwrite("upperVelocityLimit", &Model::upperVelocityLimit, "Joint max velocity.")
           .def_readwrite(
             "lowerPositionLimit", &Model::lowerPositionLimit, "Limit for joint lower position.")
           .def_readwrite(
             "upperPositionLimit", &Model::upperPositionLimit, "Limit for joint upper position.")
+          .def_readwrite(
+            "positionLimitMargin", &Model::positionLimitMargin, "Margin for joint position limit.")
 
           .def_readwrite("frames", &Model::frames, "Vector of frames contained in the model.")
 
           .def_readwrite(
             "supports", &Model::supports,
-            "Vector of supports. supports[j] corresponds to the list of joints on the "
-            "path between\n"
+            "Vector of supports. supports[j] corresponds to the list of joints on the path "
+            "between\n"
             "the current *j* to the root of the kinematic tree.")
 
           .def_readwrite(
@@ -143,6 +155,17 @@ namespace pinocchio
           .def_readwrite(
             "subtrees", &Model::subtrees,
             "Vector of subtrees. subtree[j] corresponds to the subtree supported by the joint j.")
+
+          .def_readwrite(
+            "sparsity_pattern_vector", &Model::sparsity_pattern_vector,
+            "Sparsity pattern for each joint, indexed by joint_id. "
+            "sparsity_pattern_vector[i] is a boolean vector of size nv indicating which columns "
+            "of the Jacobian are nonzero for joint i.")
+
+          .def_readwrite(
+            "span_indexes_vector", &Model::span_indexes_vector,
+            "Colwise span indexes for each joint, indexed by joint_id. "
+            "span_indexes_vector[i] lists the column indexes of nonzero entries for joint i.")
 
           .def_readwrite(
             "mimicking_joints", &Model::mimicking_joints,
@@ -160,8 +183,8 @@ namespace pinocchio
           .def(
             "addJoint", &ModelPythonVisitor::addJoint0,
             bp::args("self", "parent_id", "joint_model", "joint_placement", "joint_name"),
-            "Adds a joint to the kinematic tree. The joint is defined by its placement relative "
-            "to its parent joint and its name.")
+            "Adds a joint to the kinematic tree. The joint is defined by its placement relative to "
+            "its parent joint and its name.")
           .def(
             "addJoint", &ModelPythonVisitor::addJoint1,
             bp::args(
@@ -169,17 +192,29 @@ namespace pinocchio
               "max_velocity", "min_config", "max_config"),
             "Adds a joint to the kinematic tree with given bounds. The joint is defined by its "
             "placement relative to its parent joint and its name."
-            "This signature also takes as input effort, velocity limits as well as the bounds "
-            "on the joint configuration.")
+            "This signature also takes as input effort, velocity limits as well as the bounds on "
+            "the joint configuration.")
           .def(
             "addJoint", &ModelPythonVisitor::addJoint2,
             bp::args(
-              "self", "parent_id", "joint_model", "joint_placement", "joint_name", "max_effort",
-              "max_velocity", "min_config", "max_config", "friction", "damping"),
+              "self", "parent_id", "joint_model", "joint_placement", "joint_name", "min_effort",
+              "max_effort", "min_velocity", "max_velocity", "min_config", "max_config",
+              "min_friction", "max_friction", "damping"),
             "Adds a joint to the kinematic tree with given bounds. The joint is defined by its "
             "placement relative to its parent joint and its name.\n"
-            "This signature also takes as input effort, velocity limits as well as the bounds "
-            "on the joint configuration.\n"
+            "This signature also takes as input effort, velocity limits as well as the bounds on "
+            "the joint configuration.\n"
+            "The user should also provide the friction and damping related to the joint.")
+          .def(
+            "addJoint", &ModelPythonVisitor::addJoint3,
+            bp::args(
+              "self", "parent_id", "joint_model", "joint_placement", "joint_name", "min_effort",
+              "max_effort", "min_velocity", "max_velocity", "min_config", "max_config",
+              "config_limit_margin", "min_friction", "max_friction", "damping"),
+            "Adds a joint to the kinematic tree with given bounds. The joint is defined by its "
+            "placement relative to its parent joint and its name.\n"
+            "This signature also takes as input effort, velocity limits, bounds on "
+            "the joint configuration as well as margin on these bounds.\n"
             "The user should also provide the friction and damping related to the joint.")
           .def(
             "addJointFrame", &Model::addJointFrame,
@@ -189,8 +224,8 @@ namespace pinocchio
           .def(
             "appendBodyToJoint", &Model::appendBodyToJoint,
             bp::args("self", "joint_id", "body_inertia", "body_placement"),
-            "Appends a body to the joint given by its index. The body is defined by its "
-            "inertia, its relative placement regarding to the joint and its name.")
+            "Appends a body to the joint given by its index. The body is defined by its inertia, "
+            "its relative placement regarding to the joint and its name.")
 
           .def(
             "addBodyFrame", &Model::addBodyFrame,
@@ -214,8 +249,8 @@ namespace pinocchio
             (bp::arg("self"), bp::arg("name"),
              bp::arg("type") = (FrameType)(JOINT | FIXED_JOINT | BODY | OP_FRAME | SENSOR)),
             "Returns the index of the frame given by its name and its type."
-            "If the frame is not in the frames vector, it returns the current size of the "
-            "frames vector.")
+            "If the frame is not in the frames vector, it returns the current size of the frames "
+            "vector.")
 
           .def(
             "existFrame", &Model::existFrame,
@@ -232,11 +267,11 @@ namespace pinocchio
             "parent joint.")
 
           .def(
-            "createData", &ModelPythonVisitor::createData, bp::arg("self"),
+            "createData", &Model::createData, bp::arg("self"),
             "Create a Data object for the given model.")
 
           .def(
-            "check", (bool(Model::*)(const Data &) const) & Model::check, bp::args("self", "data"),
+            "check", (bool (Model::*)(const Data &) const) & Model::check, bp::args("self", "data"),
             "Check consistency of data wrt model.")
 
           .def(
@@ -245,7 +280,10 @@ namespace pinocchio
           .def(
             "hasConfigurationLimitInTangent", &Model::hasConfigurationLimitInTangent,
             bp::args("self"),
-            "Returns list of boolean if joints have configuration limit in tangent space  .")
+            "Returns list of boolean if joints have configuration limit in tangent space.")
+          .def(
+            "getChildJoints", &Model::getChildJoints, bp::args("self"),
+            "Returns a vector of the children joints of the kinematic tree..")
 
 #ifndef PINOCCHIO_PYTHON_SKIP_COMPARISON_OPERATIONS
 
@@ -291,21 +329,42 @@ namespace pinocchio
         const JointModel & jmodel,
         const SE3 & joint_placement,
         const std::string & joint_name,
+        const VectorXs & min_effort,
         const VectorXs & max_effort,
+        const VectorXs & min_velocity,
         const VectorXs & max_velocity,
         const VectorXs & min_config,
         const VectorXs & max_config,
-        const VectorXs & friction,
+        const VectorXs & min_friction,
+        const VectorXs & max_friction,
         const VectorXs & damping)
       {
         return model.addJoint(
-          parent_id, jmodel, joint_placement, joint_name, max_effort, max_velocity, min_config,
-          max_config, friction, damping);
+          parent_id, jmodel, joint_placement, joint_name, min_effort, max_effort, min_velocity,
+          max_velocity, min_config, max_config, min_friction, max_friction, damping);
       }
 
-      static Data createData(const Model & model)
+      static JointIndex addJoint3(
+        Model & model,
+        JointIndex parent_id,
+        const JointModel & jmodel,
+        const SE3 & joint_placement,
+        const std::string & joint_name,
+        const VectorXs & min_effort,
+        const VectorXs & max_effort,
+        const VectorXs & min_velocity,
+        const VectorXs & max_velocity,
+        const VectorXs & min_config,
+        const VectorXs & max_config,
+        const VectorXs & config_limit_margin,
+        const VectorXs & min_friction,
+        const VectorXs & max_friction,
+        const VectorXs & damping)
       {
-        return Data(model);
+        return model.addJoint(
+          parent_id, jmodel, joint_placement, joint_name, min_effort, max_effort, min_velocity,
+          max_velocity, min_config, max_config, config_limit_margin, min_friction, max_friction,
+          damping);
       }
 
       ///
@@ -344,6 +403,11 @@ namespace pinocchio
         StdVectorPythonVisitor<std::vector<std::string>, true>::expose("StdVec_StdString");
         StdVectorPythonVisitor<std::vector<bool>, true>::expose("StdVec_Bool");
         StdVectorPythonVisitor<std::vector<Scalar>, true>::expose("StdVec_Scalar");
+        StdVectorPythonVisitor<typename Model::EigenIndexVector, true>::expose("StdVec_EigenIndex");
+        StdVectorPythonVisitor<typename Model::VectorOfEigenIndexVector>::expose(
+          "StdVec_EigenIndexVector");
+        StdVectorPythonVisitor<typename Model::VectorOfBooleanVector>::expose(
+          "StdVec_BooleanVector");
 
 #if defined(PINOCCHIO_PYTHON_INTERFACE_MAIN_MODULE)
         bp::scope().attr("StdVec_Double") = bp::scope().attr("StdVec_Scalar"); // alias
@@ -365,7 +429,7 @@ namespace pinocchio
           .def(ExposeConstructorByCastVisitor<Model, ::pinocchio::Model>())
           .def(SerializableVisitor<Model>())
           .def(PrintableVisitor<Model>())
-          .def(CopyableVisitor<Model>())
+          .def(::eigenpy::CopyableVisitor<Model>())
 #ifndef PINOCCHIO_PYTHON_NO_SERIALIZATION
           .def_pickle(PickleFromStringSerialization<Model>())
 #endif
@@ -375,5 +439,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_multibody_model_hpp__

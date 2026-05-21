@@ -2,12 +2,39 @@
 // Copyright (c) 2019-2021 INRIA
 //
 
-#ifndef __pinocchio_algorithm_constrained_dynamics_hpp__
-#define __pinocchio_algorithm_constrained_dynamics_hpp__
+#pragma once
 
-#include "pinocchio/algorithm/contact-info.hpp"
+// IWYU pragma: begin_keep
+#include <cassert>
+#include <cstddef>
+#include <vector>
 
+#include <Eigen/Core>
+
+#include <boost/fusion/container/vector.hpp>
+
+#include "pinocchio/config.hpp"
+#include "pinocchio/context.hpp"
+#include "pinocchio/unsupported.hpp"
+#include "pinocchio/macros.hpp"
+
+#include "pinocchio/utils/check.hpp"
+
+#include "pinocchio/math.hpp"
+
+#include "pinocchio/spatial.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+
+#include "pinocchio/algorithm/fwd.hpp"
 #include "pinocchio/algorithm/proximal.hpp"
+#include "pinocchio/algorithm/check-model.hpp"
+#include "pinocchio/constraints.hpp"
+#include "pinocchio/algorithm/crba.hpp"
+#include "pinocchio/algorithm/cholesky.hpp"
+#include "pinocchio/algorithm/constraint-cholesky.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -25,17 +52,21 @@ namespace pinocchio
   /// \param[in] model The model structure of the rigid body system.
   /// \param[in] data The data structure of the rigid body system.
   /// \param[in] contact_models Vector of contact information related to the problem.
+  /// \param[in] contact_datas Vector of contact data.
   ///
   template<
     typename Scalar,
     int Options,
     template<typename, int> class JointCollectionTpl,
-    class Allocator>
-  PINOCCHIO_UNSUPPORTED_MESSAGE("The API will change towards more flexibility")
+    class ConstraintModel,
+    class ConstraintModelAllocator,
+    class ConstraintData,
+    class ConstraintDataAllocator>
   inline void initConstraintDynamics(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     DataTpl<Scalar, Options, JointCollectionTpl> & data,
-    const std::vector<RigidConstraintModelTpl<Scalar, Options>, Allocator> & contact_models);
+    const std::vector<ConstraintModel, ConstraintModelAllocator> & contact_models,
+    const std::vector<ConstraintData, ConstraintDataAllocator> & contact_datas);
 
   ///
   /// \brief Computes the forward dynamics with contact constraints according to a given list of
@@ -43,14 +74,15 @@ namespace pinocchio
   ///
   /// \note  When using forwardDynamics for the first time, you should call first
   ///        initConstraintDynamics to initialize the internal memory used in the algorithm.
-  ///
-  /// It computes the following problem: \[
-  ///       \f[
-  ///       \begin{eqnarray}
-  ///       \underset{\ddot{q}}{\min} & & \| \ddot{q} - \ddot{q}_{\text{free}} \|_{M(q)} \\
-  ///           \text{s.t.} & & J (q) \ddot{q} + \gamma (q, \dot{q}) = 0
-  ///       \end{eqnarray}
-  ///       \f] where \f$ \ddot{q}_{\text{free}} \f$ is the free acceleration (i.e. without
+  /**
+   * It computes the following problem: \f[
+   *       \begin{eqnarray}
+   *           \underset{\ddot{q}}{\min} & & \| \ddot{q} - \ddot{q}_{\text{free}} \|_{M(q)} \\
+   *           \text{s.t.} & & J (q) \ddot{q} + \gamma (q, \dot{q}) = 0
+   *       \end{eqnarray}
+   *       \f]
+   */
+  ///       where \f$ \ddot{q}_{\text{free}} \f$ is the free acceleration (i.e. without
   ///       constraints), \f$ M \f$ is the mass matrix, \f$ J \f$ the constraint Jacobian and \f$
   ///       \gamma \f$ is the constraint drift.
   ///  By default, the constraint Jacobian is assumed to be full rank, and undamped Cholesky inverse
@@ -100,17 +132,19 @@ namespace pinocchio
 
   ///
   /// \brief Computes the forward dynamics with contact constraints according to a given list of
-  /// Contact information.
+  /// contact information.
   ///
   /// \note  When using forwardDynamics for the first time, you should call first
   ///        initConstraintDynamics to initialize the internal memory used in the algorithm.
-  ///
-  /// It computes the following problem: \f[
-  ///       \begin{eqnarray}
-  ///           \underset{\ddot{q}}{\min} & & \| \ddot{q} - \ddot{q}_{\text{free}} \|_{M(q)} \\
-  ///           \text{s.t.} & & J (q) \ddot{q} + \gamma (q, \dot{q}) = 0
-  ///       \end{eqnarray}
-  ///       \f] where \f$ \ddot{q}_{\text{free}} \f$ is the free acceleration (i.e. without
+  /**
+   * It computes the following problem: \f[
+   *       \begin{eqnarray}
+   *           \underset{\ddot{q}}{\min} & & \| \ddot{q} - \ddot{q}_{\text{free}} \|_{M(q)} \\
+   *           \text{s.t.} & & J (q) \ddot{q} + \gamma (q, \dot{q}) = 0
+   *       \end{eqnarray}
+   *       \f]
+   */
+  ///       where \f$ \ddot{q}_{\text{free}} \f$ is the free acceleration (i.e. without
   ///       constraints), \f$ M \f$ is the mass matrix, \f$ J \f$ the constraint Jacobian and \f$
   ///       \gamma \f$ is the constraint drift.
   ///  By default, the constraint Jacobian is assumed to be full rank, and undamped Cholesky inverse
@@ -185,10 +219,6 @@ namespace pinocchio
 
 } // namespace pinocchio
 
-#include "pinocchio/algorithm/constrained-dynamics.hxx"
-
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/algorithm/constrained-dynamics.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-
-#endif // ifndef __pinocchio_algorithm_constrained_dynamics_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/constrained-dynamics.hxx"
+// IWYU pragma: end_exports

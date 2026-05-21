@@ -2,19 +2,12 @@
 // Copyright (c) 2024-2025 INRIA
 //
 
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/algorithm/crba.hpp"
-#include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/frames.hpp"
 
-#include "pinocchio/parsers/graph/model-graph.hpp"
-#include "pinocchio/parsers/graph/joints.hpp"
-#include "pinocchio/parsers/graph/model-graph-algo.hpp"
-#include "pinocchio/parsers/graph/model-configuration-converter.hpp"
+#include "pinocchio/parsers/graph.hpp"
 
-#if defined(PINOCCHIO_WITH_HPP_FCL)
-  #include "pinocchio/parsers/graph/model-graph-algo-geometry.hpp"
-#endif
 #include <boost/test/unit_test.hpp>
 #include <stdexcept>
 
@@ -26,8 +19,9 @@ pinocchio::graph::ModelGraph buildReversableModelGraph(const pinocchio::graph::J
   //////////////////////////////////////// Bodies
   g.addFrame("body1", BodyFrame(pinocchio::Inertia::Identity()));
   g.addFrame(
-    "body2", BodyFrame(pinocchio::Inertia(
-               4., pinocchio::Inertia::Vector3(0., 2., 0.), pinocchio::Symmetric3::Zero())));
+    "body2", BodyFrame(
+               pinocchio::Inertia(
+                 4., pinocchio::Inertia::Vector3(0., 2., 0.), pinocchio::Symmetric3::Zero())));
 
   /////////////////////////////////////// Joints
   pinocchio::SE3 poseBody1 =
@@ -1539,7 +1533,7 @@ BOOST_AUTO_TEST_CASE(test_add_geometry)
   BOOST_CHECK(vertex.geometries.size() == 2);
 }
 
-#if defined(PINOCCHIO_WITH_HPP_FCL)
+#if defined(PINOCCHIO_WITH_COLLISION)
 BOOST_AUTO_TEST_CASE(test_build_geometry_model)
 {
   using namespace pinocchio::graph;
@@ -1595,32 +1589,32 @@ BOOST_AUTO_TEST_CASE(test_build_geometry_model)
   BOOST_CHECK(m_col.ngeoms == 3);
 
   // Check that the right geometries were added to visual
-  auto * box = dynamic_cast<hpp::fcl::Box *>(m_visual.geometryObjects.at(0).geometry.get());
+  auto * box = dynamic_cast<coal::Box *>(m_visual.geometryObjects.at(0).geometry.get());
   BOOST_REQUIRE(box);
   Eigen::Vector3d sides = Eigen::Vector3d::Constant(1);
   BOOST_CHECK(box->halfSide == sides);
 
-  auto * cyl = dynamic_cast<hpp::fcl::Cylinder *>(m_visual.geometryObjects.at(1).geometry.get());
+  auto * cyl = dynamic_cast<coal::Cylinder *>(m_visual.geometryObjects.at(1).geometry.get());
   BOOST_REQUIRE(cyl);
   BOOST_CHECK(cyl->halfLength == 1);
   BOOST_CHECK(cyl->radius == 2);
 
-  auto * cap = dynamic_cast<hpp::fcl::Capsule *>(m_visual.geometryObjects.at(2).geometry.get());
+  auto * cap = dynamic_cast<coal::Capsule *>(m_visual.geometryObjects.at(2).geometry.get());
   BOOST_REQUIRE(cap);
   BOOST_CHECK(cap->halfLength == 1.5);
   BOOST_CHECK(cap->radius == 3);
 
   // Check that the right geometries were added to collision
-  auto * s = dynamic_cast<hpp::fcl::Sphere *>(m_col.geometryObjects.at(0).geometry.get());
+  auto * s = dynamic_cast<coal::Sphere *>(m_col.geometryObjects.at(0).geometry.get());
   BOOST_REQUIRE(s);
   BOOST_CHECK(s->radius == 4);
 
-  auto * c = dynamic_cast<hpp::fcl::Capsule *>(m_col.geometryObjects.at(1).geometry.get());
+  auto * c = dynamic_cast<coal::Capsule *>(m_col.geometryObjects.at(1).geometry.get());
   BOOST_REQUIRE(c);
   BOOST_CHECK(c->halfLength == 1);
   BOOST_CHECK(c->radius == 2);
 
-  auto * cap2 = dynamic_cast<hpp::fcl::Capsule *>(m_col.geometryObjects.at(2).geometry.get());
+  auto * cap2 = dynamic_cast<coal::Capsule *>(m_col.geometryObjects.at(2).geometry.get());
   BOOST_REQUIRE(cap2);
   BOOST_CHECK(cap2->halfLength == 1.5);
   BOOST_CHECK(cap2->radius == 3);

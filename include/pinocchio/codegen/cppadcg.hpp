@@ -2,18 +2,28 @@
 // Copyright (c) 2018-2023 CNRS INRIA
 //
 
-#ifndef __pinocchio_codegen_ccpadcg_hpp__
-#define __pinocchio_codegen_ccpadcg_hpp__
+#pragma once
+
+// IWYU pragma: always_keep
 
 #define PINOCCHIO_WITH_CPPADCG_SUPPORT
 
-#include "pinocchio/math/fwd.hpp"
-
+// IWYU pragma: begin_keep
 #include <cmath>
+#include <type_traits>
+
+#include <Eigen/Core>
+
+#include <boost/version.hpp>
+#include <boost/math/constants/constants.hpp>
 #include <boost/mpl/int.hpp>
+
+#include <cppad/cg.hpp>
 #include <cppad/cg/support/cppadcg_eigen.hpp>
 
+#include "pinocchio/math.hpp"
 #include "pinocchio/autodiff/cppad.hpp"
+// IWYU pragma: end_keep
 
 namespace boost
 {
@@ -61,9 +71,7 @@ namespace Eigen
     template<typename Scalar>
     struct cast_impl<CppAD::cg::CG<Scalar>, Scalar>
     {
-#if EIGEN_VERSION_AT_LEAST(3, 2, 90)
       EIGEN_DEVICE_FUNC
-#endif
       static inline Scalar run(const CppAD::cg::CG<Scalar> & x)
       {
         return x.getValue();
@@ -74,9 +82,7 @@ namespace Eigen
     template<typename Scalar>
     struct cast_impl<CppAD::AD<CppAD::cg::CG<Scalar>>, Scalar>
     {
-#if EIGEN_VERSION_AT_LEAST(3, 2, 90)
       EIGEN_DEVICE_FUNC
-#endif
       static inline Scalar run(const CppAD::AD<CppAD::cg::CG<Scalar>> & x)
       {
         return CppAD::Value(x).getValue();
@@ -98,30 +104,7 @@ namespace CppAD
   } // namespace cg
 } // namespace CppAD
 
-namespace pinocchio
-{
-  template<typename Scalar>
-  struct TaylorSeriesExpansion<CppAD::cg::CG<Scalar>>
-  {
-    typedef TaylorSeriesExpansion<Scalar> Base;
-    typedef CppAD::cg::CG<Scalar> CGScalar;
-
-    template<int degree>
-    static CGScalar precision()
-    {
-      return CGScalar(Base::template precision<degree>());
-    }
-  };
-
-  template<typename NewScalar, typename Scalar>
-  struct ScalarCast<NewScalar, CppAD::cg::CG<Scalar>>
-  {
-    static NewScalar cast(const CppAD::cg::CG<Scalar> & cg_value)
-    {
-      return static_cast<NewScalar>(cg_value.getValue());
-    }
-  };
-
-} // namespace pinocchio
-
-#endif // #ifndef __pinocchio_codegen_ccpadcg_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/codegen/cppadcg/math/cast.hxx"
+#include "pinocchio/src/codegen/cppadcg/math/taylor-series-expansion.hxx"
+// IWYU pragma: end_exports

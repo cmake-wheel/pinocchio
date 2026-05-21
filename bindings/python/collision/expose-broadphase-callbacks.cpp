@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 INRIA
+// Copyright (c) 2022-2025 INRIA
 //
 
 #include <eigenpy/eigenpy.hpp>
@@ -38,8 +38,8 @@ namespace pinocchio
       static void expose()
       {
         bp::class_<
-          CollisionCallBackBaseWrapper, bp::bases<hpp::fcl::CollisionCallBackBase>,
-          boost::noncopyable>("CollisionCallBackBase", bp::no_init)
+          CollisionCallBackBaseWrapper, bp::bases<coal::CollisionCallBackBase>, boost::noncopyable>(
+          "CollisionCallBackBase", bp::no_init)
           .def(
             "getGeometryModel", &CollisionCallBackDefault::getGeometryModel, bp::arg("self"),
             bp::return_value_policy<bp::copy_const_reference>())
@@ -54,13 +54,13 @@ namespace pinocchio
             "Whether there is a collision or not.")
           .def_readonly(
             "accumulate", &CollisionCallBackDefault::accumulate,
-            "Whether the callback is used in an accumulate mode where several collide "
-            "methods are called successively.")
+            "Whether the callback is used in an accumulate mode where several collide methods are "
+            "called successively.")
 
           .def(
             "stop", bp::pure_virtual(&Base::stop), bp::arg("self"),
-            "If true, the stopping criteria related to the collision callback has been met and "
-            "one can stop.")
+            "If true, the stopping criteria related to the collision callback has been met and one "
+            "can stop.")
           .def(
             "done", &Base::done, &CollisionCallBackBaseWrapper::done_default,
             "Callback method called after the termination of a collisition detection algorithm.");
@@ -71,12 +71,21 @@ namespace pinocchio
     {
       CollisionCallBackBaseWrapper::expose();
 
+      bp::class_<CollisionCallBackCollect, bp::bases<CollisionCallBackBase>>(
+        "CollisionCallBackCollect", bp::no_init)
+        .def(
+          bp::init<const GeometryModel &, GeometryData &, bp::optional<int>>(
+            bp::args("self", "geometry_model", "geometry_data", "max_num_pairs"))
+            [bp::with_custodian_and_ward<1, 2>(), bp::with_custodian_and_ward<1, 3>()])
+        .def_readonly("pair_indexes", &CollisionCallBackCollect::pair_indexes);
+
       bp::class_<CollisionCallBackDefault, bp::bases<CollisionCallBackBase>>(
         "CollisionCallBackDefault", bp::no_init)
-        .def(bp::init<const GeometryModel &, GeometryData &, bp::optional<bool>>(
-          bp::args("self", "geometry_model", "geometry_data", "stopAtFirstCollision"),
-          "Default constructor from a given GeometryModel and a GeometryData")
-               [bp::with_custodian_and_ward<1, 2>(), bp::with_custodian_and_ward<1, 3>()])
+        .def(
+          bp::init<const GeometryModel &, GeometryData &, bp::optional<bool>>(
+            bp::args("self", "geometry_model", "geometry_data", "stopAtFirstCollision"),
+            "Default constructor from a given GeometryModel and a GeometryData")
+            [bp::with_custodian_and_ward<1, 2>(), bp::with_custodian_and_ward<1, 3>()])
 
         .def_readwrite(
           "stopAtFirstCollision", &CollisionCallBackDefault::stopAtFirstCollision,

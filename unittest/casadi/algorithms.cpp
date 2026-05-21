@@ -4,8 +4,7 @@
 
 #include "pinocchio/autodiff/casadi.hpp"
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
 
 #include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/frames.hpp"
@@ -67,7 +66,7 @@ BOOST_AUTO_TEST_CASE(test_jacobian)
 
   casadi::SX cs_q = casadi::SX::sym("q", model.nq);
   ConfigVectorAD q_ad(model.nq);
-  for (Eigen::DenseIndex k = 0; k < model.nq; ++k)
+  for (Eigen::Index k = 0; k < model.nq; ++k)
   {
     q_ad[k] = cs_q(k);
   }
@@ -75,7 +74,7 @@ BOOST_AUTO_TEST_CASE(test_jacobian)
 
   casadi::SX cs_v = casadi::SX::sym("v", model.nv);
   TangentVectorAD v_ad(model.nv);
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     v_ad[k] = cs_v(k);
   }
@@ -87,7 +86,7 @@ BOOST_AUTO_TEST_CASE(test_jacobian)
   MotionAD v_world = ad_data.oMi[(size_t)joint_id].act(v_local);
 
   casadi::SX cs_v_local(6, 1), cs_v_world(6, 1);
-  for (Eigen::DenseIndex k = 0; k < 6; ++k)
+  for (Eigen::Index k = 0; k < 6; ++k)
   {
     cs_v_local(k) = v_local.toVector()[k];
     cs_v_world(k) = v_world.toVector()[k];
@@ -240,7 +239,7 @@ BOOST_AUTO_TEST_CASE(test_rnea)
   casadi::SX tau_ad(model.nv, 1);
   //    Eigen::Map<TangentVectorAD>(tau_ad->data(),model.nv,1)
   //    = ad_data.tau;
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
     tau_ad(k) = ad_data.tau[k];
   casadi::Function eval_rnea(
     "eval_rnea", casadi::SXVector{cs_q, cs_v, cs_a}, casadi::SXVector{tau_ad});
@@ -312,7 +311,7 @@ BOOST_AUTO_TEST_CASE(test_crba)
   casadi::SX cs_tau(model.nv, 1);
   //    Eigen::Map<TangentVectorAD>(tau_ad->data(),model.nv,1)
   //    = ad_data.tau;
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
     cs_tau(k) = ad_data.tau[k];
   casadi::Function eval_rnea(
     "eval_rnea", casadi::SXVector{cs_q, cs_v, cs_a}, casadi::SXVector{cs_tau});
@@ -321,9 +320,9 @@ BOOST_AUTO_TEST_CASE(test_crba)
   ad_data.M.triangularView<Eigen::StrictlyLower>() =
     ad_data.M.transpose().triangularView<Eigen::StrictlyLower>();
   casadi::SX M_ad(model.nv, model.nv);
-  for (Eigen::DenseIndex j = 0; j < model.nv; ++j)
+  for (Eigen::Index j = 0; j < model.nv; ++j)
   {
-    for (Eigen::DenseIndex i = 0; i < model.nv; ++i)
+    for (Eigen::Index i = 0; i < model.nv; ++i)
     {
       M_ad(i, j) = ad_data.M(i, j);
     }
@@ -401,7 +400,7 @@ BOOST_AUTO_TEST_CASE(test_aba)
   // ABA
   pinocchio::aba(ad_model, ad_data, q_ad, v_ad, tau_ad, pinocchio::Convention::WORLD);
   casadi::SX cs_ddq(model.nv, 1);
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
     cs_ddq(k) = ad_data.ddq[k];
   casadi::Function eval_aba(
     "eval_aba", casadi::SXVector{cs_q, cs_v, cs_tau}, casadi::SXVector{cs_ddq});

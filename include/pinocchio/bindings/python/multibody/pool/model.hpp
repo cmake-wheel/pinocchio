@@ -1,25 +1,20 @@
 //
-// Copyright (c) 2021-2022 INRIA
+// Copyright (c) 2021-2025 INRIA
 //
 
-#ifndef __pinocchio_python_multibody_pool_model_hpp__
-#define __pinocchio_python_multibody_pool_model_hpp__
+#pragma once
 
 #include <eigenpy/eigen-to-python.hpp>
+#include <eigenpy/copyable.hpp>
 
-#include "pinocchio/multibody/pool/model.hpp"
+#include "pinocchio/multibody/pool.hpp"
 
 #include <boost/python/overloads.hpp>
 #include <eigenpy/memory.hpp>
 #include <eigenpy/exception.hpp>
 
 #include "pinocchio/algorithm/check.hpp"
-#include "pinocchio/bindings/python/utils/copyable.hpp"
 #include "pinocchio/bindings/python/utils/std-vector.hpp"
-
-#if EIGENPY_VERSION_AT_MOST(2, 8, 1)
-EIGENPY_DEFINE_STRUCT_ALLOCATOR_SPECIALIZATION(pinocchio::ModelPool)
-#endif
 
 namespace pinocchio
 {
@@ -40,8 +35,9 @@ namespace pinocchio
       template<class PyClass>
       void visit(PyClass & cl) const
       {
-        cl.def(bp::init<const Model &, bp::optional<size_t>>(
-                 bp::args("self", "model", "size"), "Default constructor."))
+        cl.def(
+            bp::init<const Model &, bp::optional<size_t>>(
+              bp::args("self", "model", "size"), "Default constructor."))
           .def(bp::init<const ModelPool &>(bp::args("self", "other"), "Copy constructor."))
 
           .def(
@@ -63,7 +59,7 @@ namespace pinocchio
           .def("resize", &ModelPool::resize, bp::args("self", "new_size"), "Resize the pool.")
 
           .def(
-            "update", (void(ModelPool::*)(const Data &)) & ModelPool::update,
+            "update", (void (ModelPool::*)(const Data &))&ModelPool::update,
             bp::args("self", "data"), "Update all the datas with the input data value.");
       }
 
@@ -74,7 +70,7 @@ namespace pinocchio
           "ModelPool", "Pool containing a model and several datas for parallel computations",
           bp::no_init)
           .def(ModelPoolPythonVisitor())
-          .def(CopyableVisitor<ModelPool>());
+          .def(::eigenpy::CopyableVisitor<ModelPool>());
 
         StdVectorPythonVisitor<ModelVector>::expose("StdVec_Model");
         StdVectorPythonVisitor<DataVector>::expose("StdVec_Data");
@@ -82,5 +78,3 @@ namespace pinocchio
     };
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifnded __pinocchio_python_multibody_pool_model_hpp__

@@ -1,29 +1,14 @@
 //
-// Copyright (c) 2021-2022 INRIA
+// Copyright (c) 2026 INRIA
 //
 
-#ifndef __pinocchio_multibody_pool_fwd_hpp__
-#define __pinocchio_multibody_pool_fwd_hpp__
+#pragma once
 
+// IWYU pragma: begin_keep
+#include "pinocchio/context.hpp"
 #include "pinocchio/multibody/joint/fwd.hpp"
+// IWYU pragma: end_keep
 
-namespace pinocchio
-{
-
-  template<
-    typename Scalar,
-    int Options = 0,
-    template<typename, int> class JointCollectionTpl = JointCollectionDefaultTpl>
-  class ModelPoolTpl;
-  typedef ModelPoolTpl<context::Scalar> ModelPool;
-
-  template<
-    typename Scalar,
-    int Options = 0,
-    template<typename, int> class JointCollectionTpl = JointCollectionDefaultTpl>
-  class GeometryPoolTpl;
-  typedef GeometryPoolTpl<context::Scalar> GeometryPool;
-
-} // namespace pinocchio
-
-#endif // ifndef __pinocchio_multibody_pool_fwd_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/multibody/pool/fwd.hxx"
+// IWYU pragma: end_exports

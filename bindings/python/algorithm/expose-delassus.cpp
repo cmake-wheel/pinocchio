@@ -16,10 +16,8 @@ namespace pinocchio
 {
   namespace python
   {
-    typedef PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(context::RigidConstraintModel)
-      RigidConstraintModelVector;
-    typedef PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(context::RigidConstraintData)
-      RigidConstraintDataVector;
+    typedef std::vector<context::RigidConstraintModel> RigidConstraintModelVector;
+    typedef std::vector<context::RigidConstraintData> RigidConstraintDataVector;
 
     static const context::MatrixXs computeDelassusMatrix_proxy(
       const context::Model & model,
@@ -29,7 +27,7 @@ namespace pinocchio
       RigidConstraintDataVector & contact_datas,
       const context::Scalar mu = context::Scalar(0))
     {
-      const size_t constraint_size = getTotalConstraintSize(contact_models);
+      const Eigen::Index constraint_size = getTotalConstraintResidualSize(contact_models);
       context::MatrixXs delassus(constraint_size, constraint_size);
       computeDelassusMatrix(model, data, q, contact_models, contact_datas, delassus, mu);
       make_symmetric(delassus);
@@ -45,7 +43,7 @@ namespace pinocchio
       const context::Scalar mu,
       const bool scaled = false)
     {
-      const size_t constraint_size = getTotalConstraintSize(contact_models);
+      const Eigen::Index constraint_size = getTotalConstraintResidualSize(contact_models);
       context::MatrixXs delassus_inverse(constraint_size, constraint_size);
       computeDampedDelassusMatrixInverse(
         model, data, q, contact_models, contact_datas, delassus_inverse, mu, scaled);

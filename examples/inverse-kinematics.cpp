@@ -1,10 +1,27 @@
-#include <iostream>
+#include <Eigen/Cholesky>
+#include <Eigen/Core>
+#include <Eigen/SparseCore>
 
-#include "pinocchio/multibody/sample-models.hpp"
-#include "pinocchio/spatial/explog.hpp"
-#include "pinocchio/algorithm/kinematics.hpp"
+#include <boost/core/ref.hpp>
+#include <boost/fusion/algorithm.hpp>
+#include <boost/fusion/functional.hpp>
+#include <boost/variant.hpp>
+
+#include <iostream>
+#include <vector>
+
+#include "pinocchio/algorithm/check-data.hpp"
 #include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
+#include "pinocchio/algorithm/kinematics.hpp"
+#include "pinocchio/eigen-common.hpp"
+#include "pinocchio/math.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/multibody/sample-models.hpp"
+#include "pinocchio/spatial.hpp"
+#include "pinocchio/utils/check.hpp"
+#include "pinocchio/utils/static-if.hpp"
 
 int main(int /* argc */, char ** /* argv */)
 {

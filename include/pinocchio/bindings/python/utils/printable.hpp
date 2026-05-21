@@ -2,8 +2,7 @@
 // Copyright (c) 2016 CNRS
 //
 
-#ifndef __pinocchio_python_utils_printable_hpp__
-#define __pinocchio_python_utils_printable_hpp__
+#pragma once
 
 #include <boost/python.hpp>
 
@@ -28,5 +27,3 @@ namespace pinocchio
     };
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_utils_printable_hpp__

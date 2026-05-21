@@ -2,18 +2,15 @@
 // Copyright (c) 2017-2020 CNRS INRIA
 //
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/sample-models.hpp"
+
 #include "pinocchio/algorithm/jacobian.hpp"
-#include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/kinematics-derivatives.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
 #include "pinocchio/algorithm/rnea-derivatives.hpp"
 #include "pinocchio/algorithm/crba.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
-
-#include <iostream>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
@@ -78,7 +75,7 @@ BOOST_AUTO_TEST_CASE(test_generalized_gravity_derivatives_fext)
   model.upperPositionLimit.head<3>().fill(1.);
   VectorXd q = randomConfiguration(model);
 
-  typedef PINOCCHIO_ALIGNED_STD_VECTOR(Force) ForceVector;
+  typedef std::vector<Force> ForceVector;
   ForceVector fext((size_t)model.njoints);
   for (ForceVector::iterator it = fext.begin(); it != fext.end(); ++it)
     (*it).setRandom();
@@ -329,7 +326,7 @@ BOOST_AUTO_TEST_CASE(test_rnea_derivatives_fext)
   VectorXd v(VectorXd::Random(model.nv));
   VectorXd a(VectorXd::Random(model.nv));
 
-  typedef PINOCCHIO_ALIGNED_STD_VECTOR(Force) ForceVector;
+  typedef std::vector<Force> ForceVector;
   ForceVector fext((size_t)model.njoints);
   for (ForceVector::iterator it = fext.begin(); it != fext.end(); ++it)
     (*it).setRandom();

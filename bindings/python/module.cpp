@@ -1,16 +1,17 @@
 //
-// Copyright (c) 2015-2022 CNRS INRIA
+// Copyright (c) 2015-2018 CNRS
+// Copyright (c) 2018-2025 INRIA
 //
 
 #include "pinocchio/bindings/python/fwd.hpp"
 #include "pinocchio/multibody/fwd.hpp"
+#include "pinocchio/constraints/fwd.hpp"
 #include "pinocchio/utils/version.hpp"
 #include "pinocchio/bindings/python/utils/version.hpp"
 #include "pinocchio/bindings/python/utils/dependencies.hpp"
-#include "pinocchio/bindings/python/utils/registration.hpp"
 
 #include "pinocchio/bindings/python/utils/std-vector.hpp"
-#include "pinocchio/spatial/cartesian-axis.hpp"
+#include "pinocchio/spatial.hpp"
 #include "pinocchio/bindings/python/serialization/serialization.hpp"
 
 #include <eigenpy/eigenpy.hpp>
@@ -31,17 +32,18 @@ BOOST_PYTHON_MODULE(PINOCCHIO_PYTHON_MODULE_NAME)
   bp::import("warnings");
 
 #if defined(PINOCCHIO_PYTHON_INTERFACE_MAIN_MODULE)                                                \
-  && defined(PINOCCHIO_PYTHON_INTERFACE_WITH_HPP_FCL_PYTHON_BINDINGS)
-  bp::import("hppfcl");
+  && defined(PINOCCHIO_PYTHON_INTERFACE_WITH_COLLISION_PYTHON_BINDINGS)
+  bp::import("coal");
 #endif
 
   exposeEigenTypes();
   exposeSpecificTypeFeatures();
 
   eigenpy::OptionalConverter<context::VectorXs, boost::optional>::registration();
-  eigenpy::OptionalConverter<Eigen::Ref<context::VectorXs>, boost::optional>::registration();
-  eigenpy::OptionalConverter<
-    const Eigen::Ref<const context::VectorXs>, boost::optional>::registration();
+  eigenpy::OptionalConverter<context::RefVectorXs, boost::optional>::registration();
+  eigenpy::OptionalConverter<context::RefConstVectorXs, boost::optional>::registration();
+  eigenpy::OptionalConverter<const context::RefConstVectorXs, boost::optional>::registration();
+  eigenpy::OptionalConverter<context::Scalar, boost::optional>::registration();
 
 #if defined(PINOCCHIO_PYTHON_INTERFACE_MAIN_MODULE)
   eigenpy::StdContainerFromPythonList<std::vector<std::string>>::register_converter();
@@ -49,12 +51,15 @@ BOOST_PYTHON_MODULE(PINOCCHIO_PYTHON_MODULE_NAME)
 
   bp::scope().attr("ScalarType") = getScalarType();
 
-  bp::scope().attr("XAxis") = bp::object(bp::handle<>(
-    eigenpy::EigenToPy<context::Vector3s>::convert(pinocchio::XAxis::vector<context::Scalar>())));
-  bp::scope().attr("YAxis") = bp::object(bp::handle<>(
-    eigenpy::EigenToPy<context::Vector3s>::convert(pinocchio::YAxis::vector<context::Scalar>())));
-  bp::scope().attr("ZAxis") = bp::object(bp::handle<>(
-    eigenpy::EigenToPy<context::Vector3s>::convert(pinocchio::ZAxis::vector<context::Scalar>())));
+  bp::scope().attr("XAxis") = bp::object(
+    bp::handle<>(
+      eigenpy::EigenToPy<context::Vector3s>::convert(pinocchio::XAxis::vector<context::Scalar>())));
+  bp::scope().attr("YAxis") = bp::object(
+    bp::handle<>(
+      eigenpy::EigenToPy<context::Vector3s>::convert(pinocchio::YAxis::vector<context::Scalar>())));
+  bp::scope().attr("ZAxis") = bp::object(
+    bp::handle<>(
+      eigenpy::EigenToPy<context::Vector3s>::convert(pinocchio::ZAxis::vector<context::Scalar>())));
 
   if (!register_symbolic_link_to_registered_type<::pinocchio::ReferenceFrame>())
   {
@@ -92,17 +97,26 @@ BOOST_PYTHON_MODULE(PINOCCHIO_PYTHON_MODULE_NAME)
       .export_values();
   }
 
+  if (!register_symbolic_link_to_registered_type<::pinocchio::ConstraintSelectionType>())
+  {
+    bp::enum_<::pinocchio::ConstraintSelectionType>("ConstraintSelectionType")
+      .value("CURRENT", ::pinocchio::ConstraintSelectionType::CURRENT)
+      .value("MAXIMAL", ::pinocchio::ConstraintSelectionType::MAXIMAL);
+  }
+
   exposeSE3();
   exposeForce();
   exposeMotion();
   exposeInertia();
   exposeSymmetric3();
   exposeJoints();
+  exposeConstraints();
   exposeExplog();
   exposeRpy();
   exposeLinalg();
   exposeTridiagonalMatrix();
   exposeLanczosDecomposition();
+  exposeGramSchmidtOrthonormalisation();
   exposeSkew();
   exposeLieGroups();
 
@@ -119,11 +133,11 @@ BOOST_PYTHON_MODULE(PINOCCHIO_PYTHON_MODULE_NAME)
   exposeExtras();
   exposeSerialization();
 
-#if defined(PINOCCHIO_PYTHON_INTERFACE_WITH_HPP_FCL_PYTHON_BINDINGS)                               \
+#if defined(PINOCCHIO_PYTHON_INTERFACE_WITH_COLLISION_PYTHON_BINDINGS)                             \
   && defined(PINOCCHIO_PYTHON_INTERFACE_MAIN_MODULE)
-  exposeFCL();
+  exposeCoal();
   exposeCollision();
-#endif // defined(PINOCCHIO_PYTHON_INTERFACE_WITH_HPP_FCL_PYTHON_BINDINGS) &&
+#endif // defined(PINOCCHIO_PYTHON_INTERFACE_WITH_COLLISION_PYTHON_BINDINGS) &&
        // defined(PINOCCHIO_PYTHON_INTERFACE_MAIN_MODULE)
 
 #if defined(PINOCCHIO_PYTHON_INTERFACE_WITH_OPENMP)                                                \
@@ -132,7 +146,7 @@ BOOST_PYTHON_MODULE(PINOCCHIO_PYTHON_MODULE_NAME)
   exposeParallelAlgorithms();
 #endif
 
-#if defined(PINOCCHIO_PYTHON_INTERFACE_WITH_HPP_FCL_PYTHON_BINDINGS)                               \
+#if defined(PINOCCHIO_PYTHON_INTERFACE_WITH_COLLISION_PYTHON_BINDINGS)                             \
   && defined(PINOCCHIO_PYTHON_INTERFACE_WITH_OPENMP)                                               \
   && defined(PINOCCHIO_PYTHON_INTERFACE_MAIN_MODULE)
   exposePoolCollision();
@@ -144,10 +158,12 @@ BOOST_PYTHON_MODULE(PINOCCHIO_PYTHON_MODULE_NAME)
   exposeConversions();
 
   typedef std::vector<::pinocchio::VectorXb> StdVec_VectorXb;
+  typedef std::vector<::Eigen::Index> StdVec_Index;
   typedef std::vector<context::MatrixXs> StdVec_MatrixXs;
 
   StdVectorPythonVisitor<StdVec_VectorXb, false>::expose(
     "StdVec_VectorXb", eigenpy::details::overload_base_get_item_for_std_vector<StdVec_VectorXb>());
+  StdVectorPythonVisitor<StdVec_Index, true>::expose("StdVec_long");
   StdVectorPythonVisitor<StdVec_MatrixXs, false>::expose(
     "StdVec_MatrixXs", eigenpy::details::overload_base_get_item_for_std_vector<StdVec_MatrixXs>());
 }

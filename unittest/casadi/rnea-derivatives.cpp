@@ -3,19 +3,15 @@
 //
 
 #include "pinocchio/autodiff/casadi.hpp"
-#include "pinocchio/autodiff/casadi-algo.hpp"
 
 #include "pinocchio/algorithm/rnea.hpp"
 #include "pinocchio/algorithm/rnea-derivatives.hpp"
-#include "pinocchio/algorithm/aba.hpp"
-#include "pinocchio/algorithm/aba-derivatives.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
 
 #include "pinocchio/multibody/sample-models.hpp"
 
 #include <casadi/casadi.hpp>
 
-#include <iostream>
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
 
@@ -79,7 +75,7 @@ BOOST_AUTO_TEST_CASE(test_rnea_derivatives)
 
   rnea(ad_model, ad_data, q_int_ad, v_ad, a_ad);
   casadi::SX cs_tau(model.nv, 1);
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     cs_tau(k) = ad_data.tau[k];
   }

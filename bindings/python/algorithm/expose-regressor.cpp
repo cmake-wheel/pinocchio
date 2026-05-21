@@ -33,10 +33,7 @@ namespace pinocchio
     {
       typedef context::Scalar Scalar;
       typedef context::VectorXs VectorXs;
-      enum
-      {
-        Options = context::Options
-      };
+      using context::Options;
 
       bp::def(
         "computeStaticRegressor",
@@ -62,10 +59,10 @@ namespace pinocchio
 
       bp::def(
         "jointBodyRegressor", &jointBodyRegressor_proxy, bp::args("model", "data", "joint_id"),
-        "Compute the regressor for the dynamic parameters of a rigid body attached to a "
-        "given joint.\n"
-        "This algorithm assumes RNEA has been run to compute the acceleration and "
-        "gravitational effects.\n\n"
+        "Compute the regressor for the dynamic parameters of a rigid body attached to a given "
+        "joint.\n"
+        "This algorithm assumes RNEA has been run to compute the acceleration and gravitational "
+        "effects.\n\n"
         "Parameters:\n"
         "\tmodel: model of the kinematic tree\n"
         "\tdata: data related to the model\n"
@@ -74,10 +71,10 @@ namespace pinocchio
 
       bp::def(
         "frameBodyRegressor", &frameBodyRegressor_proxy, bp::args("model", "data", "frame_id"),
-        "Computes the regressor for the dynamic parameters of a rigid body attached to a "
-        "given frame.\n"
-        "This algorithm assumes RNEA has been run to compute the acceleration and "
-        "gravitational effects.\n\n"
+        "Computes the regressor for the dynamic parameters of a rigid body attached to a given "
+        "frame.\n"
+        "This algorithm assumes RNEA has been run to compute the acceleration and gravitational "
+        "effects.\n\n"
         "Parameters:\n"
         "\tmodel: model of the kinematic tree\n"
         "\tdata: data related to the model\n"

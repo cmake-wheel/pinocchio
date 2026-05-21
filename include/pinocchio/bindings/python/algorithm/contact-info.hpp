@@ -2,56 +2,26 @@
 // Copyright (c) 2019-2022 INRIA
 //
 
-#ifndef __pinocchio_python_algorithm_contact_info_hpp__
-#define __pinocchio_python_algorithm_contact_info_hpp__
+#pragma once
 
 #include <eigenpy/memory.hpp>
 
-#include "pinocchio/algorithm/contact-info.hpp"
+#include "pinocchio/constraints.hpp"
 
 #include "pinocchio/bindings/python/utils/cast.hpp"
 #include "pinocchio/bindings/python/utils/macros.hpp"
 #include "pinocchio/bindings/python/utils/comparable.hpp"
 #include "pinocchio/bindings/python/utils/std-vector.hpp"
+#include "pinocchio/bindings/python/algorithm/constraints/baumgarte-corrector-parameters.hpp"
+#include "pinocchio/bindings/python/utils/eigen.hpp"
+
+#include "pinocchio/bindings/python/utils/model-checker.hpp"
 
 namespace pinocchio
 {
   namespace python
   {
     namespace bp = boost::python;
-
-    template<typename BaumgarteCorrectorParameters>
-    struct BaumgarteCorrectorParametersPythonVisitor
-    : public boost::python::def_visitor<
-        BaumgarteCorrectorParametersPythonVisitor<BaumgarteCorrectorParameters>>
-    {
-      typedef typename BaumgarteCorrectorParameters::Scalar Scalar;
-      typedef typename BaumgarteCorrectorParameters::Vector6Max Vector6Max;
-      typedef BaumgarteCorrectorParameters Self;
-
-    public:
-      template<class PyClass>
-      void visit(PyClass & cl) const
-      {
-        cl.def(bp::init<int>(bp::args("self", "size"), "Default constructor."))
-
-          .def_readwrite("Kp", &Self::Kp, "Proportional corrector value.")
-          .def_readwrite("Kd", &Self::Kd, "Damping corrector value.")
-
-          .def(CastVisitor<Self>())
-          .def(ExposeConstructorByCastVisitor<
-               Self, ::pinocchio::context::RigidConstraintModel::BaumgarteCorrectorParameters>())
-          .def(ComparableVisitor<Self, pinocchio::is_floating_point<Scalar>::value>());
-      }
-
-      static void expose()
-      {
-        eigenpy::enableEigenPySpecific<Vector6Max>();
-        bp::class_<BaumgarteCorrectorParameters>(
-          "BaumgarteCorrectorParameters", "Paramaters of the Baumgarte Corrector.", bp::no_init)
-          .def(BaumgarteCorrectorParametersPythonVisitor());
-      }
-    };
 
     template<typename RigidConstraintModel>
     struct RigidConstraintModelPythonVisitor
@@ -65,6 +35,7 @@ namespace pinocchio
         typename RigidConstraintModel::BaumgarteCorrectorParameters BaumgarteCorrectorParameters;
 
       typedef ModelTpl<Scalar, RigidConstraintModel::Options, JointCollectionDefaultTpl> Model;
+      typedef DataTpl<Scalar, RigidConstraintModel::Options, JointCollectionDefaultTpl> Data;
 
     public:
       template<class PyClass>
@@ -73,25 +44,29 @@ namespace pinocchio
         cl
           //        .def(bp::init<>(bp::arg("self"),
           //                        "Default constructor."))
-          .def(bp::init<
-               ContactType, const Model &, JointIndex, const SE3 &, JointIndex, const SE3 &,
-               bp::optional<ReferenceFrame>>(
-            (bp::arg("self"), bp::arg("contact_type"), bp::arg("model"), bp::arg("joint1_id"),
-             bp::arg("joint1_placement"), bp::arg("joint2_id"), bp::arg("joint2_placement"),
-             bp::arg("reference_frame")),
-            "Contructor from a given ContactType, joint index and placement for the two joints "
-            "implied in the constraint."))
-          .def(bp::init<
-               ContactType, const Model &, JointIndex, const SE3 &, bp::optional<ReferenceFrame>>(
-            (bp::arg("self"), bp::arg("contact_type"), bp::arg("model"), bp::arg("joint1_id"),
-             bp::arg("joint1_placement"), bp::arg("reference_frame")),
-            "Contructor from a given ContactType, joint index and placement only for the first "
-            "joint implied in the constraint."))
-          .def(bp::init<ContactType, const Model &, JointIndex, bp::optional<ReferenceFrame>>(
-            (bp::arg("self"), bp::arg("contact_type"), bp::arg("model"), bp::arg("joint1_id"),
-             bp::arg("reference_frame")),
-            "Contructor from a given ContactType and joint index. The base joint is taken as 0 in "
-            "the constraint."))
+          .def(
+            bp::init<
+              ContactType, const Model &, JointIndex, const SE3 &, JointIndex, const SE3 &,
+              bp::optional<ReferenceFrame>>(
+              (bp::arg("self"), bp::arg("contact_type"), bp::arg("model"), bp::arg("joint1_id"),
+               bp::arg("joint1_placement"), bp::arg("joint2_id"), bp::arg("joint2_placement"),
+               bp::arg("reference_frame")),
+              "Constructor from a given ContactType, joint index and placement for the two joints "
+              "implied in the constraint."))
+          .def(
+            bp::init<
+              ContactType, const Model &, JointIndex, const SE3 &, bp::optional<ReferenceFrame>>(
+              (bp::arg("self"), bp::arg("contact_type"), bp::arg("model"), bp::arg("joint1_id"),
+               bp::arg("joint1_placement"), bp::arg("reference_frame")),
+              "Constructor from a given ContactType, joint index and placement only for the first "
+              "joint implied in the constraint."))
+          .def(
+            bp::init<ContactType, const Model &, JointIndex, bp::optional<ReferenceFrame>>(
+              (bp::arg("self"), bp::arg("contact_type"), bp::arg("model"), bp::arg("joint1_id"),
+               bp::arg("reference_frame")),
+              "Constructor from a given ContactType and joint index. The base joint is taken as 0 "
+              "in "
+              "the constraint."))
           .PINOCCHIO_ADD_PROPERTY(Self, name, "Name of the contact.")
           .PINOCCHIO_ADD_PROPERTY(Self, type, "Type of the contact.")
           .PINOCCHIO_ADD_PROPERTY(Self, joint1_id, "Index of first parent joint in the model tree.")
@@ -110,21 +85,59 @@ namespace pinocchio
             Self, desired_contact_velocity, "Desired contact spatial velocity.")
           .PINOCCHIO_ADD_PROPERTY(
             Self, desired_contact_acceleration, "Desired contact spatial acceleration.")
-          .PINOCCHIO_ADD_PROPERTY(Self, corrector, "Corrector parameters.")
-
-          .PINOCCHIO_ADD_PROPERTY(
-            Self, colwise_joint1_sparsity, "Sparsity pattern associated to joint 1.")
-          .PINOCCHIO_ADD_PROPERTY(
-            Self, colwise_joint2_sparsity, "Sparsity pattern associated to joint 2.")
-          .PINOCCHIO_ADD_PROPERTY(
-            Self, colwise_span_indexes, "Indexes of the columns spanned by the constraints.")
-
-          .def("size", &RigidConstraintModel::size, "Size of the constraint")
-
           .def(
             "createData", &RigidConstraintModelPythonVisitor::createData,
             "Create a Data object for the given model.")
-          .def(ComparableVisitor<Self, pinocchio::is_floating_point<Scalar>::value>());
+          .def(ComparableVisitor<Self, pinocchio::is_floating_point<Scalar>::value>())
+          .def(
+            "calc", (void (Self::*)(const Model &, const Data &, ContactData &) const) & Self::calc,
+            bp::args("self", "model", "data", "constraint_data"))
+          .def("jacobian", &jacobian, bp::args("self", "model", "data", "constraint_data"))
+          .def(
+            "residualSize", &residualSize,
+            (bp::arg("self"), bp::arg("sel") = ConstraintSelectionType::CURRENT),
+            "Constraint size for the selection.")
+          .def(
+            "setCompliance", &setCompliance,
+            (bp::arg("self"), bp::arg("vec"), bp::arg("sel") = ConstraintSelectionType::CURRENT),
+            "Set the compliance value for the selected constraint.")
+          .def(
+            "retrieveCompliance", &retrieveCompliance,
+            (bp::arg("self"), bp::arg("sel") = ConstraintSelectionType::CURRENT),
+            "Retrieve the compliance value for the selected constraint.")
+          .def(
+            "setBaumgarteCorrectorParameters", &setBaumgarteCorrectorParameters,
+            (bp::arg("self"), bp::arg("bp"), bp::arg("sel") = ConstraintSelectionType::CURRENT),
+            "Set the Baumgarte parameters.");
+        cl.add_property(
+          "m_baumgarte_parameters",
+          bp::make_function( //
+            +[](Self & self) -> BaumgarteCorrectorParameters & {
+              return self.baumgarte_corrector_parameters();
+            },
+            bp::return_internal_reference<>()),
+          bp::make_function( //
+            +[](Self & self, const BaumgarteCorrectorParameters & copy) {
+              self.baumgarte_corrector_parameters() = copy;
+            },
+            bp::return_internal_reference<>()),
+          "Baumgarte parameters associated with the constraint.");
+      }
+
+      static context::RigidConstraintModel convertToRigidConstraintModel_point(
+        const context::Model & model,
+        const context::PointAnchorConstraintModel & constraint,
+        const ReferenceFrame reference_frame)
+      {
+        return convertToRigidConstraintModel(model, constraint, reference_frame);
+      }
+
+      static context::RigidConstraintModel convertToRigidConstraintModel_frame(
+        const context::Model & model,
+        const context::FrameAnchorConstraintModel & constraint,
+        const ReferenceFrame reference_frame)
+      {
+        return convertToRigidConstraintModel(model, constraint, reference_frame);
       }
 
       static void expose()
@@ -134,15 +147,101 @@ namespace pinocchio
           bp::no_init)
           .def(RigidConstraintModelPythonVisitor())
           .def(CastVisitor<RigidConstraintModel>())
-          .def(ExposeConstructorByCastVisitor<
-               RigidConstraintModel, ::pinocchio::context::RigidConstraintModel>());
+          .def(
+            ExposeConstructorByCastVisitor<
+              RigidConstraintModel, ::pinocchio::RigidConstraintModel>());
 
-        BaumgarteCorrectorParametersPythonVisitor<BaumgarteCorrectorParameters>::expose();
+        bp::def(
+          "convertToRigidConstraintModel", convertToRigidConstraintModel_point,
+          (bp::arg("model"), bp::arg("constraint"),
+           bp::arg("reference_frame") = ReferenceFrame::LOCAL),
+          "Convert a PointAnchorConstraintModel to a RigidConstraintModel with contact type "
+          "CONTACT_3D.\n\n"
+          "The kinematic structure (joint IDs and placements) is preserved. The 3D desired "
+          "offset is placed in the translation of desired_contact_placement, and the 3D desired "
+          "velocity/acceleration are placed in the linear parts of the corresponding Motion "
+          "fields.",
+          mimic_not_supported_function<>(0));
+
+        bp::def(
+          "convertToRigidConstraintModel", convertToRigidConstraintModel_frame,
+          (bp::arg("model"), bp::arg("constraint"),
+           bp::arg("reference_frame") = ReferenceFrame::LOCAL),
+          "Convert a FrameAnchorConstraintModel to a RigidConstraintModel with contact type "
+          "CONTACT_6D.\n\n"
+          "The kinematic structure (joint IDs and placements) is preserved. The 6D desired "
+          "offset (ordered [linear; angular]) is mapped to desired_contact_placement via exp6, "
+          "and the 6D desired velocity/acceleration vectors are mapped directly to Motion fields.",
+          mimic_not_supported_function<>(0));
       }
 
       static ContactData createData(const Self & self)
       {
         return ContactData(self);
+      }
+
+      static context::MatrixXs jacobian(
+        const Self & self, const Model & model, const Data & data, ContactData & constraint_data)
+      {
+        context::MatrixXs res(self.residualSize(), model.nv);
+        self.jacobian(model, data, constraint_data, res);
+        return res;
+      }
+
+      static int residualSize(const Self & self, ConstraintSelectionType sel)
+      {
+        switch (sel)
+        {
+        case ConstraintSelectionType::CURRENT:
+          return self.residualSize(CurrentSelection());
+        case ConstraintSelectionType::MAXIMAL:
+          return self.residualSize(MaximalSelection());
+        default:
+          PINOCCHIO_UNREACHABLE();
+        }
+      }
+
+      static void
+      setCompliance(Self & self, context::VectorXs & vector, ConstraintSelectionType sel)
+      {
+        switch (sel)
+        {
+        case ConstraintSelectionType::CURRENT:
+          return self.setCompliance(vector, CurrentSelection());
+        case ConstraintSelectionType::MAXIMAL:
+          return self.setCompliance(vector, MaximalSelection());
+        }
+      }
+
+      static context::VectorXs retrieveCompliance(const Self & self, ConstraintSelectionType sel)
+      {
+        switch (sel)
+        {
+        case ConstraintSelectionType::CURRENT: {
+          context::VectorXs res(self.residualSize(CurrentSelection()));
+          self.retrieveCompliance(res, CurrentSelection());
+          return res;
+        }
+        case ConstraintSelectionType::MAXIMAL: {
+          context::VectorXs res(self.residualSize(MaximalSelection()));
+          self.retrieveCompliance(res, MaximalSelection());
+          return res;
+        }
+        default:
+          PINOCCHIO_UNREACHABLE();
+        }
+      }
+
+      static void setBaumgarteCorrectorParameters(
+        Self & self, const BaumgarteCorrectorParameters & bp, ConstraintSelectionType sel)
+      {
+        switch (sel)
+        {
+        case ConstraintSelectionType::CURRENT:
+          return self.setBaumgarteCorrectorParameters(bp, CurrentSelection());
+        case ConstraintSelectionType::MAXIMAL:
+          return self.setBaumgarteCorrectorParameters(bp, MaximalSelection());
+        }
       }
     };
 
@@ -158,8 +257,9 @@ namespace pinocchio
       template<class PyClass>
       void visit(PyClass & cl) const
       {
-        cl.def(bp::init<const ContactModel &>(
-                 bp::args("self", "contact_model"), "Default constructor."))
+        cl.def(
+            bp::init<const ContactModel &>(
+              bp::args("self", "contact_model"), "Default constructor."))
 
           .PINOCCHIO_ADD_PROPERTY(Self, contact_force, "Constraint force.")
           .PINOCCHIO_ADD_PROPERTY(
@@ -189,12 +289,12 @@ namespace pinocchio
             "Current contact spatial error (due to the integration step).")
           .PINOCCHIO_ADD_PROPERTY(
             Self, contact1_acceleration_drift,
-            "Current contact drift acceleration (acceleration only due to "
-            "the Coriolis and centrifugal effects) of the contact frame 1.")
+            "Current contact drift acceleration (acceleration only due to the Coriolis and "
+            "centrifugal effects) of the contact frame 1.")
           .PINOCCHIO_ADD_PROPERTY(
             Self, contact2_acceleration_drift,
-            "Current contact drift acceleration (acceleration only due to "
-            "the Coriolis and centrifugal effects) of the contact frame 2.")
+            "Current contact drift acceleration (acceleration only due to the Coriolis and "
+            "centrifugal effects) of the contact frame 2.")
           .PINOCCHIO_ADD_PROPERTY(
             Self, contact_acceleration_deviation,
             "Contact deviation from the reference acceleration (a.k.a the error).")
@@ -227,5 +327,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_algorithm_contact_info_hpp__

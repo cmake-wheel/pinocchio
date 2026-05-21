@@ -5,17 +5,12 @@
 #include "pinocchio/autodiff/casadi.hpp"
 #include "pinocchio/autodiff/casadi-algo.hpp"
 
-#include "pinocchio/algorithm/rnea.hpp"
-#include "pinocchio/algorithm/rnea-derivatives.hpp"
-#include "pinocchio/algorithm/aba.hpp"
-#include "pinocchio/algorithm/aba-derivatives.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
 
 #include "pinocchio/multibody/sample-models.hpp"
 
 #include <casadi/casadi.hpp>
 
-#include <iostream>
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
 
@@ -43,8 +38,8 @@ BOOST_AUTO_TEST_CASE(test_constraintDynamics_casadi_algo)
   const Model::JointIndex LF_id = model.getJointId(LF);
 
   // Contact models and data
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) contact_models;
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintData) contact_data;
+  std::vector<pinocchio::RigidConstraintModel> contact_models;
+  std::vector<pinocchio::RigidConstraintData> contact_data;
 
   pinocchio::RigidConstraintModel ci_RF(
     pinocchio::CONTACT_3D, model, RF_id, pinocchio::LOCAL_WORLD_ALIGNED);
@@ -57,13 +52,12 @@ BOOST_AUTO_TEST_CASE(test_constraintDynamics_casadi_algo)
   ci_LF.joint1_placement.setRandom();
   contact_models.push_back(ci_LF);
   contact_data.push_back(pinocchio::RigidConstraintData(ci_LF));
-  const double mu0 = 0.;
   ConfigVector q(model.nq);
   q = pinocchio::randomConfiguration(model);
   TangentVector v(TangentVector::Random(model.nv));
   TangentVector tau(TangentVector::Random(model.nv));
 
-  pinocchio::initConstraintDynamics(model, data, contact_models);
+  pinocchio::initConstraintDynamics(model, data, contact_models, contact_data);
   pinocchio::constraintDynamics(model, data, q, v, tau, contact_models, contact_data);
   pinocchio::computeConstraintDynamicsDerivatives(model, data, contact_models, contact_data);
   pinocchio::casadi::AutoDiffConstraintDynamics<Scalar> ad_casadi(model, contact_models);

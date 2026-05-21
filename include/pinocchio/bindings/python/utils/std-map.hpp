@@ -2,8 +2,7 @@
 // Copyright (c) 2020 INRIA
 //
 
-#ifndef __pinocchio_python_utils_map_hpp__
-#define __pinocchio_python_utils_map_hpp__
+#pragma once
 
 #include <boost/python/suite/indexing/map_indexing_suite.hpp>
 
@@ -70,5 +69,3 @@ namespace pinocchio
     } // namespace details
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_utils_map_hpp__

@@ -3,16 +3,9 @@
 // Copyright (c) 2015 Wandercraft, 86 rue de Paris 91400 Orsay, France.
 //
 
-#include "pinocchio/math/fwd.hpp"
-#include "pinocchio/multibody/joint/joints.hpp"
-#include "pinocchio/algorithm/rnea.hpp"
-#include "pinocchio/algorithm/aba.hpp"
-#include "pinocchio/algorithm/crba.hpp"
-#include "pinocchio/algorithm/jacobian.hpp"
-#include "pinocchio/algorithm/compute-all-terms.hpp"
+#include "pinocchio/multibody/joint.hpp"
 
 #include <boost/test/unit_test.hpp>
-#include <iostream>
 
 using namespace pinocchio;
 

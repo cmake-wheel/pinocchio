@@ -3,12 +3,17 @@
 //
 
 #include <pinocchio/autodiff/casadi.hpp>
+#include <pinocchio/math.hpp>
 
-#include <boost/variant.hpp> // to avoid C99 warnings
+#include <Eigen/Core>
+
+#include <casadi/casadi.hpp>
+
+#include <boost/test/unit_test.hpp>
 
 #include <iostream>
-#include <boost/test/unit_test.hpp>
-#include <boost/utility/binary.hpp>
+#include <string>
+#include <vector>
 
 BOOST_AUTO_TEST_SUITE(BOOST_TEST_MODULE)
 

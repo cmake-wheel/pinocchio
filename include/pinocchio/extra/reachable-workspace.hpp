@@ -2,20 +2,30 @@
 // Copyright (c) 2016-2023 CNRS INRIA
 //
 
-#ifndef __pinocchio_extra_reachable_workspace_hpp__
-#define __pinocchio_extra_reachable_workspace_hpp__
+#pragma once
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
-#include "pinocchio/multibody/geometry.hpp"
-#include "pinocchio/algorithm/geometry.hpp"
+// IWYU pragma: begin_keep
+#include <Eigen/Core>
+#include <Eigen/SparseCore>
+
+// #include <vector>
+#include <cmath>
+
+#include <boost/math/special_functions/factorials.hpp>
+
+#include "pinocchio/macros.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/liegroup.hpp"
+
+#include "pinocchio/algorithm/frames.hpp"
+
 #include "pinocchio/extra/config.hpp"
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
   #include "pinocchio/collision/collision.hpp"
-#endif // PINOCCHIO_WITH_HPP_FCL
-
-#include <Eigen/Core>
+#endif // PINOCCHIO_WITH_COLLISION
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -47,14 +57,12 @@ namespace pinocchio
   ///
   /// \tparam JointCollection Collection of Joint types.
   /// \tparam ConfigVectorType Type of the joint configuration vector.
-
   /// \param[in] model The model structure of the rigid body system.
-  /// \param[in] q The initial joint configuration vector (dim model.nq).
-  /// \param[in] frame_id Index of the frame for which the workspace should be computed.
+  /// \param[in] q0 The initial joint configuration vector (dim model.nq).
   /// \param[in] time_horizon: time horizon for which the polytope will be computed (in seconds)
+  /// \param[in] frame_id Index of the frame for which the workspace should be computed.
   /// \param[in] params parameters of the algorithm
-
-  /// \param[out] points inside of the reachable workspace
+  /// \param[out] vertex inside of the reachable workspace
   template<
     typename Scalar,
     int Options,
@@ -75,7 +83,7 @@ namespace pinocchio
   /// \tparam ConfigVectorType Type of the joint configuration vector.
 
   /// \param[in] model The model structure of the rigid body system.
-  /// \param[in] q The initial joint configuration vector (dim model.nq).
+  /// \param[in] q0 The initial joint configuration vector (dim model.nq).
   /// \param[in] frame_id Index of the frame for which the workspace should be computed.
   /// \param[in] time_horizon: time horizon for which the polytope will be computed (in seconds)
   /// \param[in] params parameters of the algorithm
@@ -94,21 +102,20 @@ namespace pinocchio
     ReachableSetResults & res,
     const ReachableSetParams & params = ReachableSetParams());
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
   /// \brief Computes the reachable workspace with respect to a geometry model on a fixed time
   /// horizon. For more information, please see
   /// https://gitlab.inria.fr/auctus-team/people/antunskuric/pycapacity
   ///
   /// \tparam JointCollection Collection of Joint types.
   /// \tparam ConfigVectorType Type of the joint configuration vector.
-
   /// \param[in] model The model structure of the rigid body system.
-  /// \param[in] q The initial joint configuration vector (dim model.nq).
+  /// \param[in] geom_model: Geometry model, to take into accout collision with the environment
+  /// \param[in] q0 The initial joint configuration vector (dim model.nq).
   /// \param[in] frame_id Index of the frame for which the workspace should be computed.
   /// \param[in] time_horizon: time horizon for which the polytope will be computed (in seconds)
   /// \param[in] params parameters of the algorithm
-
-  /// \param[out] points inside of the reachable workspace
+  /// \param[out] vertex inside of the reachable workspace
   template<
     typename Scalar,
     int Options,
@@ -130,14 +137,12 @@ namespace pinocchio
   ///
   /// \tparam JointCollection Collection of Joint types.
   /// \tparam ConfigVectorType Type of the joint configuration vector.
-
   /// \param[in] model The model structure of the rigid body system.
   /// \param[in] geom_model: Geometry model, to take into accout collision with the environment
-  /// \param[in] q The initial joint configuration vector (dim model.nq).
+  /// \param[in] q0 The initial joint configuration vector (dim model.nq).
   /// \param[in] frame_id Index of the frame for which the workspace should be computed.
   /// \param[in] time_horizon: time horizon for which the polytope will be computed (in seconds)
   /// \param[in] params parameters of the algorithm
-
   /// \param[out] res Results of algorithm
   template<
     typename Scalar,
@@ -152,7 +157,7 @@ namespace pinocchio
     const int frame_id,
     ReachableSetResults & res,
     const ReachableSetParams & params = ReachableSetParams());
-#endif // PINOCCHIO_WITH_HPP_FCL
+#endif // PINOCCHIO_WITH_COLLISION
 
   namespace internal
   {
@@ -196,7 +201,7 @@ namespace pinocchio
     /// result \param[in] comb Vector of active joints in this configuration
 
     /// \param[out] qv Joint Velocity result
-    void computeJointVel(
+    inline void computeJointVel(
       const Eigen::VectorXd & res1,
       const Eigen::VectorXd & res2,
       const Eigen::VectorXi & comb,
@@ -207,7 +212,7 @@ namespace pinocchio
     /// hold the results \param[in] n Max range of element \param[in] k length of subsequences
 
     /// \param[out] indices results of the combination
-    void generateCombination(const int n, const int k, Eigen::VectorXi & indices);
+    inline void generateCombination(const int n, const int k, Eigen::VectorXi & indices);
 
     /// \brief Cartesian product of input element with itself. Number of repetition is specified
     /// with repeat argument. Inspired by
@@ -217,7 +222,7 @@ namespace pinocchio
     /// call)
 
     /// \param[out] combination Cartesian Product associated with the indices
-    void productCombination(
+    inline void productCombination(
       const Eigen::VectorXd & element,
       const int repeat,
       Eigen::VectorXi & indices,
@@ -225,7 +230,6 @@ namespace pinocchio
   } // namespace internal
 } // namespace pinocchio
 
-/* --- Details -------------------------------------------------------------------- */
-#include "pinocchio/extra/reachable-workspace.hxx"
-
-#endif // ifndef __pinocchio_extra_reachable_workspace_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/extra/reachable-workspace.hxx"
+// IWYU pragma: end_exports

@@ -26,7 +26,7 @@ namespace pinocchio
       return model;
     }
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
     GeometryModel buildSampleGeometryModelManipulator(const Model & model)
     {
       GeometryModel geom;
@@ -42,7 +42,7 @@ namespace pinocchio
       return model;
     }
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
     GeometryModel buildSampleGeometryModelHumanoid(const Model & model)
     {
       GeometryModel geom;
@@ -65,7 +65,7 @@ namespace pinocchio
         static_cast<Model (*)(bool)>(pinocchio::python::buildSampleModelManipulator),
         (bp::arg("mimic") = false), "Generate a (hard-coded) model of a simple manipulator.");
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
       bp::def(
         "buildSampleGeometryModelManipulator",
         static_cast<GeometryModel (*)(const Model &)>(
@@ -79,7 +79,7 @@ namespace pinocchio
         (bp::arg("using_free_flyer") = true),
         "Generate a (hard-coded) model of a simple humanoid.");
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
       bp::def(
         "buildSampleGeometryModelHumanoid",
         static_cast<GeometryModel (*)(const Model &)>(

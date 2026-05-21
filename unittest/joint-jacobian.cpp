@@ -2,14 +2,15 @@
 // Copyright (c) 2015-2020 CNRS INRIA
 //
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/spatial.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/sample-models.hpp"
+
+#include "pinocchio/utils/timer.hpp"
+
 #include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
-#include "pinocchio/spatial/act-on-set.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
-#include "pinocchio/utils/timer.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
 
 #include <boost/test/unit_test.hpp>

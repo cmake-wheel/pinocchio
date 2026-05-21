@@ -2,14 +2,10 @@
 // Copyright (c) 2018-2019 CNRS INRIA
 //
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/crba.hpp"
-#include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/multibody/sample-models.hpp"
-
-#include <iostream>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
@@ -361,7 +357,7 @@ BOOST_AUTO_TEST_CASE(test_kinematics_mimic)
     pinocchio::Data dataFKRed(model_mimic);
     pinocchio::forwardKinematics(model_mimic, dataFKRed, q, v, a);
 
-    for (int i = 0; i < model_full.njoints; i++)
+    for (pinocchio::JointIndex i = 0; i < pinocchio::JointIndex(model_full.njoints); i++)
     {
       BOOST_CHECK(dataFKRed.oMi[i].isApprox(dataFKFull.oMi[i]));
       BOOST_CHECK(dataFKRed.liMi[i].isApprox(dataFKFull.liMi[i]));

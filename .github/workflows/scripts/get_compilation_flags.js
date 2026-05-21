@@ -7,6 +7,7 @@ function CMakeOptions() {
   this.BUILD_WITH_CODEGEN_SUPPORT = "OFF";
   this.BUILD_WITH_OPENMP_SUPPORT = "OFF";
   this.BUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT = "OFF";
+  this.PINOCCHIO_BUILD_MPFR_TESTING = "OFF";
   this.INSTALL_DOCUMENTATION = "ON";
   this.GENERATE_PYTHON_STUBS = "ON";
   this.BUILD_WITH_ACCELERATE_SUPPORT = "OFF";
@@ -26,6 +27,7 @@ function makeLabelToOptions() {
         'BUILD_WITH_AUTODIFF_SUPPORT',
         'BUILD_WITH_EXTRA_SUPPORT',
         'BUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT',
+        'PINOCCHIO_BUILD_MPFR_TESTING',
         'BUILD_WITH_SDF_SUPPORT'
       ],
       build_collision: ['BUILD_WITH_COLLISION_SUPPORT'],
@@ -34,7 +36,7 @@ function makeLabelToOptions() {
       build_extra: ['BUILD_WITH_EXTRA_SUPPORT'],
       build_codegen: [],
       build_openmp: [],
-      build_mpfr: ['BUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT'],
+      build_mpfr: ['BUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT', 'PINOCCHIO_BUILD_MPFR_TESTING'],
       build_sdf: ['BUILD_WITH_SDF_SUPPORT'],
       build_accelerate: ['BUILD_WITH_ACCELERATE_SUPPORT']
     };
@@ -47,6 +49,7 @@ function makeLabelToOptions() {
         'BUILD_WITH_EXTRA_SUPPORT',
         'BUILD_WITH_OPENMP_SUPPORT',
         'BUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT',
+        'PINOCCHIO_BUILD_MPFR_TESTING',
         'BUILD_WITH_SDF_SUPPORT'
       ],
       build_collision: ['BUILD_WITH_COLLISION_SUPPORT'],
@@ -55,7 +58,7 @@ function makeLabelToOptions() {
       build_extra: ['BUILD_WITH_EXTRA_SUPPORT'],
       build_codegen: [],
       build_openmp: ['BUILD_WITH_OPENMP_SUPPORT'],
-      build_mpfr: ['BUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT'],
+      build_mpfr: ['BUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT', 'PINOCCHIO_BUILD_MPFR_TESTING'],
       build_sdf: ['BUILD_WITH_SDF_SUPPORT'],
       build_accelerate: ['BUILD_WITH_ACCELERATE_SUPPORT']
     };
@@ -69,6 +72,7 @@ function makeLabelToOptions() {
         'BUILD_WITH_CODEGEN_SUPPORT',
         'BUILD_WITH_OPENMP_SUPPORT',
         'BUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT',
+        'PINOCCHIO_BUILD_MPFR_TESTING',
         'BUILD_WITH_SDF_SUPPORT'
       ],
       build_collision: ['BUILD_WITH_COLLISION_SUPPORT'],
@@ -77,7 +81,7 @@ function makeLabelToOptions() {
       build_extra: ['BUILD_WITH_EXTRA_SUPPORT'],
       build_codegen: ['BUILD_WITH_CODEGEN_SUPPORT'],
       build_openmp: ['BUILD_WITH_OPENMP_SUPPORT'],
-      build_mpfr: ['BUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT'],
+      build_mpfr: ['BUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT', 'PINOCCHIO_BUILD_MPFR_TESTING'],
       build_sdf: ['BUILD_WITH_SDF_SUPPORT'],
       build_accelerate: ['BUILD_WITH_ACCELERATE_SUPPORT']
     };

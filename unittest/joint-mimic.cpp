@@ -2,8 +2,8 @@
 // Copyright (c) 2019 INRIA
 //
 
-#include "pinocchio/multibody/joint/joint-generic.hpp"
-#include "pinocchio/multibody/liegroup/liegroup.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/multibody/liegroup.hpp"
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
@@ -18,7 +18,6 @@ template<typename JointModel>
 void test_constraint_mimic(const JointModelBase<JointModel> & jmodel)
 {
   typedef typename traits<JointModel>::JointDerived Joint;
-  typedef typename traits<Joint>::Constraint_t ConstraintType;
   typedef typename traits<Joint>::JointDataDerived JointData;
   typedef ScaledJointMotionSubspaceTpl<double, 0, JointModel::NVExtended> ScaledConstraint;
   typedef JointMotionSubspaceTpl<Eigen::Dynamic, double, 0> ConstraintRef;
@@ -64,7 +63,7 @@ void test_constraint_mimic(const JointModelBase<JointModel> & jmodel)
 
   // Test transpose operations
   {
-    const Eigen::DenseIndex dim = ScaledConstraint::MaxDim;
+    const Eigen::Index dim = ScaledConstraint::MaxDim;
     const Matrix6x Fin = Matrix6x::Random(6, dim);
     Eigen::MatrixXd Fout = scaled_constraint.transpose() * Fin;
     Eigen::MatrixXd Fout_ref = scaling_factor * (constraint_ref.transpose() * Fin);
@@ -143,6 +142,7 @@ void test_joint_mimic(const JointModelBase<JointModel> & jmodel)
 
   // Non-const ref accessors trigger asserts, usefull const ref to call const ref accessors...
   const JointDataMimic & jdata_mimic_const_ref{jdata_mimic};
+  BOOST_CHECK(&jdata_mimic_const_ref == &jdata_mimic); // sanity check
 
   BOOST_CHECK(jmodel_mimic.nq() == 0);
   BOOST_CHECK(jmodel_mimic.nv() == 0);

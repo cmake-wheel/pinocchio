@@ -1,18 +1,17 @@
 //
-// Copyright (c) 2016-2022 CNRS INRIA
+// Copyright (c) 2016-2018 CNRS
+// Copyright (c) 2018-2025 INRIA
 //
 
-#ifndef __pinocchio_python_multibody_frame_hpp__
-#define __pinocchio_python_multibody_frame_hpp__
+#pragma once
 
-#include "pinocchio/multibody/fwd.hpp"
-#include "pinocchio/multibody/frame.hpp"
+#include <eigenpy/copyable.hpp>
 
-#include "pinocchio/bindings/python/utils/deprecation.hpp"
+#include "pinocchio/multibody.hpp"
+
+#include <eigenpy/deprecation-policy.hpp>
 #include "pinocchio/bindings/python/utils/cast.hpp"
-#include "pinocchio/bindings/python/utils/copyable.hpp"
 #include "pinocchio/bindings/python/utils/printable.hpp"
-#include "pinocchio/bindings/python/utils/registration.hpp"
 
 namespace pinocchio
 {
@@ -31,20 +30,23 @@ namespace pinocchio
       {
         cl.def(bp::init<>(bp::arg("self"), "Default constructor"))
           .def(bp::init<const Frame &>(bp::args("self", "other"), "Copy constructor"))
-          .def(bp::init<
-               const std::string &, const JointIndex, const SE3 &, FrameType,
-               bp::optional<const Inertia &>>(
-            (bp::arg("name"), bp::arg("parent_joint"), bp::arg("placement"), bp::arg("type"),
-             bp::arg("inertia")),
-            "Initialize from a given name, type, parent frame index and placement wrt parent joint "
-            "and an spatial inertia object."))
-          .def(bp::init<
-               const std::string &, const JointIndex, const FrameIndex, const SE3 &, FrameType,
-               bp::optional<const Inertia &>>(
-            (bp::arg("name"), bp::arg("parent_joint"), bp::args("parent_frame"),
-             bp::arg("placement"), bp::arg("type"), bp::arg("inertia")),
-            "Initialize from a given name, type, parent joint index, parent frame index and "
-            "placement wrt parent joint and an spatial inertia object."))
+          .def(
+            bp::init<
+              const std::string &, const JointIndex, const SE3 &, FrameType,
+              bp::optional<const Inertia &>>(
+              (bp::arg("name"), bp::arg("parent_joint"), bp::arg("placement"), bp::arg("type"),
+               bp::arg("inertia")),
+              "Initialize from a given name, type, parent frame index and placement wrt parent "
+              "joint "
+              "and an spatial inertia object."))
+          .def(
+            bp::init<
+              const std::string &, const JointIndex, const FrameIndex, const SE3 &, FrameType,
+              bp::optional<const Inertia &>>(
+              (bp::arg("name"), bp::arg("parent_joint"), bp::args("parent_frame"),
+               bp::arg("placement"), bp::arg("type"), bp::arg("inertia")),
+              "Initialize from a given name, type, parent joint index, parent frame index and "
+              "placement wrt parent joint and an spatial inertia object."))
           .def(bp::init<const Frame &>((bp::arg("self"), bp::arg("clone")), "Copy constructor"))
 
           .def_readwrite("name", &Frame::name, "name of the frame")
@@ -54,19 +56,19 @@ namespace pinocchio
             "parent",
             bp::make_function(
               +[](const Frame & self) { return self.parentJoint; },
-              deprecated_member<>("Deprecated member. Use Frame.parentJoint instead.")),
+              ::eigenpy::deprecated_member<>("Deprecated member. Use Frame.parentJoint instead.")),
             bp::make_function(
               +[](Frame & self, const JointIndex index) { self.parentJoint = index; },
-              deprecated_member<>("Deprecated member. Use Frame.parentJoint instead.")),
+              ::eigenpy::deprecated_member<>("Deprecated member. Use Frame.parentJoint instead.")),
             "See parentJoint property.")
           .add_property(
             "previousFrame",
             bp::make_function(
               +[](const Frame & self) { return self.parentFrame; },
-              deprecated_member<>("Deprecated member. Use Frame.parentFrame instead.")),
+              ::eigenpy::deprecated_member<>("Deprecated member. Use Frame.parentFrame instead.")),
             bp::make_function(
               +[](Frame & self, const FrameIndex index) { self.parentFrame = index; },
-              deprecated_member<>("Deprecated member. Use Frame.parentFrame instead.")),
+              ::eigenpy::deprecated_member<>("Deprecated member. Use Frame.parentFrame instead.")),
             "See parentFrame property.")
           .def_readwrite(
             "placement", &Frame::placement, "placement in the parent joint local frame")
@@ -100,7 +102,7 @@ namespace pinocchio
           .def(FramePythonVisitor())
           .def(CastVisitor<Frame>())
           .def(ExposeConstructorByCastVisitor<Frame, ::pinocchio::Frame>())
-          .def(CopyableVisitor<Frame>())
+          .def(::eigenpy::CopyableVisitor<Frame>())
           .def(PrintableVisitor<Frame>())
           .def_pickle(Pickle());
       }
@@ -139,5 +141,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_multibody_frame_hpp__

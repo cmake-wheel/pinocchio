@@ -8,7 +8,7 @@
 #include "pinocchio/bindings/python/multibody/joint/joint-model.hpp"
 #include "pinocchio/bindings/python/multibody/joint/joint-data.hpp"
 
-#include "pinocchio/bindings/python/utils/std-aligned-vector.hpp"
+#include "pinocchio/bindings/python/utils/std-vector.hpp"
 
 namespace pinocchio
 {
@@ -21,13 +21,13 @@ namespace pinocchio
       boost::mpl::for_each<JointModelVariant::types>(JointModelExposer());
       bp::to_python_converter<JointModelVariant, JointVariantVisitor<JointModelVariant>>();
       JointModelPythonVisitor<context::JointModel>::expose();
-      StdAlignedVectorPythonVisitor<context::JointModel>::expose("StdVec_JointModelVector");
+      StdVectorPythonVisitor<std::vector<context::JointModel>>::expose("StdVec_JointModelVector");
 
       typedef context::JointCollectionDefault::JointDataVariant JointDataVariant;
       boost::mpl::for_each<JointDataVariant::types>(JointDataExposer());
       bp::to_python_converter<JointDataVariant, JointVariantVisitor<JointDataVariant>>();
       JointDataPythonVisitor<context::JointData>::expose();
-      StdAlignedVectorPythonVisitor<context::JointData>::expose("StdVec_JointDataVector");
+      StdVectorPythonVisitor<std::vector<context::JointData>>::expose("StdVec_JointDataVector");
     }
 
   } // namespace python

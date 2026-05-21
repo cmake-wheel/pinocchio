@@ -2,11 +2,32 @@
 // Copyright (c) 2015-2021 CNRS INRIA
 //
 
-#ifndef __pinocchio_compute_all_terms_hpp__
-#define __pinocchio_compute_all_terms_hpp__
+#pragma once
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+// IWYU pragma: begin_keep
+#include <Eigen/Core>
+
+#include <cassert>
+#include <type_traits>
+#include <vector>
+
+#include <boost/fusion/container/vector.hpp>
+
+#include "pinocchio/macros.hpp"
+#include "pinocchio/fwd.hpp"
+//
+#include "pinocchio/math.hpp"
+
+#include "pinocchio/spatial.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/multibody/visitor.hpp"
+
+#include "pinocchio/algorithm/center-of-mass.hpp"
+#include "pinocchio/algorithm/energy.hpp"
+#include "pinocchio/algorithm/check.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -33,7 +54,7 @@ namespace pinocchio
   /// \param[in] q The joint configuration vector (dim model.nq).
   /// \param[in] v The joint velocity vector (dim model.nv).
   ///
-  /// \return All the results are stored in data. Please refer to the specific algorithm for further
+  /// \note All the results are stored in data. Please refer to the specific algorithm for further
   /// details.
   ///
   template<
@@ -50,10 +71,6 @@ namespace pinocchio
 
 } // namespace pinocchio
 
-#include "pinocchio/algorithm/compute-all-terms.hxx"
-
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/algorithm/compute-all-terms.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-
-#endif // ifndef __pinocchio_compute_all_terms_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/compute-all-terms.hxx"
+// IWYU pragma: end_exports

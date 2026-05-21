@@ -2,6 +2,7 @@
 // Copyright (c) 2022 INRIA
 //
 
+#include "pinocchio/src/context/template-instantiation.hxx"
 #include "pinocchio/algorithm/centroidal-derivatives.hpp"
 
 namespace pinocchio
@@ -20,8 +21,8 @@ namespace pinocchio
       Eigen::Ref<context::Matrix6xs>,
       Eigen::Ref<context::Matrix6xs>,
       Eigen::Ref<context::Matrix6xs>>(
-      const context::Model &,
-      context::Data &,
+      const Model &,
+      Data &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
@@ -39,8 +40,8 @@ namespace pinocchio
       Eigen::Ref<context::Matrix6xs>,
       Eigen::Ref<context::Matrix6xs>,
       Eigen::Ref<context::Matrix6xs>>(
-      const context::Model &,
-      context::Data &,
+      const Model &,
+      Data &,
       const Eigen::MatrixBase<Eigen::Ref<context::Matrix6xs>> &,
       const Eigen::MatrixBase<Eigen::Ref<context::Matrix6xs>> &,
       const Eigen::MatrixBase<Eigen::Ref<context::Matrix6xs>> &,

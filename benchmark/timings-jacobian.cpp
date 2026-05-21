@@ -4,14 +4,10 @@
 
 #include "model-fixture.hpp"
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
-#include "pinocchio/algorithm/joint-configuration.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/frames.hpp"
-#include "pinocchio/parsers/urdf.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
 
 #include <iostream>
 

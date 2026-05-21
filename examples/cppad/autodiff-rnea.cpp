@@ -1,10 +1,29 @@
 #include "pinocchio/autodiff/cppad.hpp"
 
-#include <pinocchio/multibody/model.hpp>
-#include <pinocchio/multibody/sample-models.hpp>
-#include <pinocchio/algorithm/rnea.hpp>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <boost/core/ref.hpp>
+#include <boost/fusion/algorithm.hpp>
+#include <boost/fusion/functional.hpp>
+#include <boost/variant.hpp>
+
+#include <iostream>
+
+#include <cppad/cppad.hpp>
+
 #include <pinocchio/algorithm/joint-configuration.hpp>
 #include <pinocchio/algorithm/rnea-derivatives.hpp>
+#include <pinocchio/algorithm/rnea.hpp>
+#include <pinocchio/multibody.hpp>
+#include <pinocchio/multibody/sample-models.hpp>
+#include "pinocchio/algorithm/check.hpp"
+#include "pinocchio/eigen-common.hpp"
+#include "pinocchio/math.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/spatial.hpp"
+#include "pinocchio/utils/cast.hpp"
+#include "pinocchio/utils/check.hpp"
+#include "pinocchio/utils/static-if.hpp"
 
 using namespace CppAD;
 

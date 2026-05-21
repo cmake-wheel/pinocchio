@@ -3,21 +3,24 @@
 //
 
 #include <iostream>
-#include <cstdio> // for std::tmpnam
 
-#include "pinocchio/multibody/model.hpp"
+#include <boost/filesystem.hpp>
+#include <boost/property_tree/xml_parser.hpp>
+
+#include "pinocchio/multibody.hpp"
 
 #include "pinocchio/parsers/mjcf.hpp"
-#include "pinocchio/parsers/mjcf/mjcf-graph.hpp"
 #include "pinocchio/parsers/urdf.hpp"
 
 #include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/algorithm/frames.hpp"
 
-#include "pinocchio/multibody/joint/joints.hpp"
+#include "pinocchio/multibody/joint.hpp"
 
 #include <boost/test/unit_test.hpp>
 #include <boost/filesystem/fstream.hpp>
+
+typedef ::pinocchio::mjcf::details::MjcfVisitor MjcfVisitor;
 
 namespace
 {
@@ -113,7 +116,7 @@ BOOST_AUTO_TEST_CASE(convert_inertia_fullinertia)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model;
-  MjcfGraph::UrdfVisitor visitor(model);
+  MjcfVisitor visitor(model);
 
   MjcfGraph graph(visitor, "fakeMjcf");
 
@@ -147,7 +150,7 @@ BOOST_AUTO_TEST_CASE(convert_inertia_diaginertia)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model;
-  MjcfGraph::UrdfVisitor visitor(model);
+  MjcfVisitor visitor(model);
 
   MjcfGraph graph(visitor, "fakeMjcf");
 
@@ -197,7 +200,7 @@ BOOST_AUTO_TEST_CASE(geoms_construction)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "fakeMjcf");
   graph.parseGraphFromXML(namefile.name());
@@ -288,7 +291,7 @@ BOOST_AUTO_TEST_CASE(inertia_from_geom)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "fakeMjcf");
   graph.parseGraphFromXML(namefile.name());
@@ -330,7 +333,7 @@ BOOST_AUTO_TEST_CASE(convert_orientation)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model;
-  MjcfGraph::UrdfVisitor visitor(model);
+  MjcfVisitor visitor(model);
 
   MjcfGraph graph(visitor, "fakeMjcf");
 
@@ -384,7 +387,7 @@ BOOST_AUTO_TEST_CASE(merge_default)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model;
-  MjcfGraph::UrdfVisitor visitor(model);
+  MjcfVisitor visitor(model);
 
   MjcfGraph graph(visitor, "fakeMjcf");
   graph.parseDefault(ptr.get_child("default"), ptr, "default");
@@ -453,11 +456,13 @@ BOOST_AUTO_TEST_CASE(parse_default_class)
   typedef pinocchio::SE3::Vector3 Vector3;
   typedef pinocchio::SE3::Matrix3 Matrix3;
 
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) contact_models;
+  std::vector<pinocchio::FrameAnchorConstraintModel> frame_anchor_constraint_models;
+  std::vector<pinocchio::PointAnchorConstraintModel> point_anchor_constraint_models;
   std::string filename = PINOCCHIO_MODEL_DIR + std::string("/../unittest/models/test_mjcf.xml");
 
   pinocchio::Model model_m;
-  pinocchio::mjcf::buildModel(filename, model_m, contact_models);
+  pinocchio::mjcf::buildModel(
+    filename, model_m, point_anchor_constraint_models, frame_anchor_constraint_models);
 
   std::string file_u = PINOCCHIO_MODEL_DIR + std::string("/../unittest/models/test_mjcf.urdf");
   pinocchio::Model model_u;
@@ -502,7 +507,7 @@ BOOST_AUTO_TEST_CASE(parse_dirs_no_strippath)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "/fakeMjcf/fake.xml");
   graph.parseGraphFromXML(namefile.name());
@@ -539,7 +544,7 @@ BOOST_AUTO_TEST_CASE(parse_dirs_strippath)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "/fakeMjcf/fake.xml");
   graph.parseGraphFromXML(namefile.name());
@@ -571,7 +576,7 @@ BOOST_AUTO_TEST_CASE(parse_RX)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m, modelRX;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "fakeMjcf");
   graph.parseGraphFromXML(namefile.name());
@@ -608,7 +613,7 @@ BOOST_AUTO_TEST_CASE(parse_PX)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m, modelPX;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "fakeMjcf");
   graph.parseGraphFromXML(namefile.name());
@@ -645,7 +650,7 @@ BOOST_AUTO_TEST_CASE(parse_Sphere)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m, modelS;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "fakeMjcf");
   graph.parseGraphFromXML(namefile.name());
@@ -682,7 +687,7 @@ BOOST_AUTO_TEST_CASE(parse_Free)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m, modelF;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "fakeMjcf");
   graph.parseGraphFromXML(namefile.name());
@@ -720,7 +725,7 @@ BOOST_AUTO_TEST_CASE(parse_composite_RXRY)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m, modelRXRY;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "fakeMjcf");
   graph.parseGraphFromXML(namefile.name());
@@ -762,7 +767,7 @@ BOOST_AUTO_TEST_CASE(parse_composite_PXPY)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m, modelPXPY;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "fakeMjcf");
   graph.parseGraphFromXML(namefile.name());
@@ -804,7 +809,7 @@ BOOST_AUTO_TEST_CASE(parse_composite_PXRY)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m, modelPXRY;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "fakeMjcf");
   graph.parseGraphFromXML(namefile.name());
@@ -846,7 +851,7 @@ BOOST_AUTO_TEST_CASE(parse_composite_PXSphere)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m, modelPXSphere;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "fakeMjcf");
   graph.parseGraphFromXML(namefile.name());
@@ -938,6 +943,55 @@ BOOST_AUTO_TEST_CASE(adding_keyframes)
 
   Eigen::VectorXd vect_ref(model_m.nq);
   vect_ref << 0, 0, 0.596, 0, 0.154359, 0, 0.988015, 0, 0.154359, 0, 0.988015;
+  ::pinocchio::normalize(model_m, vect_ref);
+
+  BOOST_CHECK(vect_model.size() == vect_ref.size());
+  BOOST_CHECK(vect_model == vect_ref);
+}
+
+// Test laoding a model with a spherical joint and verify that keyframe is valid
+BOOST_AUTO_TEST_CASE(adding_keyframes_with_ref_and_freejoint)
+{
+  std::istringstream xmlData(R"(
+            <mujoco model="testKeyFrame">
+                <default>
+                    <position ctrllimited="true" ctrlrange="-.1 .1" kp="30"/>
+                    <default class="joint">
+                    <geom type="cylinder" size=".006" fromto="0 0 0 0 0 .05" rgba=".9 .6 1 1"/>
+                    </default>
+                </default>
+                <worldbody>
+                    <body name="body1" pos="0 0 1.1">
+                        <freejoint/>
+                        <geom type="capsule" size=".01" fromto="0 0 0 .2 0 0"/>
+                        <body pos=".2 0 0" name="body2">
+                            <joint type="ball" damping=".1"/>
+                            <geom type="capsule" size=".01" fromto="0 -.15 0 0 0 0"/>
+                        </body>
+                    </body>
+                </worldbody>
+                <keyframe>
+                    <key name="test"
+                    qpos="0 0 0.596
+                        0.988015 0 0.154359 0
+                        0.988015 0 0.154359 0"/>
+                </keyframe>
+                </mujoco>)");
+
+  auto namefile = createTempFile(xmlData);
+
+  pinocchio::Model model_m;
+  pinocchio::mjcf::buildModel(namefile.name(), model_m);
+
+  Eigen::Vector3d freejoint_trans_test = Eigen::Vector3d::Zero();
+  Eigen::Vector3d freejoint_trans = model_m.jointPlacements[1].translation();
+  BOOST_CHECK(freejoint_trans_test == freejoint_trans);
+
+  Eigen::VectorXd vect_model = model_m.referenceConfigurations.at("test");
+
+  Eigen::VectorXd vect_ref(model_m.nq);
+  vect_ref << 0, 0, 0.596, 0, 0.154359, 0, 0.988015, 0, 0.154359, 0, 0.988015;
+  ::pinocchio::normalize(model_m, vect_ref);
 
   BOOST_CHECK(vect_model.size() == vect_ref.size());
   BOOST_CHECK(vect_model == vect_ref);
@@ -978,9 +1032,6 @@ BOOST_AUTO_TEST_CASE(joint_and_inertias)
 
 BOOST_AUTO_TEST_CASE(armature)
 {
-  typedef pinocchio::SE3::Vector3 Vector3;
-  typedef pinocchio::SE3::Matrix3 Matrix3;
-
   std::istringstream xmlData(R"(
             <mujoco model="model_RX">
                 <default>
@@ -1004,7 +1055,7 @@ BOOST_AUTO_TEST_CASE(armature)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "fakeMjcf");
   graph.parseGraphFromXML(namefile.name());
@@ -1013,7 +1064,7 @@ BOOST_AUTO_TEST_CASE(armature)
   Eigen::VectorXd armature_real(model_m.nv);
   armature_real << 1.3, 2.4, 0.4, 1, 1, 1;
 
-  for (size_t i = 0; i < size_t(model_m.nv); i++)
+  for (Eigen::Index i = 0; i < model_m.nv; i++)
     BOOST_CHECK_EQUAL(model_m.armature[i], armature_real[i]);
 }
 
@@ -1045,7 +1096,7 @@ BOOST_AUTO_TEST_CASE(reference_positions)
 
   Eigen::VectorXd vect_model = model_m.referenceConfigurations.at("test");
   Eigen::VectorXd vect_ref(model_m.nq);
-  vect_ref << 0.66, 0.4;
+  vect_ref << 0.8, 0.5;
 
   BOOST_CHECK(vect_model.size() == vect_ref.size());
   BOOST_CHECK(vect_model == vect_ref);
@@ -1138,6 +1189,140 @@ BOOST_AUTO_TEST_CASE(build_model_no_root_joint)
   BOOST_CHECK_EQUAL(model_m.nq, 29);
 }
 
+double degreesToRadian(double degrees)
+{
+  return degrees * (M_PI / 180.0);
+}
+
+BOOST_AUTO_TEST_CASE(slide_joint_limits)
+{
+  std::istringstream xmlData(R"(
+            <mujoco model="model_PX">
+                <worldbody>
+                    <body name="link0">
+                        <body name="link1" pos="0 0 0">
+                            <joint name="joint1" type="slide" axis="1 0 0" range="-16.34 17.2" margin="1.2345" actuatorfrcrange="1.5 4.8" frictionloss="11.6"/>
+                        </body>
+                    </body>
+                </worldbody>
+            </mujoco>)");
+
+  auto namefile = createTempFile(xmlData);
+
+  pinocchio::Model model_m;
+  pinocchio::mjcf::buildModel(namefile.name(), model_m);
+
+  Eigen::VectorXd lower_position_limit(model_m.lowerPositionLimit);
+  lower_position_limit << -degreesToRadian(16.34);
+  Eigen::VectorXd upper_position_limit(model_m.upperPositionLimit);
+  upper_position_limit << degreesToRadian(17.2);
+  Eigen::VectorXd position_limit_margin(model_m.positionLimitMargin);
+  position_limit_margin << degreesToRadian(1.2345);
+  Eigen::VectorXd min_dry_friction(model_m.lowerDryFrictionLimit);
+  min_dry_friction << -11.6;
+  Eigen::VectorXd max_dry_friction(model_m.upperDryFrictionLimit);
+  max_dry_friction << 11.6;
+  Eigen::VectorXd min_effort(model_m.lowerEffortLimit);
+  min_effort << 1.5;
+  Eigen::VectorXd max_effort(model_m.upperEffortLimit);
+  max_effort << 4.8;
+
+  BOOST_CHECK(lower_position_limit == model_m.lowerPositionLimit);
+  BOOST_CHECK(upper_position_limit == model_m.upperPositionLimit);
+  BOOST_CHECK(position_limit_margin == model_m.positionLimitMargin);
+  BOOST_CHECK(min_dry_friction == model_m.lowerDryFrictionLimit);
+  BOOST_CHECK(max_dry_friction == model_m.upperDryFrictionLimit);
+  BOOST_CHECK(min_effort == model_m.lowerEffortLimit);
+  BOOST_CHECK(max_effort == model_m.upperEffortLimit);
+}
+
+BOOST_AUTO_TEST_CASE(hinge_joint_limits)
+{
+  std::istringstream xmlData(R"(
+            <mujoco model="model_PX">
+                <worldbody>
+                    <body name="link0">
+                        <body name="link1" pos="0 0 0">
+                            <joint name="joint1" type="hinge" axis="1 0 0" range="-16.34 17.2" margin="1.2345" actuatorfrcrange="1.5 4.8" frictionloss="11.6"/>
+                        </body>
+                    </body>
+                </worldbody>
+            </mujoco>)");
+
+  auto namefile = createTempFile(xmlData);
+
+  pinocchio::Model model_m;
+  pinocchio::mjcf::buildModel(namefile.name(), model_m);
+
+  Eigen::VectorXd lower_position_limit(model_m.lowerPositionLimit);
+  lower_position_limit << -degreesToRadian(16.34);
+  Eigen::VectorXd upper_position_limit(model_m.upperPositionLimit);
+  upper_position_limit << degreesToRadian(17.2);
+  Eigen::VectorXd position_limit_margin(model_m.positionLimitMargin);
+  position_limit_margin << degreesToRadian(1.2345);
+  Eigen::VectorXd min_dry_friction(model_m.lowerDryFrictionLimit);
+  min_dry_friction << -11.6;
+  Eigen::VectorXd max_dry_friction(model_m.upperDryFrictionLimit);
+  max_dry_friction << 11.6;
+  Eigen::VectorXd min_effort(model_m.lowerEffortLimit);
+  min_effort << 1.5;
+  Eigen::VectorXd max_effort(model_m.upperEffortLimit);
+  max_effort << 4.8;
+
+  BOOST_CHECK(lower_position_limit == model_m.lowerPositionLimit);
+  BOOST_CHECK(upper_position_limit == model_m.upperPositionLimit);
+  BOOST_CHECK(position_limit_margin == model_m.positionLimitMargin);
+  BOOST_CHECK(min_dry_friction == model_m.lowerDryFrictionLimit);
+  BOOST_CHECK(max_dry_friction == model_m.upperDryFrictionLimit);
+  BOOST_CHECK(min_effort == model_m.lowerEffortLimit);
+  BOOST_CHECK(max_effort == model_m.upperEffortLimit);
+}
+
+BOOST_AUTO_TEST_CASE(hinge_and_slide_joints_limits)
+{
+  std::istringstream xmlData(R"(
+            <mujoco model="model_PX">
+                <worldbody>
+                    <body name="link0">
+                        <body name="link1" pos="0 0 0">
+                            <joint name="joint1" type="hinge" axis="1 0 0" range="-16.34 17.2" margin="1.2345" actuatorfrcrange="1.5 4.8" frictionloss="11.6"/>
+                            <body name="link2" pos="0 0 0">
+                              <joint name="joint2" type="slide" axis="1 0 0" range="-18.32 19.1" margin="2.3366" actuatorfrcrange="-6.87 -4.8" frictionloss="0.17"/>
+                            </body>
+                        </body>
+                    </body>
+                </worldbody>
+            </mujoco>)");
+
+  auto namefile = createTempFile(xmlData);
+
+  pinocchio::Model model_m;
+  pinocchio::mjcf::buildModel(namefile.name(), model_m);
+
+  Eigen::VectorXd lower_position_limit(model_m.lowerPositionLimit);
+  lower_position_limit << -degreesToRadian(16.34), -degreesToRadian(18.32);
+  Eigen::VectorXd upper_position_limit(model_m.upperPositionLimit);
+  upper_position_limit << degreesToRadian(17.2), degreesToRadian(19.1);
+  Eigen::VectorXd position_limit_margin(model_m.positionLimitMargin);
+  position_limit_margin << degreesToRadian(1.2345), degreesToRadian(2.3366);
+  Eigen::VectorXd min_dry_friction(model_m.lowerDryFrictionLimit);
+  min_dry_friction << -11.6, -0.17;
+  Eigen::VectorXd max_dry_friction(model_m.upperDryFrictionLimit);
+  max_dry_friction << 11.6, 0.17;
+  Eigen::VectorXd min_effort(model_m.lowerEffortLimit);
+  min_effort << 1.5, -6.87;
+  Eigen::VectorXd max_effort(model_m.upperEffortLimit);
+  max_effort << 4.8, -4.8;
+
+  BOOST_CHECK(lower_position_limit == model_m.lowerPositionLimit);
+  BOOST_CHECK(upper_position_limit == model_m.upperPositionLimit);
+  BOOST_CHECK(position_limit_margin == model_m.positionLimitMargin);
+  BOOST_CHECK(min_dry_friction == model_m.lowerDryFrictionLimit);
+  BOOST_CHECK(max_dry_friction == model_m.upperDryFrictionLimit);
+  BOOST_CHECK(min_effort == model_m.lowerEffortLimit);
+  BOOST_CHECK(max_effort == model_m.upperEffortLimit);
+}
+
 BOOST_AUTO_TEST_CASE(build_model_with_root_joint_name)
 {
   const std::string filename = PINOCCHIO_MODEL_DIR + std::string("/simple_humanoid.xml");
@@ -1158,7 +1343,6 @@ BOOST_AUTO_TEST_CASE(build_model_with_root_joint_name)
 BOOST_AUTO_TEST_CASE(compare_to_urdf)
 {
   using namespace pinocchio;
-  typedef typename pinocchio::Model::ConfigVectorMap ConfigVectorMap;
 
   const std::string filename = PINOCCHIO_MODEL_DIR + std::string("/simple_humanoid.xml");
 
@@ -1185,22 +1369,11 @@ BOOST_AUTO_TEST_CASE(compare_to_urdf)
   BOOST_CHECK(model_urdf.idx_vs == model_m.idx_vs);
   BOOST_CHECK(model_urdf.nvs == model_m.nvs);
 
-  typename ConfigVectorMap::const_iterator it = model_m.referenceConfigurations.begin();
-  typename ConfigVectorMap::const_iterator it_model_urdf =
-    model_urdf.referenceConfigurations.begin();
-  for (long k = 0; k < (long)model_m.referenceConfigurations.size(); ++k)
-  {
-    std::advance(it, k);
-    std::advance(it_model_urdf, k);
-    BOOST_CHECK(it->second.size() == it_model_urdf->second.size());
-    BOOST_CHECK(it->second == it_model_urdf->second);
-  }
-
   BOOST_CHECK(model_urdf.armature.size() == model_m.armature.size());
 
   BOOST_CHECK(model_urdf.armature == model_m.armature);
-  BOOST_CHECK(model_urdf.friction.size() == model_m.friction.size());
-  BOOST_CHECK(model_urdf.friction == model_m.friction);
+  BOOST_CHECK(model_urdf.upperDryFrictionLimit.size() == model_m.upperDryFrictionLimit.size());
+  BOOST_CHECK(model_urdf.upperDryFrictionLimit == model_m.upperDryFrictionLimit);
 
   BOOST_CHECK(model_urdf.damping.size() == model_m.damping.size());
 
@@ -1214,8 +1387,8 @@ BOOST_AUTO_TEST_CASE(compare_to_urdf)
 
   BOOST_CHECK(model_urdf.rotorGearRatio == model_m.rotorGearRatio);
 
-  BOOST_CHECK(model_urdf.effortLimit.size() == model_m.effortLimit.size());
-  BOOST_CHECK(model_urdf.effortLimit == model_m.effortLimit);
+  BOOST_CHECK(model_urdf.upperEffortLimit.size() == model_m.upperEffortLimit.size());
+  BOOST_CHECK(model_urdf.upperEffortLimit == model_m.upperEffortLimit);
   // Cannot test velocity limit since it does not exist in mjcf
 
   BOOST_CHECK(model_urdf.lowerPositionLimit.size() == model_m.lowerPositionLimit.size());
@@ -1244,7 +1417,7 @@ BOOST_AUTO_TEST_CASE(compare_to_urdf)
 }
 #endif // PINOCCHIO_WITH_URDFDOM
 
-#if defined(PINOCCHIO_WITH_HPP_FCL)
+#if defined(PINOCCHIO_WITH_COLLISION)
 BOOST_AUTO_TEST_CASE(test_geometry_parsing)
 {
   typedef pinocchio::Model Model;
@@ -1282,52 +1455,69 @@ BOOST_AUTO_TEST_CASE(test_geometry_parsing)
 
   BOOST_CHECK(geomModel_m.ngeoms == 5);
 
-  auto * cyl = dynamic_cast<hpp::fcl::Cylinder *>(geomModel_m.geometryObjects.at(0).geometry.get());
+  auto * cyl = dynamic_cast<coal::Cylinder *>(geomModel_m.geometryObjects.at(0).geometry.get());
   BOOST_REQUIRE(cyl);
   BOOST_CHECK(cyl->halfLength == 0.25);
   BOOST_CHECK(cyl->radius == 0.01);
 
-  auto * cap = dynamic_cast<hpp::fcl::Capsule *>(geomModel_m.geometryObjects.at(2).geometry.get());
+  auto * cap = dynamic_cast<coal::Capsule *>(geomModel_m.geometryObjects.at(2).geometry.get());
   BOOST_REQUIRE(cap);
   BOOST_CHECK(cap->halfLength == 0.25);
   BOOST_CHECK(cap->radius == 0.01);
 
-  auto * s = dynamic_cast<hpp::fcl::Sphere *>(geomModel_m.geometryObjects.at(3).geometry.get());
+  auto * s = dynamic_cast<coal::Sphere *>(geomModel_m.geometryObjects.at(3).geometry.get());
   BOOST_REQUIRE(s);
   BOOST_CHECK(s->radius == 0.01);
 
-  auto * b = dynamic_cast<hpp::fcl::Box *>(geomModel_m.geometryObjects.at(1).geometry.get());
+  auto * b = dynamic_cast<coal::Box *>(geomModel_m.geometryObjects.at(1).geometry.get());
   BOOST_REQUIRE(b);
   Eigen::Vector3d sides;
   sides << 0.01, 0.01, 0.25;
   BOOST_CHECK(b->halfSide == sides);
 
-  auto * e = dynamic_cast<hpp::fcl::Ellipsoid *>(geomModel_m.geometryObjects.at(4).geometry.get());
+  auto * e = dynamic_cast<coal::Ellipsoid *>(geomModel_m.geometryObjects.at(4).geometry.get());
   BOOST_REQUIRE(e);
   BOOST_CHECK(e->radii == sides);
 }
-#endif // if defined(PINOCCHIO_WITH_HPP_FCL)
+#endif // if defined(PINOCCHIO_WITH_COLLISION)
 
 BOOST_AUTO_TEST_CASE(test_contact_parsing)
 {
-  PINOCCHIO_STD_VECTOR_WITH_EIGEN_ALLOCATOR(pinocchio::RigidConstraintModel) contact_models;
+  std::vector<pinocchio::FrameAnchorConstraintModel> frame_anchor_constraint_models;
+  std::vector<pinocchio::PointAnchorConstraintModel> point_anchor_constraint_models;
   std::string filename = PINOCCHIO_MODEL_DIR + std::string("/../unittest/models/closed_chain.xml");
 
   pinocchio::Model model;
-  pinocchio::mjcf::buildModel(filename, model, contact_models);
+  pinocchio::mjcf::buildModel(
+    filename, model, point_anchor_constraint_models, frame_anchor_constraint_models);
 
-  BOOST_CHECK_EQUAL(contact_models.size(), 4);
+  BOOST_CHECK_EQUAL(point_anchor_constraint_models.size(), 4);
+
+  // We check that we have correctly parsed the values contained in the XML file
   BOOST_CHECK_EQUAL(
-    contact_models[0].joint1_placement.translation(), pinocchio::SE3::Vector3(0.50120, 0, 0));
+    point_anchor_constraint_models[0].joint1_placement.translation(),
+    pinocchio::SE3::Vector3(0.50120, 0, 0));
   BOOST_CHECK_EQUAL(
-    contact_models[1].joint1_placement.translation(), pinocchio::SE3::Vector3(0.35012, 0, 0));
+    point_anchor_constraint_models[1].joint1_placement.translation(),
+    pinocchio::SE3::Vector3(0.35012, 0, 0));
   BOOST_CHECK_EQUAL(
-    contact_models[2].joint1_placement.translation(), pinocchio::SE3::Vector3(0.50120, 0, 0));
+    point_anchor_constraint_models[2].joint1_placement.translation(),
+    pinocchio::SE3::Vector3(0.50120, 0, 0));
   BOOST_CHECK_EQUAL(
-    contact_models[3].joint1_placement.translation(), pinocchio::SE3::Vector3(0.35012, 0, 0));
-  for (const auto & cm : contact_models)
+    point_anchor_constraint_models[3].joint1_placement.translation(),
+    pinocchio::SE3::Vector3(0.35012, 0, 0));
+
+  // Next, we check if the other constraint placement has been computed correctly.
+  // If a point anchor constraint has been constructed well, then the origin of the constraint
+  // placements, expressed in the world frame, should match
+  const Eigen::VectorXd q0 = model.referenceConfigurations["qpos0"];
+  pinocchio::Data data(model);
+  pinocchio::forwardKinematics(model, data, q0);
+  for (const auto & cm : point_anchor_constraint_models)
   {
-    BOOST_CHECK(cm.joint2_placement.isApprox(cm.joint1_placement.inverse()));
+    const pinocchio::SE3 oMc1 = data.oMi[cm.joint1_id] * cm.joint1_placement;
+    const pinocchio::SE3 oMc2 = data.oMi[cm.joint2_id] * cm.joint2_placement;
+    BOOST_CHECK(oMc1.translation().isApprox(oMc2.translation()));
   }
 }
 
@@ -1347,7 +1537,7 @@ BOOST_AUTO_TEST_CASE(test_default_eulerseq)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "fakeMjcf");
   graph.parseGraphFromXML(namefile.name());
@@ -1383,7 +1573,7 @@ BOOST_AUTO_TEST_CASE(parse_mesh_with_vertices)
 
   typedef ::pinocchio::mjcf::details::MjcfGraph MjcfGraph;
   pinocchio::Model model_m;
-  MjcfGraph::UrdfVisitor visitor(model_m);
+  MjcfVisitor visitor(model_m);
 
   MjcfGraph graph(visitor, "/fakeMjcf/fake.xml");
   graph.parseGraphFromXML(namefile.name());
@@ -1418,15 +1608,70 @@ BOOST_AUTO_TEST_CASE(test_get_unknown_size_vector_from_stream)
   Eigen::VectorXd expected2(6);
   expected2 << 1, 2, 3, 4, 5, 6;
   BOOST_CHECK(v2 == expected2);
+}
 
-  const auto v3 = pinocchio::mjcf::details::internal::getUnknownSizeVectorFromStream(R"(1 2 3
-                                                                                        4 5 6
-                                                                                        7 8 9
-                                                                                        )");
-  BOOST_CHECK(v3.size() == 9);
-  Eigen::VectorXd expected3(9);
-  expected3 << 1, 2, 3, 4, 5, 6, 7, 8, 9;
-  BOOST_CHECK(v3 == expected3);
+BOOST_AUTO_TEST_CASE(load_hopper)
+{
+  std::istringstream xmlData(R"(
+<mujoco model="hopper">
+  <compiler angle="degree" inertiafromgeom="true"/>
+  <default>
+    <joint armature="1" damping="1" limited="true"/>
+    <geom conaffinity="1" condim="1" contype="1" margin="0.001" material="geom" rgba="0.8 0.6 .4 1" solimp=".8 .8 .01" solref=".02 1"/>
+    <motor ctrllimited="true" ctrlrange="-.4 .4"/>
+  </default>
+  <option integrator="RK4" timestep="0.002"/>
+  <visual>
+    <map znear="0.02"/>
+  </visual>
+  <worldbody>
+    <light cutoff="100" diffuse="1 1 1" dir="-0 0 -1.3" directional="true" exponent="1" pos="0 0 1.3" specular=".1 .1 .1"/>
+    <geom conaffinity="1" condim="3" name="floor" pos="0 0 0" rgba="0.8 0.9 0.8 1" size="20 20 .125" type="plane" material="MatPlane"/>
+    <body name="torso" pos="0 0 1.25">
+      <camera name="track" mode="trackcom" pos="0 -3 -0.25" xyaxes="1 0 0 0 0 1"/>
+      <joint armature="0" axis="1 0 0" damping="0" limited="false" name="rootx" pos="0 0 -1.25" stiffness="0" type="slide"/>
+      <joint armature="0" axis="0 0 1" damping="0" limited="false" name="rootz" pos="0 0 -1.25" ref="1.25" stiffness="0" type="slide"/>
+      <joint armature="0" axis="0 1 0" damping="0" limited="false" name="rooty" pos="0 0 0" stiffness="0" type="hinge"/>
+      <geom friction="0.9" name="torso_geom" size="0.05 0.19999999999999996" type="capsule"/>
+      <body name="thigh" pos="0 0 -0.19999999999999996">
+        <joint axis="0 -1 0" name="thigh_joint" pos="0 0 0" range="-150 0" type="hinge"/>
+        <geom friction="0.9" pos="0 0 -0.22500000000000009" name="thigh_geom" size="0.05 0.22500000000000003" type="capsule"/>
+        <body name="leg" pos="0 0 -0.70000000000000007">
+          <joint axis="0 -1 0" name="leg_joint" pos="0 0 0.25" range="-150 0" type="hinge"/>
+          <geom friction="0.9" name="leg_geom" size="0.04 0.25" type="capsule"/>
+          <body name="foot" pos="0.13 0 -0.35">
+            <joint axis="0 -1 0" name="foot_joint" pos="-0.13 0 0.1" range="-45 45" type="hinge"/>
+            <geom friction="2.0" pos="-0.065 0 0.1" quat="0.70710678118654757 0 -0.70710678118654746 0" name="foot_geom" size="0.06 0.195" type="capsule"/>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <actuator>
+    <motor ctrllimited="true" ctrlrange="-1.0 1.0" gear="200.0" joint="thigh_joint"/>
+    <motor ctrllimited="true" ctrlrange="-1.0 1.0" gear="200.0" joint="leg_joint"/>
+    <motor ctrllimited="true" ctrlrange="-1.0 1.0" gear="200.0" joint="foot_joint"/>
+  </actuator>
+    <asset>
+        <texture type="skybox" builtin="gradient" rgb1=".4 .5 .6" rgb2="0 0 0"
+            width="100" height="100"/>
+        <texture builtin="flat" height="1278" mark="cross" markrgb="1 1 1" name="texgeom" random="0.01" rgb1="0.8 0.6 0.4" rgb2="0.8 0.6 0.4" type="cube" width="127"/>
+        <texture builtin="checker" height="100" name="texplane" rgb1="0 0 0" rgb2="0.8 0.8 0.8" type="2d" width="100"/>
+        <material name="MatPlane" reflectance="0.5" shininess="1" specular="1" texrepeat="60 60" texture="texplane"/>
+        <material name="geom" texture="texgeom" texuniform="true"/>
+    </asset>
+</mujoco>)");
+
+  auto namefile = createTempFile(xmlData);
+
+  pinocchio::Model model_m;
+  pinocchio::GeometryModel geomModel_m;
+  pinocchio::mjcf::buildModel(namefile.name(), model_m);
+  // std::cout << "model_m: " << model_m << std::endl;
+  pinocchio::mjcf::buildGeom(model_m, namefile.name(), pinocchio::COLLISION, geomModel_m);
+  // std::cout << "geomModel_m: " << geomModel_m << std::endl;
+
+  BOOST_CHECK_EQUAL(model_m.nq, 6);
 }
 
 // This non regression test address issue: https://github.com/stack-of-tasks/pinocchio/issues/2747

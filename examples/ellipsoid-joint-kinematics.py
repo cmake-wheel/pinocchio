@@ -210,10 +210,10 @@ def visualize_ellipsoid_motion():
         print("\nVisualization skipped (MeshcatVisualizer not available)")
         return
 
-    if not hasattr(pin, "hppfcl"):
-        print("\nVisualization skipped (hpp-fcl not available)")
-        print("Install with: conda install -c conda-forge hpp-fcl")
-        print("Then recompile Pinocchio with -DBUILD_WITH_HPP_FCL_SUPPORT=ON")
+    if not hasattr(pin, "coal"):
+        print("\nVisualization skipped (coal not available)")
+        print("Install with: conda install -c conda-forge coal")
+        print("Then recompile Pinocchio with -DBUILD_WITH_COLLISION_SUPPORT=ON")
         return
 
     print("\n" + "=" * 60)
@@ -229,7 +229,7 @@ def visualize_ellipsoid_motion():
         geom_model = pin.GeometryModel()
 
         # 1. Add the ELLIPSOID SURFACE as a visual object
-        ellipsoid_shape = pin.hppfcl.Ellipsoid(radius_x, radius_y, radius_z)
+        ellipsoid_shape = pin.coal.Ellipsoid(radius_x, radius_y, radius_z)
         ellipsoid_geom = pin.GeometryObject(
             "ellipsoid_surface",
             0,  # Universe frame
@@ -242,7 +242,7 @@ def visualize_ellipsoid_motion():
         geom_model.addGeometryObject(ellipsoid_geom)
 
         # 2. Add a small sphere to show the contact point on the ellipsoid
-        contact_sphere = pin.hppfcl.Sphere(0.03)
+        contact_sphere = pin.coal.Sphere(0.03)
         contact_geom = pin.GeometryObject(
             "contact_point",
             model.getJointId("ellipsoid"),
@@ -253,7 +253,7 @@ def visualize_ellipsoid_motion():
         geom_model.addGeometryObject(contact_geom)
 
         # 3. Add a box to visualize the body orientation
-        box = pin.hppfcl.Box(0.1, 0.1, 0.3)
+        box = pin.coal.Box(0.1, 0.1, 0.3)
         box_geom = pin.GeometryObject(
             "body_visual",
             model.getJointId("ellipsoid"),

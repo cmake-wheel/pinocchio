@@ -2,15 +2,13 @@
 // Copyright (c) 2022 INRIA
 //
 
-#include <iostream>
-
 #include "pinocchio/collision/collision.hpp"
 #include "pinocchio/collision/broadphase.hpp"
 #include "pinocchio/collision/tree-broadphase-manager.hpp"
 #include "pinocchio/parsers/urdf.hpp"
 #include "pinocchio/parsers/srdf.hpp"
 
-#include <hpp/fcl/broadphase/broadphase_dynamic_AABB_tree.h>
+#include <coal/broadphase/broadphase_dynamic_AABB_tree.h>
 
 #include <vector>
 #include <boost/filesystem.hpp>
@@ -26,7 +24,7 @@ BOOST_AUTO_TEST_CASE(test_tree_broadphase_with_empty_models)
   GeometryModel geom_model;
   GeometryData geom_data(geom_model);
 
-  TreeBroadPhaseManagerTpl<hpp::fcl::DynamicAABBTreeCollisionManager> broadphase_manager(
+  TreeBroadPhaseManagerTpl<coal::DynamicAABBTreeCollisionManager> broadphase_manager(
     &model, &geom_model, &geom_data);
 
   BOOST_CHECK(broadphase_manager.check());
@@ -62,7 +60,7 @@ BOOST_AUTO_TEST_CASE(test_collisions)
   BOOST_CHECK(computeCollisions(geom_model, geom_data) == false);
   BOOST_CHECK(computeCollisions(geom_model, geom_data, false) == false);
 
-  TreeBroadPhaseManagerTpl<hpp::fcl::DynamicAABBTreeCollisionManager> broadphase_manager(
+  TreeBroadPhaseManagerTpl<coal::DynamicAABBTreeCollisionManager> broadphase_manager(
     &model, &geom_model, &geom_data_broadphase);
   BOOST_CHECK(computeCollisions(broadphase_manager) == false);
   BOOST_CHECK(computeCollisions(broadphase_manager, false) == false);

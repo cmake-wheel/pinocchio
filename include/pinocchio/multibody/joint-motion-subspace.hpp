@@ -2,26 +2,23 @@
 // Copyright (c) 2015-2020 CNRS INRIA
 //
 
-#ifndef __pinocchio_multibody_joint_motion_subspace_hpp__
-#define __pinocchio_multibody_joint_motion_subspace_hpp__
+#pragma once
 
-#include "pinocchio/macros.hpp"
+// IWYU pragma: begin_keep
+#include <Eigen/Core>
+#include <iosfwd>
+#include <ostream>
 
-namespace pinocchio
-{
+#include "pinocchio/fwd.hpp"
+#include "pinocchio/eigen-common.hpp"
 
-  template<int _Dim, typename _Scalar, int _Options = context::Options, int _MaxDim = -1>
-  struct JointMotionSubspaceTpl;
+#include "pinocchio/math.hpp"
+#include "pinocchio/spatial.hpp"
 
-  typedef JointMotionSubspaceTpl<1, context::Scalar, context::Options> JointMotionSubspace1d;
-  typedef JointMotionSubspaceTpl<3, context::Scalar, context::Options> JointMotionSubspace3d;
-  typedef JointMotionSubspaceTpl<6, context::Scalar, context::Options> JointMotionSubspace6d;
-  typedef JointMotionSubspaceTpl<Eigen::Dynamic, context::Scalar, context::Options>
-    JointMotionSubspaceXd;
+#include "pinocchio/multibody/fwd.hpp"
+// IWYU pragma: end_keep
 
-} // namespace pinocchio
-
-#include "pinocchio/multibody/joint-motion-subspace-base.hpp"
-#include "pinocchio/multibody/joint-motion-subspace-generic.hpp"
-
-#endif // ifndef __pinocchio_multibody_joint_motion_subspace_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/multibody/joint-motion-subspace-base.hxx"
+#include "pinocchio/src/multibody/joint-motion-subspace-generic.hxx"
+// IWYU pragma: end_exports

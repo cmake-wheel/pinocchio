@@ -7,12 +7,12 @@
 #include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/algorithm/kinematics.hpp"
 #include "pinocchio/algorithm/geometry.hpp"
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
   #include "pinocchio/collision/collision.hpp"
-#endif // PINOCCHIO_WITH_HPP_FCL
+  #include "pinocchio/collision/distance.hpp"
+#endif // PINOCCHIO_WITH_COLLISION
 #include "pinocchio/parsers/urdf.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
-#include "pinocchio/multibody/geometry.hpp"
+#include "pinocchio/geometry.hpp"
 
 #include <iostream>
 
@@ -111,7 +111,7 @@ BENCHMARK_DEFINE_F(GeometryFixture, UPDATE_GEOMETRY_PLACEMENTS)(benchmark::State
 }
 BENCHMARK_REGISTER_F(GeometryFixture, UPDATE_GEOMETRY_PLACEMENTS)->Apply(CustomArguments);
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
 
 struct CollisionFixture : GeometryFixture
 {
@@ -192,9 +192,9 @@ BENCHMARK_DEFINE_F(CollisionFixture, COMPUTE_DISTANCES)(benchmark::State & st)
 }
 BENCHMARK_REGISTER_F(CollisionFixture, COMPUTE_DISTANCES)->Apply(CustomArguments);
 
-#endif // #ifdef PINOCCHIO_WITH_HPP_FCL
+#endif // #ifdef PINOCCHIO_WITH_COLLISION
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
 PINOCCHIO_BENCHMARK_MAIN_WITH_SETUP(CollisionFixture::GlobalSetUp);
 #else
 PINOCCHIO_BENCHMARK_MAIN_WITH_SETUP(GeometryFixture::GlobalSetUp);

@@ -18,11 +18,7 @@ namespace pinocchio
       typedef context::Scalar Scalar;
       typedef context::SE3 SE3;
       typedef context::VectorXs VectorXs;
-      enum
-      {
-        Options = context::Options
-      };
-      typedef Eigen::Matrix<Scalar, 7, 1, Options> Vector7s;
+      typedef context::Vector7s Vector7s;
       typedef Eigen::Map<SE3::Quaternion> QuatMap;
       typedef Eigen::Map<const SE3::Quaternion> QuatConstMap;
 
@@ -53,13 +49,13 @@ namespace pinocchio
         }
 
         // bp::extract<SE3::Scalar> to_double;
-        const Scalar & v0 = bp::extract<Scalar>(v[0]);
-        const Scalar & v1 = bp::extract<Scalar>(v[1]);
-        const Scalar & v2 = bp::extract<Scalar>(v[2]);
-        const Scalar & v3 = bp::extract<Scalar>(v[3]);
-        const Scalar & v4 = bp::extract<Scalar>(v[4]);
-        const Scalar & v5 = bp::extract<Scalar>(v[5]);
-        const Scalar & v6 = bp::extract<Scalar>(v[6]);
+        const auto v0 = bp::extract<Scalar>(v[0]);
+        const auto v1 = bp::extract<Scalar>(v[1]);
+        const auto v2 = bp::extract<Scalar>(v[2]);
+        const auto v3 = bp::extract<Scalar>(v[3]);
+        const auto v4 = bp::extract<Scalar>(v[4]);
+        const auto v5 = bp::extract<Scalar>(v[5]);
+        const auto v6 = bp::extract<Scalar>(v[6]);
 
         SE3::Quaternion q(v6, v3, v4, v5);
         SE3::Vector3 t(v0, v1, v2);

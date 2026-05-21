@@ -5,8 +5,7 @@
 #include "pinocchio/bindings/python/fwd.hpp"
 #include "pinocchio/bindings/python/utils/namespace.hpp"
 
-#include "pinocchio/math/matrix.hpp"
-#include "pinocchio/math/eigenvalues.hpp"
+#include "pinocchio/math.hpp"
 
 namespace pinocchio
 {
@@ -33,7 +32,7 @@ namespace pinocchio
 #ifndef PINOCCHIO_PYTHON_SKIP_CASADI_UNSUPPORTED
         bp::def(
           "computeLargestEigenvector",
-          (context::VectorXs(*)(
+          (context::VectorXs (*)(
             const context::MatrixXs &, const int,
             const context::Scalar))&computeLargestEigenvector<context::MatrixXs>,
           (bp::arg("mat"), bp::arg("max_it") = 10, bp::arg("rel_tol") = 1e-8),

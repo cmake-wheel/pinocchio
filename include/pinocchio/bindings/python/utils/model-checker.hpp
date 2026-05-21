@@ -1,9 +1,8 @@
 //
-// Copyright (c) 2025 INRIA
+// Copyright (c) 2025-2026 INRIA
 //
 
-#ifndef __pinocchio_python_utils_model_checker_hpp__
-#define __pinocchio_python_utils_model_checker_hpp__
+#pragma once
 
 #include <Python.h>
 #include <string>
@@ -21,9 +20,9 @@ namespace pinocchio
     template<class Policy = boost::python::default_call_policies>
     struct mimic_not_supported_function : Policy
     {
-      mimic_not_supported_function(size_t model_idx_)
+      mimic_not_supported_function(size_t model_arg_list_idx_)
       : Policy()
-      , model_idx(model_idx_)
+      , model_arg_list_idx(model_arg_list_idx_)
       {
       }
 
@@ -33,7 +32,7 @@ namespace pinocchio
         // Convert the object to a tuple
         boost::python::tuple py_args = boost::python::extract<boost::python::tuple>(args);
 
-        context::Model m = boost::python::extract<context::Model>(py_args[model_idx]);
+        context::Model m = boost::python::extract<context::Model>(py_args[model_arg_list_idx]);
         if (!m.check(MimicChecker()))
         {
           PyErr_SetString(PyExc_RuntimeError, m_error_message.c_str());
@@ -46,7 +45,7 @@ namespace pinocchio
     protected:
       static const std::string m_error_message;
       // index of the pinocchio in the function arguments. Need it to avoid a loop
-      const size_t model_idx;
+      const size_t model_arg_list_idx;
     };
 
     template<class Policy>
@@ -54,4 +53,3 @@ namespace pinocchio
       "This algorithm does not support Joint Mimic type in the model.";
   } // namespace python
 } // namespace pinocchio
-#endif // model_checker

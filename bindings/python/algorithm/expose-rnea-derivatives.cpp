@@ -13,7 +13,7 @@ namespace pinocchio
   {
 
     namespace bp = boost::python;
-    typedef PINOCCHIO_ALIGNED_STD_VECTOR(context::Force) ForceAlignedVector;
+    typedef std::vector<context::Force> ForceAlignedVector;
 
     context::Data::MatrixXs computeGeneralizedGravityDerivatives(
       const context::Model & model, context::Data & data, const context::VectorXs & q)
@@ -92,10 +92,10 @@ namespace pinocchio
 
       bp::def(
         "computeRNEADerivatives", computeRNEADerivatives, bp::args("model", "data", "q", "v", "a"),
-        "Computes the RNEA partial derivatives, store the result in data.dtau_dq, "
-        "data.dtau_dv and data.M (aka dtau_da)\n"
-        "which correspond to the partial derivatives of the torque output with respect to "
-        "the joint configuration,\n"
+        "Computes the RNEA partial derivatives, store the result in data.dtau_dq, data.dtau_dv and "
+        "data.M (aka dtau_da)\n"
+        "which correspond to the partial derivatives of the torque output with respect to the "
+        "joint configuration,\n"
         "velocity and acceleration vectors.\n\n"
         "Parameters:\n"
         "\tmodel: model of the kinematic tree\n"
@@ -111,8 +111,8 @@ namespace pinocchio
         bp::args("model", "data", "q", "v", "a", "fext"),
         "Computes the RNEA partial derivatives with external contact foces,\n"
         "store the result in data.dtau_dq, data.dtau_dv and data.M (aka dtau_da)\n"
-        "which correspond to the partial derivatives of the torque output with respect to "
-        "the joint configuration,\n"
+        "which correspond to the partial derivatives of the torque output with respect to the "
+        "joint configuration,\n"
         "velocity and acceleration vectors.\n\n"
         "Parameters:\n"
         "\tmodel: model of the kinematic tree\n"

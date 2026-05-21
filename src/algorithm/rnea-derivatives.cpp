@@ -2,6 +2,7 @@
 // Copyright (c) 2022 INRIA
 //
 
+#include "pinocchio/src/context/template-instantiation.hxx"
 #include "pinocchio/algorithm/rnea-derivatives.hpp"
 
 namespace pinocchio
@@ -15,8 +16,8 @@ namespace pinocchio
       JointCollectionDefaultTpl,
       Eigen::Ref<const context::VectorXs>,
       Eigen::Ref<context::MatrixXs>>(
-      const context::Model &,
-      context::Data &,
+      const Model &,
+      Data &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<context::MatrixXs>> &);
 
@@ -26,10 +27,10 @@ namespace pinocchio
       JointCollectionDefaultTpl,
       Eigen::Ref<const context::VectorXs>,
       Eigen::Ref<context::MatrixXs>>(
-      const context::Model &,
-      context::Data &,
+      const Model &,
+      Data &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
-      const container::aligned_vector<context::Force> &,
+      const std::vector<Force> &,
       const Eigen::MatrixBase<Eigen::Ref<context::MatrixXs>> &);
 
     template PINOCCHIO_EXPLICIT_INSTANTIATION_DEFINITION_DLLAPI void computeRNEADerivatives<
@@ -42,8 +43,8 @@ namespace pinocchio
       Eigen::Ref<context::MatrixXs>,
       Eigen::Ref<context::MatrixXs>,
       Eigen::Ref<context::MatrixXs>>(
-      const context::Model &,
-      context::Data &,
+      const Model &,
+      Data &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
@@ -61,8 +62,8 @@ namespace pinocchio
       Eigen::Ref<context::RowMatrixXs>,
       Eigen::Ref<context::RowMatrixXs>,
       Eigen::Ref<context::MatrixXs>>(
-      const context::Model &,
-      context::Data &,
+      const Model &,
+      Data &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
@@ -80,12 +81,12 @@ namespace pinocchio
       Eigen::Ref<context::MatrixXs>,
       Eigen::Ref<context::MatrixXs>,
       Eigen::Ref<context::MatrixXs>>(
-      const context::Model &,
-      context::Data &,
+      const Model &,
+      Data &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
-      const container::aligned_vector<context::Force> &,
+      const std::vector<Force> &,
       const Eigen::MatrixBase<Eigen::Ref<context::MatrixXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<context::MatrixXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<context::MatrixXs>> &);
@@ -100,12 +101,12 @@ namespace pinocchio
       Eigen::Ref<context::RowMatrixXs>,
       Eigen::Ref<context::RowMatrixXs>,
       Eigen::Ref<context::MatrixXs>>(
-      const context::Model &,
-      context::Data &,
+      const Model &,
+      Data &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
-      const container::aligned_vector<context::Force> &,
+      const std::vector<Force> &,
       const Eigen::MatrixBase<Eigen::Ref<context::RowMatrixXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<context::RowMatrixXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<context::MatrixXs>> &);
@@ -117,8 +118,8 @@ namespace pinocchio
       Eigen::Ref<const context::VectorXs>,
       Eigen::Ref<const context::VectorXs>,
       Eigen::Ref<const context::VectorXs>>(
-      const context::Model &,
-      context::Data &,
+      const Model &,
+      Data &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &);
@@ -130,11 +131,11 @@ namespace pinocchio
       Eigen::Ref<const context::VectorXs>,
       Eigen::Ref<const context::VectorXs>,
       Eigen::Ref<const context::VectorXs>>(
-      const context::Model &,
-      context::Data &,
+      const Model &,
+      Data &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
       const Eigen::MatrixBase<Eigen::Ref<const context::VectorXs>> &,
-      const container::aligned_vector<context::Force> &);
+      const std::vector<Force> &);
   } // namespace impl
 } // namespace pinocchio

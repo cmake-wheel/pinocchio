@@ -2,8 +2,7 @@
 // Copyright (c) 2019-2020 CNRS INRIA
 //
 
-#ifndef __pinocchio_python_utils_pickle_map_hpp__
-#define __pinocchio_python_utils_pickle_map_hpp__
+#pragma once
 
 #include <boost/python.hpp>
 #include <boost/python/tuple.hpp>
@@ -73,5 +72,3 @@ namespace pinocchio
     };
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_utils_pickle_map_hpp__

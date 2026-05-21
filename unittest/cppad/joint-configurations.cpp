@@ -3,8 +3,8 @@
 //
 
 #include "pinocchio/autodiff/cppad.hpp"
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/algorithm/joint-configuration.hpp"
+
+#include "pinocchio/multibody.hpp"
 
 #include "../utils/model-generator.hpp"
 
@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE(test_joint_configuration)
   typedef pinocchio::ModelTpl<Scalar> Model;
 
   Model model;
-  buildAllJointsModel(model);
+  buildModelWithAllJoints(model);
   Eigen::VectorXd q2 = Eigen::VectorXd::Random(model.nq);
   Eigen::VectorXd q1 = Eigen::VectorXd::Random(model.nq);
   normalize(model, q1);

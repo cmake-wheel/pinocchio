@@ -1,6 +1,5 @@
 [coal]
 url = "github:coal-library"
-configure_args = ["-DCOAL_BACKWARD_COMPATIBILITY_WITH_HPP_FCL=ON"]
 
 [casadi]
 url = "github:casadi"
@@ -14,15 +13,8 @@ src_deps = ["cppad"]
 
 [pinocchio]
 url = "."
-apt_deps = [
-  "libmpfr-dev",
-  "liburdfdom-dev",
-]
-src_deps = [
-  "casadi",
-  "coal",
-  "cppadcodegen",
-]
+apt_deps = ["libmpfr-dev", "liburdfdom-dev"]
+src_deps = ["casadi", "coal", "cppadcodegen"]
 configure_args = [
   "-DBUILD_EXAMPLES=OFF",
   "-DBUILD_PYTHON_BINDINGS_WITH_BOOST_MPFR_SUPPORT=ON",

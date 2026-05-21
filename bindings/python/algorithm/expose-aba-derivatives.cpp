@@ -16,7 +16,7 @@ namespace pinocchio
   {
 
     namespace bp = boost::python;
-    typedef PINOCCHIO_ALIGNED_STD_VECTOR(context::Force) ForceAlignedVector;
+    typedef std::vector<context::Force> ForceAlignedVector;
 
     bp::tuple computeABADerivatives(
       const context::Model & model,
@@ -64,10 +64,10 @@ namespace pinocchio
 
       bp::def(
         "computeABADerivatives", computeABADerivatives, bp::args("model", "data", "q", "v", "tau"),
-        "Computes the ABA derivatives, store the result in data.ddq_dq, data.ddq_dv and "
-        "data.Minv (aka ddq_dtau)\n"
-        "which correspond to the partial derivatives of the joint acceleration vector output "
-        "with respect to the joint configuration,\n"
+        "Computes the ABA derivatives, store the result in data.ddq_dq, data.ddq_dv and data.Minv "
+        "(aka ddq_dtau)\n"
+        "which correspond to the partial derivatives of the joint acceleration vector output with "
+        "respect to the joint configuration,\n"
         "velocity and torque vectors.\n\n"
         "Parameters:\n"
         "\tmodel: model of the kinematic tree\n"
@@ -83,8 +83,8 @@ namespace pinocchio
         bp::args("model", "data", "q", "v", "tau", "fext"),
         "Computes the ABA derivatives with external contact foces,\n"
         "store the result in data.ddq_dq, data.ddq_dv and data.Minv (aka ddq_dtau)\n"
-        "which correspond to the partial derivatives of the acceleration output with respect "
-        "to the joint configuration,\n"
+        "which correspond to the partial derivatives of the acceleration output with respect to "
+        "the joint configuration,\n"
         "velocity and torque vectors.\n\n"
         "Parameters:\n"
         "\tmodel: model of the kinematic tree\n"

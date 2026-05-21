@@ -172,7 +172,8 @@ class Robot:
         def body_name(body):
             return "world/" + prefix + body
 
-        color = [red, green, blue, transparency] = [1, 1, 0.78, 1.0]
+        # [red, green, blue, transparency]
+        color = [1, 1, 0.78, 1.0]
         joint_id = root_id
         cm = 1e-2
 

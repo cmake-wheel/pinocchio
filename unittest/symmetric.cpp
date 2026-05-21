@@ -17,17 +17,14 @@
  * - Pinocchio: 6us
  */
 
-#include "pinocchio/spatial/fwd.hpp"
-#include "pinocchio/spatial/skew.hpp"
+#include "pinocchio/spatial.hpp"
 #include "pinocchio/utils/timer.hpp"
 
-#include <boost/random.hpp>
+#include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#include "pinocchio/spatial/symmetric3.hpp"
-
+#include <boost/random.hpp>
 #include <boost/test/unit_test.hpp>
-#include <boost/utility/binary.hpp>
 
 void timeSym3(
   const pinocchio::Symmetric3 & S,

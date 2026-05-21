@@ -1,13 +1,23 @@
+#include <boost/core/ref.hpp>
+#include <boost/fusion/algorithm.hpp>
+#include <boost/fusion/functional.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/multiprecision/cpp_dec_float.hpp>
+#include <boost/variant.hpp>
+
+#include <string>
+
 #include "pinocchio/math/multiprecision.hpp"
-
-#include "pinocchio/parsers/urdf.hpp"
-
+#include "pinocchio/algorithm/check-data.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
-
-#include <boost/multiprecision/cpp_dec_float.hpp>
-
-#include <iostream>
+#include "pinocchio/eigen-common.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/parsers/urdf.hpp"
+#include "pinocchio/spatial.hpp"
+#include "pinocchio/utils/cast.hpp"
+#include "pinocchio/utils/check.hpp"
 
 // EXAMPLE_ROBOT_DATA_MODEL_DIR is defined by the CMake but you can define your own directory here.
 #ifndef EXAMPLE_ROBOT_DATA_MODEL_DIR
@@ -56,10 +66,12 @@ int main(int argc, char ** argv)
 
   // Get access to the joint torque with standard or multiprecision arithmetic and print sufficient
   // decimals for both precisions
-  std::cout << "Joint torque standard arithmetic:\n"
-            << std::setprecision(std::numeric_limits<float_100>::max_digits10) << data.tau
-            << std::endl;
-  std::cout << "Joint torque multiprecision arithmetic:\n"
-            << std::setprecision(std::numeric_limits<float_100>::max_digits10) << data_multi.tau
-            << std::endl;
+  // TODO: Eigen output is broken with cpp_dec_float backend
+  //       This should be fixed in math/multiprecision.hxx
+  // std::cout << "Joint torque standard arithmetic:\n"
+  //           << std::setprecision(std::numeric_limits<float_100>::max_digits10) << data.tau
+  //           << std::endl;
+  // std::cout << "Joint torque multiprecision arithmetic:\n"
+  //           << std::setprecision(std::numeric_limits<float_100>::max_digits10) << data_multi.tau
+  //           << std::endl;
 }

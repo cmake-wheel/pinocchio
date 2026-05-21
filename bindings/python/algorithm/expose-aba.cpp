@@ -1,5 +1,6 @@
 //
-// Copyright (c) 2015-2021 CNRS INRIA
+// Copyright (c) 2015-2018 CNRS
+// Copyright (c) 2018-2024 INRIA
 //
 
 #include "pinocchio/bindings/python/algorithm/algorithms.hpp"
@@ -34,10 +35,7 @@ namespace pinocchio
     {
       typedef context::Scalar Scalar;
       typedef context::VectorXs VectorXs;
-      enum
-      {
-        Options = context::Options
-      };
+      using context::Options;
 
       bp::def(
         "computeMinverse", &computeMinverse_proxy, bp::args("model", "data", "q"),
@@ -67,7 +65,8 @@ namespace pinocchio
       bp::def(
         "aba",
         &aba<
-          Scalar, Options, JointCollectionDefaultTpl, VectorXs, VectorXs, VectorXs, context::Force>,
+          Scalar, Options, JointCollectionDefaultTpl, VectorXs, VectorXs, VectorXs, context::Force,
+          std::allocator<context::Force>>,
         (bp::arg("model"), bp::arg("data"), bp::arg("q"), bp::arg("v"), bp::arg("tau"),
          bp::arg("fext"), bp::arg("convention") = pinocchio::Convention::LOCAL),
         "Compute ABA with external forces, store the result in data.ddq and return it.\n"

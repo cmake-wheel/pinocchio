@@ -51,29 +51,29 @@ namespace pinocchio
 
       bp::def(
         "log3", &log3_proxy<context::Quaternion>, bp::args("quat"),
-        "Log: S^3 -> so3 is the pseudo-inverse of Exp: so3 -> S^3, the exponential map from "
-        "so3 to the unit"
+        "Log: S^3 -> so3 is the pseudo-inverse of Exp: so3 -> S^3, the exponential map from so3 to "
+        "the unit"
         " quaternions. It maps from S^3 -> { v in so3, ||v|| < 2pi }.");
 
       bp::def(
         "log3", &log3_proxy_quatvec<context::Vector4s>, bp::args("quat"),
-        "Log: S^3 -> so3 is the pseudo-inverse of Exp: so3 -> S^3, the exponential map from "
-        "so3 to the unit"
+        "Log: S^3 -> so3 is the pseudo-inverse of Exp: so3 -> S^3, the exponential map from so3 to "
+        "the unit"
         " quaternions. It maps from S^3 -> { v in so3, ||v|| < 2pi }.");
 
       bp::def(
         "log3", &log3_proxy_quatvec<context::Vector4s, context::Matrix1s>,
         bp::args("quat", "theta"),
-        "Log: S^3 -> so3 is the pseudo-inverse of Exp: so3 -> S^3, the exponential map from "
-        "so3 to the unit"
+        "Log: S^3 -> so3 is the pseudo-inverse of Exp: so3 -> S^3, the exponential map from so3 to "
+        "the unit"
         " quaternions. It maps from S^3 -> { v in so3, ||v|| < 2pi }.\n"
         "It also returns the angle of rotation theta around the rotation axis.");
 
       bp::def(
         "log3", &log3_proxy_quatvec_fix<context::Vector4s, context::Scalar>,
         bp::args("quat", "theta"),
-        "Log: S^3 -> so3 is the pseudo-inverse of Exp: so3 -> S^3, the exponential map from "
-        "so3 to the unit"
+        "Log: S^3 -> so3 is the pseudo-inverse of Exp: so3 -> S^3, the exponential map from so3 to "
+        "the unit"
         " quaternions. It maps from S^3 -> { v in so3, ||v|| < 2pi }.\n"
         "It also returns the angle of rotation theta around the rotation axis.");
 
@@ -113,7 +113,7 @@ namespace pinocchio
         " the tangent of SE(3) at Identity.");
 
       bp::def(
-        "log6", (context::Motion(*)(const context::SE3 &))&log6<context::Scalar, context::Options>,
+        "log6", (context::Motion (*)(const context::SE3 &))&log6<context::Scalar, context::Options>,
         bp::arg("M"),
         "Log: SE3 -> se3. Pseudo-inverse of exp from SE3"
         " -> { v,w in se3, ||w|| < 2pi }.");

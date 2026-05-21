@@ -15,10 +15,7 @@ namespace pinocchio
     {
       typedef context::Scalar Scalar;
       typedef context::VectorXs VectorXs;
-      enum
-      {
-        Options = context::Options
-      };
+      using context::Options;
 
       bp::def(
         "computeCentroidalMomentum",
@@ -40,8 +37,8 @@ namespace pinocchio
         "computeCentroidalMomentumTimeVariation",
         &computeCentroidalMomentumTimeVariation<Scalar, Options, JointCollectionDefaultTpl>,
         bp::args("model", "data"),
-        "Computes the Centroidal momentum and its time derivatives, a.k.a. the total "
-        "momentum of the system and its time derivative expressed around the center of mass.",
+        "Computes the Centroidal momentum and its time derivatives, a.k.a. the total momentum of "
+        "the system and its time derivative expressed around the center of mass.",
         bp::return_value_policy<bp::return_by_value>());
 
       bp::def(
@@ -49,8 +46,8 @@ namespace pinocchio
         &computeCentroidalMomentumTimeVariation<
           Scalar, Options, JointCollectionDefaultTpl, VectorXs, VectorXs, VectorXs>,
         bp::args("model", "data", "q", "v", "a"),
-        "Computes the Centroidal momentum and its time derivatives, a.k.a. the total "
-        "momentum of the system and its time derivative expressed around the center of mass.",
+        "Computes the Centroidal momentum and its time derivatives, a.k.a. the total momentum of "
+        "the system and its time derivative expressed around the center of mass.",
         bp::return_value_policy<bp::return_by_value>());
 
       bp::def(
@@ -65,8 +62,8 @@ namespace pinocchio
         "computeCentroidalMap",
         &computeCentroidalMap<Scalar, Options, JointCollectionDefaultTpl, VectorXs>,
         bp::args("model", "data", "q"),
-        "Computes the centroidal mapping, puts the result in Data.Ag and returns the "
-        "centroidal mapping.\n"
+        "Computes the centroidal mapping, puts the result in Data.Ag and returns the centroidal "
+        "mapping.\n"
         "For the same price, it also computes the total joint jacobians (data.J).",
         bp::return_value_policy<bp::return_by_value>());
 
@@ -84,10 +81,10 @@ namespace pinocchio
         computeCentroidalMapTimeVariation<
           Scalar, Options, JointCollectionDefaultTpl, VectorXs, VectorXs>,
         bp::args("model", "data", "q", "v"),
-        "Computes the time derivative of the centroidal momentum matrix Ag, puts the result "
-        "in Data.Ag and returns the centroidal mapping.\n"
-        "For the same price, it also computes the centroidal momentum matrix (data.Ag), the "
-        "total joint jacobians (data.J) "
+        "Computes the time derivative of the centroidal momentum matrix Ag, puts the result in "
+        "Data.Ag and returns the centroidal mapping.\n"
+        "For the same price, it also computes the centroidal momentum matrix (data.Ag), the total "
+        "joint jacobians (data.J) "
         "and the related joint jacobians time derivative (data.dJ)",
         mimic_not_supported_function<bp::return_value_policy<bp::return_by_value>>(0));
     }

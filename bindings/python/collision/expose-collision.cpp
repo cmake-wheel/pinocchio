@@ -3,14 +3,12 @@
 //
 
 #include "pinocchio/fwd.hpp"
-#include "pinocchio/bindings/python/utils/std-aligned-vector.hpp"
+#include "pinocchio/bindings/python/utils/std-vector.hpp"
 #include "pinocchio/bindings/python/collision/geometry-functors.hpp"
 #include "pinocchio/bindings/python/collision/collision.hpp"
 
 #include "pinocchio/collision/collision.hpp"
 #include "pinocchio/collision/distance.hpp"
-
-#include <Eigen/Core>
 
 namespace pinocchio
 {
@@ -36,26 +34,26 @@ namespace pinocchio
     {
       using namespace Eigen;
 
-      bp::register_ptr_to_python<std::shared_ptr<hpp::fcl::CollisionGeometry const>>();
+      bp::register_ptr_to_python<std::shared_ptr<coal::CollisionGeometry const>>();
 
       bp::class_<ComputeCollision>(
         "ComputeCollision", "Collision function between two geometry objects.\n\n", bp::no_init)
         .def(GeometryFunctorPythonVisitor<ComputeCollision>());
-      StdAlignedVectorPythonVisitor<ComputeCollision>::expose("StdVec_ComputeCollision");
+      StdVectorPythonVisitor<std::vector<ComputeCollision>>::expose("StdVec_ComputeCollision");
 
       bp::class_<ComputeDistance>(
         "ComputeDistance", "Distance function between two geometry objects.\n\n", bp::no_init)
         .def(GeometryFunctorPythonVisitor<ComputeDistance>());
-      StdAlignedVectorPythonVisitor<ComputeDistance>::expose("StdVec_ComputeDistance");
+      StdVectorPythonVisitor<std::vector<ComputeDistance>>::expose("StdVec_ComputeDistance");
 
       bp::def(
         "computeCollision",
         static_cast<bool (*)(
-          const GeometryModel &, GeometryData &, const PairIndex, fcl::CollisionRequest &)>(
+          const GeometryModel &, GeometryData &, const PairIndex, coal::CollisionRequest &)>(
           computeCollision),
-        bp::args("geometry_model", "geometry_data", "pair_index", "collision_request"),
-        "Check if the collision objects of a collision pair for a given Geometry Model and "
-        "Data are in collision.\n"
+        (bp::args("geometry_model", "geometry_data", "pair_index", "collision_request")),
+        "Check if the collision objects of a collision pair for a given Geometry Model and Data "
+        "are in collision.\n"
         "The collision pair is given by the two index of the collision objects.");
 
       bp::def(
@@ -63,8 +61,8 @@ namespace pinocchio
         static_cast<bool (*)(const GeometryModel &, GeometryData &, const PairIndex)>(
           computeCollision),
         bp::args("geometry_model", "geometry_data", "pair_index"),
-        "Check if the collision objects of a collision pair for a given Geometry Model and "
-        "Data are in collision.\n"
+        "Check if the collision objects of a collision pair for a given Geometry Model and Data "
+        "are in collision.\n"
         "The collision pair is given by the two index of the collision objects.");
 
       bp::def(
@@ -82,10 +80,25 @@ namespace pinocchio
         "determine if all collision pairs are effectively in collision or not.");
 
       bp::def(
+        "computeContactPatch",
+        static_cast<void (*)(const GeometryModel &, GeometryData &, const PairIndex)>(
+          computeContactPatch),
+        bp::args("geometry_model", "geometry_data", "pair_index"),
+        "Compute the contact patch info associated with the collision pair given by pair_id. Note "
+        "that an actual computation will only occur if the collision pair is indeed in collision "
+        "(i.e. only if geom_data.collisionResult[pair_id].isCollision() is true).");
+
+      bp::def(
+        "computeContactPatches",
+        static_cast<void (*)(const GeometryModel &, GeometryData &)>(computeContactPatches),
+        bp::args("geometry_model", "geometry_data"),
+        "Calls computeContactPatch for every collision pair.");
+
+      bp::def(
         "computeDistance", &computeDistance,
         bp::args("geometry_model", "geometry_data", "pair_index"),
-        "Compute the distance between the two geometry objects of a given collision pair for "
-        "a GeometryModel and associated GeometryData.",
+        "Compute the distance between the two geometry objects of a given collision pair for a "
+        "GeometryModel and associated GeometryData.",
         bp::with_custodian_and_ward_postcall<
           0, 2, bp::return_value_policy<bp::reference_existing_object>>());
 
@@ -93,8 +106,8 @@ namespace pinocchio
         "computeDistances",
         (std::size_t (*)(const GeometryModel &, GeometryData &))&computeDistances,
         bp::args("geometry_model", "geometry_data"),
-        "Compute the distance between each collision pair for a given GeometryModel and "
-        "associated GeometryData.");
+        "Compute the distance between each collision pair for a given GeometryModel and associated "
+        "GeometryData.");
 
       bp::def(
         "computeDistances", &computeDistances_proxy<double, 0, JointCollectionDefaultTpl, VectorXd>,

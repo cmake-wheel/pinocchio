@@ -20,13 +20,18 @@
 ===========
 -->
 
-**Pinocchio** instantiates the state-of-the-art Rigid Body Algorithms for poly-articulated systems based on revisited Roy Featherstone's algorithms.
-Besides, **Pinocchio** provides the analytical derivatives of the main Rigid-Body Algorithms, such as the Recursive Newton-Euler Algorithm or the Articulated-Body Algorithm.
+**Pinocchio** is open-source software actively developed by the [Willow](https://www.di.ens.fr/willow/) team at [Inria](https://www.inria.fr/en) in the lovely city of Paris.
+**Pinocchio** instantiates state-of-the-art Rigid Body Algorithms for poly-articulated systems, building upon and revisiting the foundational algorithms introduced by Roy Featherstone.
+
+Beyond traditional rigid-body dynamics formulations, **Pinocchio** delivers cutting-edge algorithmic solutions for modern robotics and physics-based simulation challenges. It efficiently handles closed-loop kinematic mechanisms, solves frictional contact problems, and differentiates physics computations — making it a powerful and versatile library for both research and industrial applications.
+
+**Pinocchio** also provides analytical derivatives of the main Rigid Body Algorithms — such as the Recursive Newton-Euler Algorithm and the Articulated-Body Algorithm — enabling gradient-based optimization, control, and learning in both simulation and real-world settings.
 
 **Pinocchio** was originally designed for robotics applications, but it can be used in other contexts (biomechanics, computer graphics, vision, etc.).
-It is built upon Eigen for linear algebra and FCL for collision detection. **Pinocchio** includes a Python interface for fast code prototyping, [directly accessible](https://github.com/conda-forge/pinocchio-feedstock#installing-pinocchio) through [Conda](https://docs.conda.io/en/latest/).
+It is built upon Eigen for linear algebra and **coal** for collision detection. **Pinocchio** includes a Python interface for fast code prototyping, [directly accessible](https://github.com/conda-forge/pinocchio-feedstock#installing-pinocchio) through [Conda](https://docs.conda.io/en/latest/).
 
-**Pinocchio** is now at the heart of various robotics software as [Crocoddyl](https://github.com/loco-3d/crocoddyl/tree/devel), an open-source and efficient Differential Dynamic Programming solver for robotics, the [Stack-of-Tasks](http://stack-of-tasks.github.io), an open-source and versatile hierarchical controller framework, or the [Humanoid Path Planner](https://humanoid-path-planner.github.io/hpp-doc), open-source software for Motion and Manipulation Planning.
+**Pinocchio** is now at the heart of various robotics software as [Aligator](https://github.com/Simple-Robotics/Aligator), [Crocoddyl](https://github.com/loco-3d/crocoddyl), an open-source and efficient Differential Dynamic Programming solver for robotics, the [Stack-of-Tasks](http://stack-of-tasks.github.io), an open-source and versatile hierarchical controller framework, or the [Humanoid Path Planner](https://humanoid-path-planner.github.io/hpp-doc), open-source software for Motion and Manipulation Planning.
+**Pinocchio** is also a primary source of inspiration for the [Kamino](https://disneyresearch.github.io/kamino/) simulator developed by Disney Research, which populates the Newton physics engine.
 
 If you want to learn more about **Pinocchio** internal behaviors and main features, we invite you to read the related [paper](https://hal-laas.archives-ouvertes.fr/hal-01866228) and the online [documentation](https://gepettoweb.laas.fr/doc/stack-of-tasks/pinocchio/devel/doxygen-html/) or [DeepWiki](https://deepwiki.com/stack-of-tasks/pinocchio).
 
@@ -67,7 +72,7 @@ or via pip (currently only available on Linux):
 **Pinocchio** is fast:
 
    - C++ template library,
-   - cache friendly,
+   - cache-friendly,
    - support custom scalar type.
 
 **Pinocchio** is versatile, implementing basic and more advanced rigid body dynamics algorithms:
@@ -96,7 +101,7 @@ or via pip (currently only available on Linux):
 
    - header only,
    - template instantiation,
-   - C++ 11/14/17/20/23 compliant.
+   - C++ 17/20/23 compliant.
 
 **Pinocchio** is extensible.
 **Pinocchio** is multi-thread friendly.
@@ -105,7 +110,7 @@ or via pip (currently only available on Linux):
 
 ## Documentation
 
-The online **Pinocchio** documentation of the last release is available [here](https://gepettoweb.laas.fr/doc/stack-of-tasks/pinocchio/devel/doxygen-html/). A cheat sheet pdf with the main functions and algorithms can be found [here](https://github.com/stack-of-tasks/pinocchio/blob/devel/doc/pinocchio_cheat_sheet.pdf).
+The online documentation for the latest release of ** Pinocchio ** is available [here](https://gepettoweb.laas.fr/doc/stack-of-tasks/pinocchio/devel/doxygen-html/). A cheat sheet pdf with the main functions and algorithms can be found [here](https://github.com/stack-of-tasks/pinocchio/blob/devel/doc/pinocchio_cheat_sheet.pdf).
 
 ## Examples
 
@@ -114,7 +119,7 @@ Additional examples introducing **Pinocchio** are also available in the [documen
 
 ## Tutorials
 
-**Pinocchio** comes with a large bunch of tutorials aiming at introducing the basic tools for robot control.
+**Pinocchio** comes with a large set of tutorials that introduce the basic tools for robot control.
 Tutorial and training documents are listed [here](https://gepettoweb.laas.fr/doc/stack-of-tasks/pinocchio/devel/doxygen-html/index.html#OverviewConclu).
 You can also consider the interactive Jupyter notebook [set of tutorials](https://github.com/ymontmarin/_tps_robotique) developed by [Nicolas Mansard](https://gepettoweb.laas.fr/index.php/Members/NicolasMansard) and [Yann de Mont-Marin](https://github.com/ymontmarin).
 
@@ -236,9 +241,13 @@ And the following one for the link to the GitHub codebase:
 ## Citing specific algorithmic contributions
 
 **Pinocchio** goes beyond implementing the standard rigid-body dynamics algorithms and results from active research on simulation, learning, and control.
-**Pinocchio** provides state-of-the-art algorithms for handling constraints, differentiating forward and inverse dynamics, etc.
+**Pinocchio** provides state-of-the-art algorithms for handling constraints, closed-loops mechanisms, differentiating forward and inverse dynamics, etc.
 If you use these algorithms, please consider citing them in your research articles.
 
+- de Mont-Marin, Y. Montaut, L. Ponce, J. Herbet, M. & Carpentier, J. (2026). [On the Conic Complementarity of Planar Contacts](https://arxiv.org/pdf/2509.25999). In 2026 International Conference on Robotics and Automation (ICRA).
+- Sathya, A., Montaut, L. de Mont-Marin, Y. & Carpentier, J. (2026). [Matrix-Free Delassus Operations: Scalable and Memory-Efficient Algorithms](https://hal.science/hal-05457476v1/file/RAL___Matrix_free_Delassus_Computation.pdf). Preprint.
+- Sathya, A. & Carpentier, J. (2025). [Constrained articulated body algorithms for closed-loop mechanisms](https://hal.science/hal-04895583v2/file/main.pdf). In Transactions on Robotics.
+- Sathya, A. & Carpentier, J. (2024). [Constrained Articulated Body Dynamics Algorithms](https://hal.science/hal-04443056v2/file/TRO%20-%20Constrained%20Articulated%20Body%20Dynamics%20Algorithms.pdf). In Transactions on Robotics.
 - Carpentier, J., Le Lidec, Q. & Montaut, L. (2024, July). [From Compliant to Rigid Contact Simulation: a Unified and Efficient Approach](https://hal.science/hal-04588906). In RSS 2024-Robotics: Science and Systems (RSS 2024).
 - Le Lidec, Q., Jallet, W., Montaut, L., Laptev, I., Schmid, C., & Carpentier, J. (2024). [Contact models in robotics: a comparative analysis](https://hal.science/hal-04067291/). IEEE Transactions on Robotics.
 - Montaut, L., Le Lidec, Q., Petrik, V., Sivic, J., & Carpentier, J. (2024). [GJK++: Leveraging Acceleration Methods for Faster Collision Detection](https://hal.science/hal-04070039/). IEEE Transactions on Robotics.
@@ -259,12 +268,14 @@ The currently active core developers of **Pinocchio** are:
 -   [Justin Carpentier](https://jcarpent.github.io) (Inria): main developer and manager of the project
 -   [Guilhem Saurel](https://www.laas.fr/fr/annuaire/gsaurel) (LAAS-CNRS): CI/CD, packaging
 -   [Etienne Arlaud](https://github.com/EtienneAr) (Inria): core developer
--   [Wilson Jallet](https://github.com/ManifoldFR) (LAAS-CNRS/Inria): extension of Python bindings, C++ visualization API
+-   [Wilson Jallet](https://github.com/ManifoldFR) (Inria): extension of Python bindings, C++ visualization API
 -   [Fabian Schramm](https://github.com/fabinsch) (Inria): core developper
--   [Stéphane Caron](https://scaron.info) (Inria): core developper
 -   [Joris Vaillant](https://github.com/jorisv) (Inria): core developer and project manager
--   [Megane Millan](https://github.com/MegMll) (Inria): core developer
 -   [Ajay Sathya](https://www.ajaysathya.com/) (Inria): core developer
+-   [Louis Montaut](https://lmontaut.github.io/) (Inria): core developer
+-   [Quentin Le Lidec](https://quentinll.github.io/) (NYU/formerly Inria): core developer
+-   [Yann de Mont-Marin](https://ymontmarin.github.io/) (Inria): core developer
+-   [Jeanne Matheron](https://www.linkedin.com/in/jeanne-matheron/) (Inria): core developer
 
 ## Credits
 
@@ -291,6 +302,7 @@ In addition to the core dev team, the following people have also been involved i
 -   [Alexy Legrand](https://www.linkedin.com/in/alexy-legrand-125889232/): Viser color bug fixes
 -   [Pierre Puchaud](https://github.com/ipuch): Ellipsoid Joint
 -   [Lucas Joseph](https://github.com/LucasJoseph): Ellipsoid Joint
+-   [Megane Millan](https://github.com/MegMll): core developer (MJCF, joint mimic, etc.)
 
 If you have participated in the development of **Pinocchio**, please add your name and contribution to this list.
 
@@ -314,4 +326,4 @@ If you have participated in the development of **Pinocchio**, please add your na
 
 ## Acknowledgments
 
-The development of **Pinocchio** is actively supported by the [Gepetto team](http://projects.laas.fr/gepetto/) [@LAAS-CNRS](http://www.laas.fr) and the [Willow team](https://www.di.ens.fr/willow/) [@INRIA](http://www.inria.fr).
+The development of **Pinocchio** is actively led by the [Willow team](https://www.di.ens.fr/willow/) [@INRIA](http://www.inria.fr), with the support of the [Gepetto team](http://projects.laas.fr/gepetto/) [@LAAS-CNRS](http://www.laas.fr).

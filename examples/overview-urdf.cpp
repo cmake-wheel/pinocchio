@@ -1,9 +1,26 @@
-#include "pinocchio/parsers/urdf.hpp"
+#include <iostream>
 
-#include "pinocchio/algorithm/joint-configuration.hpp"
-#include "pinocchio/algorithm/kinematics.hpp"
+#include <Eigen/Core>
+
+#include <boost/core/ref.hpp>
+#include <boost/fusion/algorithm.hpp>
+#include <boost/fusion/functional.hpp>
+#include <boost/variant.hpp>
 
 #include <iostream>
+#include <string>
+#include <vector>
+
+#include "pinocchio/algorithm/fwd.hpp"
+#include "pinocchio/algorithm/joint-configuration.hpp"
+#include "pinocchio/algorithm/kinematics.hpp"
+#include "pinocchio/eigen-common.hpp"
+#include "pinocchio/math.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/parsers/urdf.hpp"
+#include "pinocchio/spatial.hpp"
+#include "pinocchio/utils/check.hpp"
 
 // EXAMPLE_ROBOT_DATA_MODEL_DIR is defined by the CMake but you can define your own directory here.
 #ifndef EXAMPLE_ROBOT_DATA_MODEL_DIR

@@ -5,8 +5,6 @@
 #include "pinocchio/autodiff/casadi.hpp"
 #include "pinocchio/autodiff/casadi-algo.hpp"
 
-#include "pinocchio/algorithm/rnea.hpp"
-#include "pinocchio/algorithm/rnea-derivatives.hpp"
 #include "pinocchio/algorithm/aba.hpp"
 #include "pinocchio/algorithm/aba-derivatives.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
@@ -15,7 +13,6 @@
 
 #include <casadi/casadi.hpp>
 
-#include <iostream>
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
 
@@ -25,7 +22,6 @@ BOOST_AUTO_TEST_CASE(test_aba_derivatives_casadi_algo)
 {
   typedef double Scalar;
   typedef pinocchio::ModelTpl<Scalar> Model;
-  typedef pinocchio::DataTpl<Scalar> Data;
   typedef typename Model::ConfigVectorType ConfigVector;
   typedef typename Model::TangentVectorType TangentVector;
 

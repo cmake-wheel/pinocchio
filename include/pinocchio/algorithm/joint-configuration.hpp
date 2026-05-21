@@ -2,14 +2,48 @@
 // Copyright (c) 2016-2021 CNRS INRIA
 //
 
-#ifndef __pinocchio_algorithm_joint_configuration_hpp__
-#define __pinocchio_algorithm_joint_configuration_hpp__
+//
+// Copyright (c) INRIA 2026
+//
+#pragma once
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/liegroup/liegroup.hpp"
+// IWYU pragma: begin_keep
+#include <Eigen/Core>
+
+#include <cassert>
+#include <vector>
+
+#include "pinocchio/macros.hpp"
+#include "pinocchio/eigen-common.hpp"
+#include "pinocchio/fwd.hpp"
+#include "pinocchio/context.hpp"
+
+#include "pinocchio/utils/check.hpp"
+
+#include "pinocchio/math.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/liegroup.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
+
+  /// Helpers to use SFINAE for safe candidate selection compare to liegroup-variant-visitors.hxx
+  template<typename T, typename = void>
+  struct is_lie_group_map : std::false_type
+  {
+  };
+
+  // Pointer avoids instantiating operation<void>'s body (no complete type needed),
+  // while still detecting the nested template via SFINAE
+  template<typename T>
+  struct is_lie_group_map<T, std::void_t<typename T::template operation<void> *>> : std::true_type
+  {
+  };
+
+  template<typename T>
+  inline constexpr bool is_lie_group_map_v = is_lie_group_map<T>::value;
 
   /// \name API with return value as argument
   /// \{
@@ -37,7 +71,8 @@ namespace pinocchio
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorType,
     typename TangentVectorType,
-    typename ReturnType>
+    typename ReturnType,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   void integrate(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorType> & q,
@@ -97,7 +132,8 @@ namespace pinocchio
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorIn1,
     typename ConfigVectorIn2,
-    typename ReturnType>
+    typename ReturnType,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   void interpolate(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorIn1> & q0,
@@ -160,7 +196,8 @@ namespace pinocchio
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorIn1,
     typename ConfigVectorIn2,
-    typename ReturnType>
+    typename ReturnType,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   void difference(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorIn1> & q0,
@@ -220,7 +257,8 @@ namespace pinocchio
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorIn1,
     typename ConfigVectorIn2,
-    typename ReturnType>
+    typename ReturnType,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   void squaredDistance(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorIn1> & q0,
@@ -281,7 +319,8 @@ namespace pinocchio
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorIn1,
     typename ConfigVectorIn2,
-    typename ReturnType>
+    typename ReturnType,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   void randomConfiguration(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorIn1> & lowerLimits,
@@ -340,7 +379,8 @@ namespace pinocchio
     typename Scalar,
     int Options,
     template<typename, int> class JointCollectionTpl,
-    typename ReturnType>
+    typename ReturnType,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   void neutral(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ReturnType> & qout);
@@ -390,6 +430,7 @@ namespace pinocchio
    * model.nv x model.nv).
    * @param[in]  arg     Argument (either q or v) with respect to which the differentiation is
    * performed.
+   * @param[in] op       Operation to apply.
    *
    */
   template<
@@ -399,7 +440,8 @@ namespace pinocchio
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorType,
     typename TangentVectorType,
-    typename JacobianMatrixType>
+    typename JacobianMatrixType,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   void dIntegrate(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorType> & q,
@@ -475,6 +517,7 @@ namespace pinocchio
    * (size model.nv x model.nv).
    * @param[in]  arg        Argument (either q or v) with respect to which the differentiation is
    * performed.
+   * @param[in] op          Operation to apply.
    *
    */
   template<
@@ -496,6 +539,255 @@ namespace pinocchio
       LieGroupMap, Scalar, Options, JointCollectionTpl, ConfigVectorType, TangentVectorType,
       JacobianMatrixType>(
       model, q.derived(), v.derived(), PINOCCHIO_EIGEN_CONST_CAST(JacobianMatrixType, J), arg, op);
+  }
+
+  /**
+   *
+   * @brief   Computes the tangentMap that map a small variation of the configuration express in the
+   * Lie algebra (a vector of size nv) to a small variation of the configuration in the parametric
+   * space (a vector of size nq).
+   *
+   * @details This map can be interpreted as a vector space Jacobian of the integrate function
+   * regarding the variable v in 0. Chained with a Lie group Jacobian in q it allows to recover a
+   * vector space Jacobian in the parametric space.
+   *
+   * @param[in]  model   Model of the kinematic tree on which the integration operation is
+   * performed.
+   * @param[in]  q            Initial configuration (size model.nq)
+   * @param[out] TM           Tangent map in q mapping the Lie algebra with the parametric tangent
+   * space.
+   * @param[in]  op           Operation to apply.
+   *
+   */
+  template<
+    typename LieGroup_t,
+    typename Scalar,
+    int Options,
+    template<typename, int> class JointCollectionTpl,
+    typename ConfigVectorType,
+    typename TangentMapMatrixType,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
+  void tangentMap(
+    const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+    const Eigen::MatrixBase<ConfigVectorType> & q,
+    const Eigen::MatrixBase<TangentMapMatrixType> & TM,
+    const AssignmentOperatorType op = SETTO);
+
+  /**
+   *
+   * @brief   Computes the tangentMap that map a small variation of the configuration express in the
+   * Lie algebra (a vector of size nv) to a small variation of the configuration in the parametric
+   * space (a vector of size nq).
+   *
+   * @details This map can be interpreted as a vector space Jacobian of the integrate function
+   * regarding the variable v in 0. Chained with a Lie group Jacobian in q it allows to recover a
+   * vector space Jacobian in the parametric space.
+   *
+   * @param[in]  model   Model of the kinematic tree on which the integration operation is
+   * performed.
+   * @param[in]  q            Initial configuration (size model.nq)
+   * @param[out] TM           Tangent map in q mapping the Lie algebra with the parametric tangent
+   * space.
+   * @param[in]  op           Operation to apply.
+   *
+   */
+  template<
+    typename Scalar,
+    int Options,
+    template<typename, int> class JointCollectionTpl,
+    typename ConfigVectorType,
+    typename TangentMapMatrixType>
+  void tangentMap(
+    const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+    const Eigen::MatrixBase<ConfigVectorType> & q,
+    const Eigen::MatrixBase<TangentMapMatrixType> & TM,
+    const AssignmentOperatorType op = SETTO)
+  {
+    tangentMap<
+      LieGroupMap, Scalar, Options, JointCollectionTpl, ConfigVectorType, TangentMapMatrixType>(
+      model, q.derived(), TM.const_cast_derived(), op);
+  }
+
+  /**
+   *
+   * @brief   Set the tangentMap in a compact manner in matric of size nq x MAX_JOINT_NV.
+   *
+   * @param[in]  model   Model of the kinematic tree on which the integration operation is
+   * performed.
+   * @param[in]  joint_ids  Joint to condider to compute the tangentMap
+   * @param[in]  q                Initial configuration (size model.nq)
+   * @param[out] TMc              Compact storage of the tangent map
+   * space.
+   *
+   */
+  template<
+    typename LieGroup_t,
+    typename Scalar,
+    int Options,
+    template<typename, int> class JointCollectionTpl,
+    typename ConfigVectorType,
+    typename TangentMapMatrixType>
+  void compactTangentMap(
+    const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+    const std::vector<JointIndex> & joint_ids,
+    const Eigen::MatrixBase<ConfigVectorType> & q,
+    const Eigen::MatrixBase<TangentMapMatrixType> & TMc);
+
+  /**
+   *
+   * @brief   Set the tangentMap in a compact manner in a matrix of size nq x MAX_JOINT_NV.
+   *
+   * @param[in]  model   Model of the kinematic tree on which the integration operation is
+   * performed.
+   * @param[in]  joint_ids  Joint to condider to compute the tangentMap
+   * @param[in]  q            Initial configuration (size model.nq)
+   * @param[out] TMc          Compact storage of the tangent map
+   * space.
+   *
+   */
+  template<
+    typename Scalar,
+    int Options,
+    template<typename, int> class JointCollectionTpl,
+    typename ConfigVectorType,
+    typename TangentMapMatrixType>
+  void compactTangentMap(
+    const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+    const std::vector<JointIndex> & joint_ids,
+    const Eigen::MatrixBase<ConfigVectorType> & q,
+    const Eigen::MatrixBase<TangentMapMatrixType> & TMc)
+  {
+    compactTangentMap<
+      LieGroupMap, Scalar, Options, JointCollectionTpl, ConfigVectorType, TangentMapMatrixType>(
+      model, joint_ids, q.derived(), PINOCCHIO_EIGEN_CONST_CAST(TangentMapMatrixType, TMc));
+  }
+
+  /**
+   *
+   * @brief   Compose the tangentMap with a matrix, e.g., a Lie group Jacobian in order to recover a
+   * vector space Jacobian or chain Lie Group derivatives with vector space derivative in a forward
+   * manner.
+   *
+   * @param[in]  model   Model of the kinematic tree on which the integration operation is
+   * performed.
+   * @param[in]  q            Initial configuration (size model.nq)
+   * @param[in]  mat_in       A matrix with range in the Lie algebra (size model.nv, n_cols)
+   * @param[out] mat_out      A matrix with range in the parametric space (size model.nq, n_cols)
+   * @param[in]  op           Operation to apply.
+   *
+   */
+  template<
+    typename LieGroup_t,
+    typename Scalar,
+    int Options,
+    template<typename, int> class JointCollectionTpl,
+    typename ConfigVectorType,
+    typename MatrixInType,
+    typename MatrixOutType,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
+  void tangentMapProduct(
+    const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+    const Eigen::MatrixBase<ConfigVectorType> & q,
+    const Eigen::MatrixBase<MatrixInType> & mat_in,
+    const Eigen::MatrixBase<MatrixOutType> & mat_out,
+    const AssignmentOperatorType op = SETTO);
+
+  /**
+   *
+   * @brief   Compose the tangentMap with a matrix, e.g., a Lie group Jacobian in order to recover a
+   * vector space Jacobian or chain Lie Group derivatives with vector space derivative in a forward
+   * manner.
+   *
+   * @param[in]  model   Model of the kinematic tree on which the integration operation is
+   * performed.
+   * @param[in]  q            Initial configuration (size model.nq)
+   * @param[in]  mat_in       A matrix with range in the Lie algebra (size model.nv, n_cols)
+   * @param[out] mat_out      A matrix with range in the parametric space (size model.nq, n_cols)
+   * @param[in]  op           Operation to apply.
+   *
+   */
+  template<
+    typename Scalar,
+    int Options,
+    template<typename, int> class JointCollectionTpl,
+    typename ConfigVectorType,
+    typename MatrixInType,
+    typename MatrixOutType>
+  void tangentMapProduct(
+    const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+    const Eigen::MatrixBase<ConfigVectorType> & q,
+    const Eigen::MatrixBase<MatrixInType> & mat_in,
+    const Eigen::MatrixBase<MatrixOutType> & mat_out,
+    const AssignmentOperatorType op = SETTO)
+  {
+    tangentMapProduct<
+      LieGroupMap, Scalar, Options, JointCollectionTpl, ConfigVectorType, MatrixInType,
+      MatrixOutType>(
+      model, q.derived(), mat_in.derived(), PINOCCHIO_EIGEN_CONST_CAST(MatrixOutType, mat_out), op);
+  }
+
+  /**
+   *
+   * @brief   Compose the tangentMap with a matrix, e.g., a Lie group Jacobian in order to recover a
+   * vector space Jacobian or chain Lie Group derivatives with vector space derivative in reverse
+   * mode.
+   *
+   * @param[in]  model   Model of the kinematic tree on which the integration operation is
+   * performed.
+   * @param[in]  q            Initial configuration (size model.nq)
+   * @param[in]  mat_in       A matrix with range in the parametric space (size model.nq, n_cols)
+   * @param[out] mat_out      A matrix with range in the Lie algebra (size model.nv, n_cols)
+   * @param[in]  op           Operation to apply.
+   *
+   */
+  template<
+    typename LieGroup_t,
+    typename Scalar,
+    int Options,
+    template<typename, int> class JointCollectionTpl,
+    typename ConfigVectorType,
+    typename MatrixInType,
+    typename MatrixOutType,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
+  void tangentMapTransposeProduct(
+    const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+    const Eigen::MatrixBase<ConfigVectorType> & q,
+    const Eigen::MatrixBase<MatrixInType> & mat_in,
+    const Eigen::MatrixBase<MatrixOutType> & mat_out,
+    const AssignmentOperatorType op = SETTO);
+
+  /**
+   *
+   * @brief   Compose the tangentMap with a matrix, e.g., a Lie group Jacobian in order to recover a
+   * vector space Jacobian or chain Lie Group derivatives with vector space derivative in reverse
+   * mode.
+   *
+   * @param[in]  model   Model of the kinematic tree on which the integration operation is
+   * performed.
+   * @param[in]  q            Initial configuration (size model.nq)
+   * @param[in]  mat_in       A matrix with range in the parametric space (size model.nq, n_cols)
+   * @param[out] mat_out      A matrix with range in the Lie algebra (size model.nv, n_cols)
+   * @param[in]  op           Operation to apply.
+   *
+   */
+  template<
+    typename Scalar,
+    int Options,
+    template<typename, int> class JointCollectionTpl,
+    typename ConfigVectorType,
+    typename MatrixInType,
+    typename MatrixOutType>
+  void tangentMapTransposeProduct(
+    const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+    const Eigen::MatrixBase<ConfigVectorType> & q,
+    const Eigen::MatrixBase<MatrixInType> & mat_in,
+    const Eigen::MatrixBase<MatrixOutType> & mat_out,
+    const AssignmentOperatorType op = SETTO)
+  {
+    tangentMapTransposeProduct<
+      LieGroupMap, Scalar, Options, JointCollectionTpl, ConfigVectorType, MatrixInType,
+      MatrixOutType>(
+      model, q.derived(), mat_in.derived(), PINOCCHIO_EIGEN_CONST_CAST(MatrixOutType, mat_out), op);
   }
 
   /**
@@ -531,7 +823,8 @@ namespace pinocchio
     typename ConfigVectorType,
     typename TangentVectorType,
     typename JacobianMatrixType1,
-    typename JacobianMatrixType2>
+    typename JacobianMatrixType2,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   void dIntegrateTransport(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorType> & q,
@@ -619,7 +912,8 @@ namespace pinocchio
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorType,
     typename TangentVectorType,
-    typename JacobianMatrixType>
+    typename JacobianMatrixType,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   void dIntegrateTransport(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorType> & q,
@@ -701,7 +995,8 @@ namespace pinocchio
     template<typename, int> class JointCollectionTpl,
     typename ConfigVector1,
     typename ConfigVector2,
-    typename JacobianMatrix>
+    typename JacobianMatrix,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   void dDifference(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVector1> & q0,
@@ -820,7 +1115,8 @@ namespace pinocchio
     int Options,
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorIn1,
-    typename ConfigVectorIn2>
+    typename ConfigVectorIn2,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   Scalar distance(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorIn1> & q0,
@@ -858,7 +1154,7 @@ namespace pinocchio
    * @brief         Normalize a configuration vector.
    *
    * @param[in]     model      Model of the kinematic tree.
-   * @param[in,out] q               Configuration to normalize (size model.nq).
+   * @param[in,out] qout               Configuration to normalize (size model.nq).
    *
    */
   template<
@@ -866,7 +1162,8 @@ namespace pinocchio
     typename Scalar,
     int Options,
     template<typename, int> class JointCollectionTpl,
-    typename ConfigVectorType>
+    typename ConfigVectorType,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   void normalize(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorType> & qout);
@@ -876,7 +1173,7 @@ namespace pinocchio
    * @brief         Normalize a configuration vector.
    *
    * @param[in]     model      Model of the kinematic tree.
-   * @param[in,out] q               Configuration to normalize (size model.nq).
+   * @param[in,out] qout               Configuration to normalize (size model.nq).
    *
    */
   template<
@@ -908,7 +1205,8 @@ namespace pinocchio
     typename Scalar,
     int Options,
     template<typename, int> class JointCollectionTpl,
-    typename ConfigVectorType>
+    typename ConfigVectorType,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   bool isNormalized(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorType> & q,
@@ -955,13 +1253,15 @@ namespace pinocchio
    * @return     Whether the configurations are equivalent or not, within the given precision.
    *
    */
+
   template<
     typename LieGroup_t,
     typename Scalar,
     int Options,
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorIn1,
-    typename ConfigVectorIn2>
+    typename ConfigVectorIn2,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   bool isSameConfiguration(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorIn1> & q1,
@@ -1007,6 +1307,7 @@ namespace pinocchio
    * vector.
    *
    * @param[in]     model          Model of the kinematic tree.
+   * @param[in]     q          The joint configuration (vector dim model.nq)
    * @param[out]    jacobian   The Jacobian of the integrate operation.
    *
    * @details       This function is often required for the numerical solvers that are working on
@@ -1031,6 +1332,7 @@ namespace pinocchio
    * vector.
    *
    * @param[in]     model          Model of the kinematic tree.
+   * @param[in]     q          The joint configuration (vector dim model.nq)
    * @param[out]    jacobian   The Jacobian of the integrate operation.
    *
    * @details       This function is often required for the numerical solvers that are working on
@@ -1052,6 +1354,62 @@ namespace pinocchio
       LieGroupMap, Scalar, Options, JointCollectionTpl, ConfigVector, JacobianMatrix>(
       model, q.derived(), PINOCCHIO_EIGEN_CONST_CAST(JacobianMatrix, jacobian));
   }
+
+  /**
+   *
+   * @brief         Returns the Lie group associated to the model. It is the cartesian product of
+   * the lie groups of all its joints.
+   *
+   * @param[in]     model          Model of the kinematic tree.
+   * @param[out]    lgo            The cartesian Lie group object.
+   *
+   */
+  template<
+    typename LieGroup_t,
+    typename Scalar,
+    int Options,
+    template<typename, int> class JointCollectionTpl>
+  void lieGroup(
+    const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+    typename LieGroup_t::template operationProduct<Scalar, Options>::type & lgo);
+
+  /**
+   *
+   * @brief         Returns the Lie group associated to the model. It is the cartesian product of
+   * the lie groups of all its joints.
+   *
+   * @param[in]     model          Model of the kinematic tree.
+   * @param[out]    lgo            The cartesian Lie group object.
+   *
+   */
+  template<typename Scalar, int Options, template<typename, int> class JointCollectionTpl>
+  void lieGroup(
+    const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+    typename LieGroupMap::template operationProduct<Scalar, Options>::type & lgo)
+  {
+    lieGroup<LieGroupMap, Scalar, Options, JointCollectionTpl>(model, lgo);
+  }
+
+  /**
+   *
+   * @brief         Return two vector where for each, the idx_v and v associated to the
+   * same atomic joint is given.
+   *
+   * @param[in]     model            Model of the kinematic tree.
+   * @param[in]     joint_ids        Joint to condider to compute the tangentMap
+   * @param[out]    nvs              For each id give the nv of the associated joint
+   * @param[out]    idx_vs           For each id give the idx_v of the associated joint
+   *
+   * @details       This function is often required for the numerical solvers that are working on
+   * the tangent of the configuration space, instead of the configuration space itself.
+   *
+   */
+  template<typename Scalar, int Options, template<typename, int> class JointCollectionTpl>
+  void getTangentToConfigurationSparsitySegment(
+    const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+    const std::vector<JointIndex> & joint_ids,
+    std::vector<int> & nvs,
+    std::vector<int> & idx_vs);
 
   /// \}
 
@@ -1077,7 +1435,8 @@ namespace pinocchio
     int Options,
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorType,
-    typename TangentVectorType>
+    typename TangentVectorType,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   typename PINOCCHIO_EIGEN_PLAIN_TYPE(ConfigVectorType) integrate(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorType> & q,
@@ -1131,7 +1490,8 @@ namespace pinocchio
     int Options,
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorIn1,
-    typename ConfigVectorIn2>
+    typename ConfigVectorIn2,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   typename PINOCCHIO_EIGEN_PLAIN_TYPE(ConfigVectorIn1) interpolate(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorIn1> & q0,
@@ -1186,7 +1546,8 @@ namespace pinocchio
     int Options,
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorIn1,
-    typename ConfigVectorIn2>
+    typename ConfigVectorIn2,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   typename PINOCCHIO_EIGEN_PLAIN_TYPE(ConfigVectorIn1) difference(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorIn1> & q0,
@@ -1239,7 +1600,8 @@ namespace pinocchio
     int Options,
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorIn1,
-    typename ConfigVectorIn2>
+    typename ConfigVectorIn2,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   typename PINOCCHIO_EIGEN_PLAIN_TYPE(ConfigVectorIn1) squaredDistance(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     const Eigen::MatrixBase<ConfigVectorIn1> & q0,
@@ -1298,7 +1660,8 @@ namespace pinocchio
     int Options,
     template<typename, int> class JointCollectionTpl,
     typename ConfigVectorIn1,
-    typename ConfigVectorIn2>
+    typename ConfigVectorIn2,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   typename PINOCCHIO_EIGEN_PLAIN_TYPE_NO_PARENS(
     (typename ModelTpl<Scalar, Options, JointCollectionTpl>::ConfigVectorType))
     randomConfiguration(
@@ -1364,7 +1727,8 @@ namespace pinocchio
     typename LieGroup_t,
     typename Scalar,
     int Options,
-    template<typename, int> class JointCollectionTpl>
+    template<typename, int> class JointCollectionTpl,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   typename PINOCCHIO_EIGEN_PLAIN_TYPE_NO_PARENS(
     (typename ModelTpl<Scalar, Options, JointCollectionTpl>::ConfigVectorType))
     randomConfiguration(const ModelTpl<Scalar, Options, JointCollectionTpl> & model);
@@ -1409,7 +1773,8 @@ namespace pinocchio
     typename LieGroup_t,
     typename Scalar,
     int Options,
-    template<typename, int> class JointCollectionTpl>
+    template<typename, int> class JointCollectionTpl,
+    std::enable_if_t<is_lie_group_map_v<LieGroup_t>, int> = 0>
   Eigen::Matrix<Scalar, Eigen::Dynamic, 1, Options>
   neutral(const ModelTpl<Scalar, Options, JointCollectionTpl> & model);
 
@@ -1428,15 +1793,43 @@ namespace pinocchio
     return neutral<LieGroupMap, Scalar, Options, JointCollectionTpl>(model);
   }
 
+  /**
+   *
+   * @brief         Returns the Lie group associated to the model. It is the cartesian product of
+   * the lie groups of all its joints.
+   *
+   * @param[in]     model          Model of the kinematic tree.
+   * @returns The cartesian Lie group object.
+   *
+   */
+  template<
+    typename LieGroup_t,
+    typename Scalar,
+    int Options,
+    template<typename, int> class JointCollectionTpl>
+  typename LieGroup_t::template operationProduct<Scalar, Options>::type
+  lieGroup(const ModelTpl<Scalar, Options, JointCollectionTpl> & model);
+
+  /**
+   *
+   * @brief         Returns the Lie group associated to the model. It is the cartesian product of
+   * the lie groups of all its joints.
+   *
+   * @param[in]     model          Model of the kinematic tree.
+   * @returns The cartesian Lie group object.
+   *
+   */
+  template<typename Scalar, int Options, template<typename, int> class JointCollectionTpl>
+  typename LieGroupMap::template operationProduct<Scalar, Options>::type
+  lieGroup(const ModelTpl<Scalar, Options, JointCollectionTpl> & model)
+  {
+    return lieGroup<LieGroupMap, Scalar, Options, JointCollectionTpl>(model);
+  }
+
   /// \}
 
 } // namespace pinocchio
 
-/* --- Details -------------------------------------------------------------------- */
-#include "pinocchio/algorithm/joint-configuration.hxx"
-
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/algorithm/joint-configuration.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-
-#endif // ifndef __pinocchio_algorithm_joint_configuration_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/joint-configuration.hxx"
+// IWYU pragma: end_exports

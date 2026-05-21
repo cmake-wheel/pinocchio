@@ -2,10 +2,7 @@
 // Copyright (c) 2016-2020 CNRS INRIA
 //
 
-#include <iostream>
-
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/parsers/python.hpp"
 
 #include <boost/test/unit_test.hpp>

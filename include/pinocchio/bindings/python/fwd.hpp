@@ -3,19 +3,19 @@
 // Copyright (c) 2015 Wandercraft, 86 rue de Paris 91400 Orsay, France.
 //
 
-#ifndef __pinocchio_python_fwd_hpp__
-#define __pinocchio_python_fwd_hpp__
+#pragma once
 
 #include "pinocchio/bindings/python/context.hpp"
 #include <eigenpy/eigenpy.hpp>
 
 #include <memory>
-#define PINOCCHIO_SHARED_PTR_HOLDER_TYPE(T) ::std::shared_ptr<T>
 
 namespace pinocchio
 {
   namespace python
   {
+    using eigenpy::register_symbolic_link_to_registered_type;
+
     // Expose spatial classes
     void exposeSE3();
     void exposeForce();
@@ -33,6 +33,7 @@ namespace pinocchio
     void exposeLinalg();
     void exposeTridiagonalMatrix();
     void exposeLanczosDecomposition();
+    void exposeGramSchmidtOrthonormalisation();
 
     // Expose multibody classes
     void exposeJoints();
@@ -52,18 +53,19 @@ namespace pinocchio
     // Expose algorithms
     void exposeAlgorithms();
     void exposeExtras();
+    void exposeConstraints();
 
-#ifdef PINOCCHIO_PYTHON_INTERFACE_WITH_HPP_FCL_PYTHON_BINDINGS
-    void exposeFCL();
+#ifdef PINOCCHIO_PYTHON_INTERFACE_WITH_COLLISION_PYTHON_BINDINGS
+    void exposeCoal();
     void exposeCollision();
-#endif // PINOCCHIO_PYTHON_INTERFACE_WITH_HPP_FCL_PYTHON_BINDINGS
+#endif // PINOCCHIO_PYTHON_INTERFACE_WITH_COLLISION_PYTHON_BINDINGS
 
 #ifdef PINOCCHIO_PYTHON_INTERFACE_WITH_OPENMP
     void exposePool();
     void exposeParallelAlgorithms();
 #endif
 
-#if defined(PINOCCHIO_PYTHON_INTERFACE_WITH_HPP_FCL_PYTHON_BINDINGS)                               \
+#if defined(PINOCCHIO_PYTHON_INTERFACE_WITH_COLLISION_PYTHON_BINDINGS)                             \
   && defined(PINOCCHIO_PYTHON_INTERFACE_WITH_OPENMP)
     void exposeParallelCollision();
     void exposePoolCollision();
@@ -71,5 +73,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_fwd_hpp__

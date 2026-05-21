@@ -14,10 +14,7 @@ namespace pinocchio
     {
       typedef context::Scalar Scalar;
       typedef context::VectorXs VectorXs;
-      enum
-      {
-        Options = context::Options
-      };
+      using context::Options;
 
       bp::def(
         "updateGlobalPlacements",
@@ -33,29 +30,29 @@ namespace pinocchio
         "getVelocity", &getVelocity<Scalar, Options, JointCollectionDefaultTpl>,
         (bp::arg("model"), bp::arg("data"), bp::arg("joint_id"),
          bp::arg("reference_frame") = LOCAL),
-        "Returns the spatial velocity of the joint expressed in the coordinate system given "
-        "by reference_frame.\n"
-        "forwardKinematics(model,data,q,v[,a]) should be called first to compute the joint "
-        "spatial velocity stored in data.v");
+        "Returns the spatial velocity of the joint expressed in the coordinate system given by "
+        "reference_frame.\n"
+        "forwardKinematics(model,data,q,v[,a]) should be called first to compute the joint spatial "
+        "velocity stored in data.v");
 
       bp::def(
         "getAcceleration", &getAcceleration<Scalar, Options, JointCollectionDefaultTpl>,
         (bp::arg("model"), bp::arg("data"), bp::arg("joint_id"),
          bp::arg("reference_frame") = LOCAL),
-        "Returns the spatial acceleration of the joint expressed in the coordinate system "
-        "given by reference_frame.\n"
-        "forwardKinematics(model,data,q,v,a) should be called first to compute the joint "
-        "spatial acceleration stored in data.a .");
+        "Returns the spatial acceleration of the joint expressed in the coordinate system given by "
+        "reference_frame.\n"
+        "forwardKinematics(model,data,q,v,a) should be called first to compute the joint spatial "
+        "acceleration stored in data.a .");
 
       bp::def(
         "getClassicalAcceleration",
         &getClassicalAcceleration<Scalar, Options, JointCollectionDefaultTpl>,
         (bp::arg("model"), bp::arg("data"), bp::arg("joint_id"),
          bp::arg("reference_frame") = LOCAL),
-        "Returns the \"classical\" acceleration of the joint expressed in the coordinate "
-        "system given by reference_frame.\n"
-        "forwardKinematics(model,data,q,v,a) should be called first to compute the joint "
-        "spatial acceleration stored in data.a .");
+        "Returns the \"classical\" acceleration of the joint expressed in the coordinate system "
+        "given by reference_frame.\n"
+        "forwardKinematics(model,data,q,v,a) should be called first to compute the joint spatial "
+        "acceleration stored in data.a .");
 
       bp::def(
         "forwardKinematics",
@@ -86,8 +83,8 @@ namespace pinocchio
         &forwardKinematics<
           Scalar, Options, JointCollectionDefaultTpl, VectorXs, VectorXs, VectorXs>,
         bp::args("model", "data", "q", "v", "a"),
-        "Compute the global placements, local spatial velocities and spatial accelerations "
-        "of all the joints of the kinematic "
+        "Compute the global placements, local spatial velocities and spatial accelerations of all "
+        "the joints of the kinematic "
         "tree and store the results in data.\n\n"
         "Parameters:\n"
         "\tmodel: model of the kinematic tree\n"

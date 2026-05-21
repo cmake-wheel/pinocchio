@@ -3,16 +3,16 @@
 // Copyright (c) 2015 Wandercraft, 86 rue de Paris 91400 Orsay, France.
 //
 
-#include "pinocchio/math/fwd.hpp"
-#include "pinocchio/multibody/joint/joints.hpp"
-#include "pinocchio/algorithm/rnea.hpp"
+#include "pinocchio/math.hpp"
+#include "pinocchio/multibody/joint.hpp"
+
 #include "pinocchio/algorithm/aba.hpp"
+#include "pinocchio/algorithm/rnea.hpp"
 #include "pinocchio/algorithm/crba.hpp"
 #include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/compute-all-terms.hpp"
 
 #include <boost/test/unit_test.hpp>
-#include <iostream>
 
 using namespace pinocchio;
 
@@ -319,6 +319,22 @@ BOOST_AUTO_TEST_CASE(vsRX)
     modelRevoluteUnbounded, dataRevoluteUnbounded, 1, LOCAL, jacobianPrismaticUnaligned);
 
   BOOST_CHECK(jacobianPX.isApprox(jacobianPrismaticUnaligned));
+}
+
+BOOST_AUTO_TEST_CASE(tangent_map)
+{
+  JointModelRUBX joint_model_RUX;
+  joint_model_RUX.setIndexes(0, 0, 0);
+
+  Eigen::MatrixXd mat_identity = Eigen::MatrixXd::Identity(6, 6);
+
+  const auto mat_block = joint_model_RUX.jointQVMap(mat_identity, 0, 0);
+  BOOST_CHECK(mat_block.rows() == 2);
+  BOOST_CHECK(mat_block.cols() == 1);
+
+  const auto mat_block2 = joint_model_RUX.jointBlock(mat_identity);
+  BOOST_CHECK(mat_block2.rows() == 1);
+  BOOST_CHECK(mat_block2.cols() == 1);
 }
 BOOST_AUTO_TEST_SUITE_END()
 

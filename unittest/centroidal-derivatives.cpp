@@ -2,18 +2,14 @@
 // Copyright (c) 2018-2021 INRIA
 //
 
-#include "pinocchio/algorithm/crba.hpp"
+#include "pinocchio/multibody/sample-models.hpp"
+
 #include "pinocchio/algorithm/rnea.hpp"
 #include "pinocchio/algorithm/centroidal.hpp"
 #include "pinocchio/algorithm/centroidal-derivatives.hpp"
 #include "pinocchio/algorithm/rnea-derivatives.hpp"
 #include "pinocchio/algorithm/aba-derivatives.hpp"
-#include "pinocchio/algorithm/jacobian.hpp"
-#include "pinocchio/algorithm/center-of-mass.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
-
-#include <iostream>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
@@ -113,7 +109,7 @@ BOOST_AUTO_TEST_CASE(test_centroidal_derivatives)
   pinocchio::Data::Matrix6x dhdot_dq_fd(6, model.nv);
   pinocchio::Data::Matrix6x dh_dq_fd(6, model.nv);
 
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     v_eps[k] = eps;
     q_plus = pinocchio::integrate(model, q, v_eps);
@@ -132,7 +128,7 @@ BOOST_AUTO_TEST_CASE(test_centroidal_derivatives)
   Eigen::VectorXd v_plus(v);
   pinocchio::Data::Matrix6x dhdot_dv_fd(6, model.nv);
 
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     v_plus[k] += eps;
 
@@ -149,7 +145,7 @@ BOOST_AUTO_TEST_CASE(test_centroidal_derivatives)
   Eigen::VectorXd a_plus(a);
   pinocchio::Data::Matrix6x dhdot_da_fd(6, model.nv);
 
-  for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+  for (Eigen::Index k = 0; k < model.nv; ++k)
   {
     a_plus[k] += eps;
 

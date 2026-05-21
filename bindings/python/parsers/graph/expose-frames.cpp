@@ -5,10 +5,10 @@
 #include <boost/python.hpp>
 
 #include "pinocchio/bindings/python/parsers/model-graph.hpp"
-#include "pinocchio/parsers/graph/model-graph.hpp"
-#include "pinocchio/bindings/python/utils/std-aligned-vector.hpp"
+#include "pinocchio/parsers/graph.hpp"
 
 #include <eigenpy/variant.hpp>
+
 namespace pinocchio
 {
   namespace python
@@ -22,8 +22,9 @@ namespace pinocchio
       bp::class_<BodyFrame>(
         "BodyFrame", "Represents a body frame in the model graph, including its inertia.",
         bp::init<>(bp::args("self"), "Default constructor."))
-        .def(bp::init<const pinocchio::Inertia &>(
-          bp::args("self", "inertia"), "Constructor initializing with a specific inertia."))
+        .def(
+          bp::init<const pinocchio::Inertia &>(
+            bp::args("self", "inertia"), "Constructor initializing with a specific inertia."))
         .def_readwrite(
           "inertia", &BodyFrame::inertia,
           "Spatial inertia of the body, expressed at its center of mass (CoM).")

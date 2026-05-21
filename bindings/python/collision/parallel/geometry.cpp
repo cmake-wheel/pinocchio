@@ -95,10 +95,10 @@ namespace pinocchio
         "\tnum_thread: number of threads used for the computation\n"
         "\tpool: pool of geometry model/ geometry data\n"
         "\tq: the joint configuration vector (size model.nq x batch_size)\n"
-        "\tstop_at_first_collision_in_configuration: if set to true, stops when encountering "
-        "the first collision in a configuration\n"
-        "\tstop_at_first_collision_in_batch: if set to true, stops when encountering the "
-        "first collision in a batch.\n");
+        "\tstop_at_first_collision_in_configuration: if set to true, stops when encountering the "
+        "first collision in a configuration\n"
+        "\tstop_at_first_collision_in_batch: if set to true, stops when encountering the first "
+        "collision in a batch.\n");
     }
 
   } // namespace python

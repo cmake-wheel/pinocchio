@@ -2,13 +2,9 @@
 // Copyright (c) 2016-2019 CNRS INRIA
 //
 
-#include "pinocchio/multibody/joint/joint-generic.hpp"
-
-#include "pinocchio/multibody/liegroup/liegroup.hpp"
-
-#include "pinocchio/multibody/model.hpp"
-
-#include "pinocchio/algorithm/joint-configuration.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/multibody/liegroup.hpp"
+#include "pinocchio/multibody.hpp"
 
 #include <iostream>
 #include <boost/test/unit_test.hpp>
@@ -46,6 +42,10 @@ void test_joint_methods(
   BOOST_CHECK(jmodel == jma);
   BOOST_CHECK(jma == jmodel);
   BOOST_CHECK(jma.hasSameIndexes(jmodel));
+
+  typedef typename LieGroupMap::template operationProduct<
+    typename JointModel::Scalar, JointModel::Options>::type PV;
+  BOOST_CHECK(PV(jmodel.template lieGroup<LieGroupMap>()) == jma.template lieGroup<LieGroupMap>());
 
   pinocchio::JointData jda(jdata.derived());
   BOOST_CHECK(jda == jdata);
@@ -242,7 +242,6 @@ struct init<pinocchio::JointModelUniversalTpl<Scalar, Options>>
 
   static JointModel run()
   {
-    typedef typename JointModel::Vector3 Vector3;
     JointModel jmodel(XAxis::vector(), YAxis::vector());
 
     jmodel.setIndexes(0, 0, 0);
@@ -342,13 +341,10 @@ namespace pinocchio
   template<typename _Scalar, int _Options, template<typename, int> class JointCollectionTpl>
   struct traits<JointTest<_Scalar, _Options, JointCollectionTpl>>
   {
-    enum
-    {
-      Options = _Options,
-      NQ = Eigen::Dynamic, // Dynamic because unknown at compile time
-      NV = Eigen::Dynamic,
-      NVExtended = Eigen::Dynamic
-    };
+    static constexpr int Options = _Options;
+    static constexpr int NQ = Eigen::Dynamic; // Dynamic because unknown at compile time
+    static constexpr int NV = Eigen::Dynamic;
+    static constexpr int NVExtended = Eigen::Dynamic;
     typedef _Scalar Scalar;
 
     typedef JointDataTpl<Scalar, Options, JointCollectionTpl> JointDataDerived;
@@ -366,7 +362,7 @@ namespace pinocchio
     typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1, Options> ConfigVector_t;
     typedef Eigen::Matrix<Scalar, Eigen::Dynamic, 1, Options> TangentVector_t;
 
-    typedef boost::mpl::false_ is_mimicable_t;
+    typedef std::false_type is_mimicable_t;
   };
 
   template<typename _Scalar, int _Options, template<typename, int> class JointCollectionTpl>

@@ -3,10 +3,32 @@
 // Copyright (c) 2023 KU Leuven
 //
 
-#ifndef __pinocchio_algorithm_contact_delassus_hpp__
-#define __pinocchio_algorithm_contact_delassus_hpp__
+#pragma once
 
-#include "pinocchio/algorithm/contact-info.hpp"
+// IWYU pragma: begin_keep
+#include <cassert>
+#include <algorithm>
+#include <vector>
+#include <cstddef>
+#include <limits>
+
+#include <Eigen/Core>
+#include <boost/fusion/container/vector.hpp>
+
+#include "pinocchio/macros.hpp"
+#include "pinocchio/unsupported.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+
+#include "pinocchio/math.hpp"
+
+#include "pinocchio/utils/check.hpp"
+
+#include "pinocchio/algorithm/check.hpp"
+#include "pinocchio/constraints.hpp"
+#include "pinocchio/algorithm/model.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -34,11 +56,9 @@ namespace pinocchio
   /// \param[in] data The data structure of the rigid body system.
   /// \param[in] q The joint configuration (size model.nq).
   /// \param[in] contact_models Vector of contact models.
-  /// \param[in] contact_datas Vector of contact data.
+  /// \param[in] contact_data Vector of contact data.
   /// \param[out] delassus The resulting Delassus matrix.
   /// \param[in] mu Optional damping factor used when computing the inverse of the Delassus matrix.
-  ///
-  /// \return The (damped) Delassus matrix.
   ///
   template<
     typename Scalar,
@@ -70,7 +90,7 @@ namespace pinocchio
   /// \param[in] data The data structure of the rigid body system.
   /// \param[in] q The joint configuration (size model.nq).
   /// \param[in] contact_models Vector of contact models.
-  /// \param[in] contact_datas Vector of contact data.
+  /// \param[in] contact_data Vector of contact data.
   /// \param[out] damped_delassus_inverse The resulting damped Delassus matrix.
   /// \param[in] mu Damping factor well-posdnessed of the problem.
   /// \param[in] scaled If set to true, the solution is scaled my a factor \f$ \mu \f$ to avoid
@@ -78,8 +98,6 @@ namespace pinocchio
   ///
   /// \note A hint: a typical value for mu is 1e-4 when two contact constraints or more are
   /// redundant.
-  ///
-  /// \return The damped inverse Delassus matrix.
   ///
   template<
     typename Scalar,
@@ -103,6 +121,6 @@ namespace pinocchio
 
 } // namespace pinocchio
 
-#include "pinocchio/algorithm/delassus.hxx"
-
-#endif // ifndef __pinocchio_algorithm_contact_delassus_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/delassus.hxx"
+// IWYU pragma: end_exports

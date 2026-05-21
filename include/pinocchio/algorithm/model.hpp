@@ -1,12 +1,35 @@
 //
 // Copyright (c) 2019 CNRS INRIA
 //
+#pragma once
 
-#ifndef __pinocchio_algorithm_model_hpp__
-#define __pinocchio_algorithm_model_hpp__
+// IWYU pragma: begin_keep
+#include <Eigen/Core>
+//
+#include <cassert>
+#include <cstddef>
+#include <stdexcept>
+#include <algorithm>
+#include <type_traits>
+#include <utility>
+#include <iterator>
+#include <string>
+#include <vector>
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/geometry.hpp"
+#include <boost/fusion/container/vector.hpp>
+#include <boost/variant/get.hpp>
+
+#include "pinocchio/macros.hpp"
+#include "pinocchio/fwd.hpp"
+
+#include "pinocchio/spatial.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/geometry.hpp"
+#include "pinocchio/multibody/joint.hpp"
+
+#include "pinocchio/algorithm/joint-configuration.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -175,7 +198,7 @@ namespace pinocchio
 
   /**
    *
-   *  \brief Build a reduced model and a rededuced geometry model  from a given input model, a given
+   *  \brief Build a reduced model and a reduced geometry model from a given input model, a given
    * input geometry model and a list of joint to lock.
    *
    *  \param[in] model the input model to reduce.
@@ -183,7 +206,7 @@ namespace pinocchio
    * collision_model). \param[in] list_of_joints_to_lock list of joints to lock in the input model.
    *  \param[in] reference_configuration reference configuration.
    *  \param[out] reduced_model the reduced model.
-   *  \param[out] list_of_reduced_geom_model the list of reduced geometry models.
+   *  \param[out] list_of_reduced_geom_models the list of reduced geometry models.
    *
    *  \remarks All the joints that have been set to be fixed in the new reduced_model now appear in
    * the kinematic tree as a Frame as FIXED_JOINT.
@@ -193,22 +216,21 @@ namespace pinocchio
     typename Scalar,
     int Options,
     template<typename, int> class JointCollectionTpl,
-    typename GeometryModelAllocator,
     typename ConfigVectorType>
   void buildReducedModel(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
-    const std::vector<GeometryModel, GeometryModelAllocator> & list_of_geom_models,
+    const std::vector<GeometryModel> & list_of_geom_models,
     const std::vector<JointIndex> & list_of_joints_to_lock,
     const Eigen::MatrixBase<ConfigVectorType> & reference_configuration,
     ModelTpl<Scalar, Options, JointCollectionTpl> & reduced_model,
-    std::vector<GeometryModel, GeometryModelAllocator> & list_of_reduced_geom_models);
+    std::vector<GeometryModel> & list_of_reduced_geom_models);
 
   /**
    *
    *  \brief Transform of a joint of the model into a mimic joint. Keep the type of the joint as it
    * was previously.
    *
-   *  \param[in] model the input model to take joints from.
+   *  \param[in] input_model the input model to take joints from.
    *  \param[in] index_mimicked index of the joint to mimic
    *  \param[in] index_mimicking index of the joint that will mimic
    *  \param[in] scaling Scaling of joint velocity and configuration
@@ -229,7 +251,7 @@ namespace pinocchio
    *
    *  \brief Transform joints of a model into mimic joints
    *
-   *  \param[in] model the input model to take joints from.
+   *  \param[in] input_model the input model to take joints from.
    *  \param[in] index_mimicked indexes of the joint to mimic
    *  \param[in] index_mimicking indexes of the joint that will mimic
    *  \param[in] scaling Scalings of joint velocity and configuration
@@ -265,12 +287,28 @@ namespace pinocchio
     size_t & index_ancestor_in_support1,
     size_t & index_ancestor_in_support2);
 
+  /**
+   *
+   *  \brief Computes the common ancestor between two joints belonging to the same kinematic tree.
+   *
+   *  \param[in] model the input model.
+   *  \param[in] joint1_id index of the first joint.
+   *  \param[in] joint2_id index of the second joint.
+   *
+   */
+  template<typename Scalar, int Options, template<typename, int> class JointCollectionTpl>
+  JointIndex findCommonAncestor(
+    const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
+    JointIndex joint1_id,
+    JointIndex joint2_id)
+  {
+    size_t index_ancestor_in_support1, index_ancestor_in_support2;
+    return findCommonAncestor(
+      model, joint1_id, joint2_id, index_ancestor_in_support1, index_ancestor_in_support2);
+  }
+
 } // namespace pinocchio
 
-#include "pinocchio/algorithm/model.hxx"
-
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/algorithm/model.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-
-#endif // ifndef __pinocchio_algorithm_model_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/model.hxx"
+// IWYU pragma: end_exports

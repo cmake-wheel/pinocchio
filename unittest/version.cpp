@@ -5,8 +5,6 @@
 #include <pinocchio/fwd.hpp>
 #include <pinocchio/utils/version.hpp>
 
-#include "utils/macros.hpp"
-
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
 

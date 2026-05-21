@@ -2,8 +2,7 @@
 // Copyright (c) 2016 CNRS
 //
 
-#include "pinocchio/multibody/joint/joint-composite.hpp"
-#include "pinocchio/algorithm/joint-configuration.hpp"
+#include "pinocchio/multibody/joint.hpp"
 #include "pinocchio/algorithm/kinematics.hpp"
 
 #include <iostream>

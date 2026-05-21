@@ -2,18 +2,13 @@
 // Copyright (c) 2015-2019 CNRS INRIA
 //
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
 #include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/algorithm/crba.hpp"
-#include "pinocchio/algorithm/compute-all-terms.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
 #include "pinocchio/algorithm/center-of-mass.hpp"
-#include "pinocchio/utils/timer.hpp"
 #include "pinocchio/multibody/sample-models.hpp"
-
-#include <iostream>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
@@ -248,7 +243,7 @@ BOOST_AUTO_TEST_CASE(test_subtree_com_jacobian)
     centerOfMass(model, data_fd, q);
     const SE3::Vector3 com = data_fd.oMi[joint_id].act(data_fd.com[joint_id]);
     Jcom_fd.setZero();
-    for (Eigen::DenseIndex k = 0; k < model.nv; ++k)
+    for (Eigen::Index k = 0; k < model.nv; ++k)
     {
       v_plus[k] = eps;
       Eigen::VectorXd q_plus = integrate(model, q, v_plus);

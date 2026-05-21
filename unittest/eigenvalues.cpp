@@ -4,9 +4,7 @@
 
 #include <iostream>
 
-#include <pinocchio/math/eigenvalues.hpp>
-
-#include <boost/variant.hpp> // to avoid C99 warnings
+#include <pinocchio/math.hpp>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
@@ -20,7 +18,7 @@ using namespace pinocchio;
 
 BOOST_AUTO_TEST_CASE(test_identity)
 {
-  const Eigen::DenseIndex mat_size = 20;
+  const Eigen::Index mat_size = 20;
   const Eigen::MatrixXd identity_mat = Eigen::MatrixXd::Identity(mat_size, mat_size);
 
   auto eigen_vec = computeLargestEigenvector(identity_mat);
@@ -30,7 +28,7 @@ BOOST_AUTO_TEST_CASE(test_identity)
 
 BOOST_AUTO_TEST_CASE(test_random_matrix)
 {
-  const Eigen::DenseIndex mat_size = 10;
+  const Eigen::Index mat_size = 10;
   const int num_tests = 1000;
   const int num_it_max = 10;
   const int num_it_max_finer = 100 * num_it_max;

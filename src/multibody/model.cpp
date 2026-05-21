@@ -1,8 +1,9 @@
 //
-// Copyright (c) 2022 INRIA
+// Copyright (c) 2022-2024 INRIA
 //
 
-#include "pinocchio/multibody/model.hpp"
+#include "pinocchio/src/context/template-instantiation.hxx"
+#include "pinocchio/multibody.hpp"
 
 namespace pinocchio
 {
@@ -23,6 +24,12 @@ namespace pinocchio
     const context::VectorXs &,
     const context::VectorXs &,
     const context::VectorXs &,
+    const context::VectorXs &,
+    const context::VectorXs &,
+    const context::VectorXs &,
+    const context::VectorXs &,
+    const context::VectorXs &,
+    const context::VectorXs &,
     const context::VectorXs &);
 
   template PINOCCHIO_EXPLICIT_INSTANTIATION_DEFINITION_DLLAPI JointIndex
@@ -38,9 +45,20 @@ namespace pinocchio
     const context::VectorXs &,
     const context::VectorXs &);
 
+  template PINOCCHIO_EXPLICIT_INSTANTIATION_DEFINITION_DLLAPI JointIndex
+  ModelTpl<context::Scalar, context::Options, JointCollectionDefaultTpl>::addJoint(
+    const JointIndex,
+    const JointModel &,
+    const SE3 &,
+    const std::string &,
+    const context::VectorXs &,
+    const context::VectorXs &,
+    const context::VectorXs &,
+    const context::VectorXs &);
+
   template PINOCCHIO_EXPLICIT_INSTANTIATION_DEFINITION_DLLAPI FrameIndex
   ModelTpl<context::Scalar, context::Options, JointCollectionDefaultTpl>::addJointFrame(
-    const JointIndex &, int);
+    const JointIndex, int);
 
   template PINOCCHIO_EXPLICIT_INSTANTIATION_DEFINITION_DLLAPI void
   ModelTpl<context::Scalar, context::Options, JointCollectionDefaultTpl>::appendBodyToJoint(

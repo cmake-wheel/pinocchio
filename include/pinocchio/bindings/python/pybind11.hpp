@@ -1,7 +1,6 @@
-#ifndef __pinocchio_python_pybind11_hpp__
-#define __pinocchio_python_pybind11_hpp__
+#pragma once
 
-/// \mainpage Pinocchio PyBind11 helpers
+/// \page pybind11_helper Pinocchio PyBind11 helpers
 ///
 /// This package provides utilities to ease the use of Pinocchio objects when
 /// using PyBind11.
@@ -98,12 +97,11 @@ namespace pinocchio
       typedef py::object type;
       static inline type _to(T t)
       {
-        return to<typename std::remove_pointer<
-          typename std::remove_reference<typename std::remove_cv<T>::type>::type>::type>(t);
+        return to<std::remove_pointer_t<std::decay_t<T>>>(t);
       }
       static inline T _from(type t)
       {
-        return from<typename std::remove_cv<typename std::remove_reference<T>::type>::type>(t);
+        return from<std::decay_t<T>>(t);
       }
     };
 
@@ -235,5 +233,3 @@ namespace pinocchio
 } // namespace pinocchio
 
 #undef _SINGLE_ARG
-
-#endif // #ifndef __pinocchio_python_pybind11_hpp__

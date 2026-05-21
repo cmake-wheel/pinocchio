@@ -2,8 +2,6 @@
 #include <pinocchio/algorithm/rnea.hpp>
 #include <pinocchio/algorithm/joint-configuration.hpp>
 
-#include <iostream>
-
 int main(int /*argc*/, char ** /*argv*/)
 {
   using namespace pinocchio;

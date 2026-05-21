@@ -1,9 +1,8 @@
 //
 // Copyright (c) 2024 INRIA
 //
-//
-#ifndef __pinocchio_python_collision_hpp__
-#define __pinocchio_python_collision_hpp__
+
+#pragma once
 
 namespace pinocchio
 {
@@ -15,5 +14,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_collision_hpp__

@@ -2,11 +2,8 @@
 // Copyright (c) 2019-2020 INRIA
 //
 
-#include <pinocchio/math/rpy.hpp>
-#include <pinocchio/math/quaternion.hpp>
-#include <pinocchio/spatial/skew.hpp>
-
-#include <boost/variant.hpp> // to avoid C99 warnings
+#include <pinocchio/math.hpp>
+#include <pinocchio/spatial.hpp>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>

@@ -5,19 +5,14 @@
 #include "model-fixture.hpp"
 
 #include "pinocchio/codegen/cppadcg.hpp"
-#include "pinocchio/codegen/code-generator-algo.hpp"
-#include "pinocchio/container/aligned-vector.hpp"
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/sample-models.hpp"
 
-#include "pinocchio/algorithm/kinematics.hpp"
-#include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/crba.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
+#include "pinocchio/algorithm/rnea-derivatives.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
-
-#include "pinocchio/multibody/sample-models.hpp"
 
 #include <cppad/core/to_csrc.hpp>
 #include <iostream>
@@ -30,10 +25,7 @@
   #define DLL_EXT ".so"
 #endif
 
-enum
-{
-  Options = 0
-};
+static constexpr int Options = 0;
 typedef double Scalar;
 typedef CppAD::AD<Scalar> ADScalar;
 typedef CppAD::cg::CG<Scalar> CGScalar;

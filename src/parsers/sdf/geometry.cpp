@@ -9,10 +9,10 @@
 #include <iomanip>
 #include <boost/shared_ptr.hpp>
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
-  #include <hpp/fcl/mesh_loader/loader.h>
-  #include <hpp/fcl/mesh_loader/assimp.h>
-#endif // PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
+  #include <coal/mesh_loader/loader.h>
+  #include <coal/mesh_loader/assimp.h>
+#endif // PINOCCHIO_WITH_COLLISION
 
 namespace pinocchio
 {
@@ -91,13 +91,13 @@ namespace pinocchio
 
       static Eigen::Vector3d retrieveMeshScale(const ::sdf::ElementPtr sdf_mesh)
       {
-        const ignition::math::Vector3d ign_scale = sdf_mesh->Get<ignition::math::Vector3d>("scale");
+        const gz::math::Vector3d ign_scale = sdf_mesh->Get<gz::math::Vector3d>("scale");
         return Eigen::Vector3d(ign_scale.X(), ign_scale.Y(), ign_scale.Z());
       }
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
       /**
-       * @brief      Get a fcl::CollisionObject from an urdf geometry, searching
+       * @brief      Get a coal::CollisionGeometry from an urdf geometry, searching
        *             for it in specified package directories
        *
        * @param[in]  urdf_geometry  A shared pointer on the input urdf Geometry
@@ -106,16 +106,16 @@ namespace pinocchio
        * @param[out] meshPath      The Absolute path of the mesh currently read
        * @param[out] meshScale     Scale of transformation currently applied to the mesh
        *
-       * @return     A shared pointer on the geometry converted as a fcl::CollisionGeometry
+       * @return     A shared pointer on the geometry converted as a coal::CollisionGeometry
        */
-      std::shared_ptr<fcl::CollisionGeometry> static retrieveCollisionGeometry(
-        ::hpp::fcl::MeshLoaderPtr & meshLoader,
+      std::shared_ptr<coal::CollisionGeometry> static retrieveCollisionGeometry(
+        ::coal::MeshLoaderPtr & meshLoader,
         const ::sdf::ElementPtr sdf_geometry,
         const std::vector<std::string> & package_dirs,
         std::string & meshPath,
         Eigen::Vector3d & meshScale)
       {
-        std::shared_ptr<fcl::CollisionGeometry> geometry;
+        std::shared_ptr<coal::CollisionGeometry> geometry;
 
         // Handle the case where collision geometry is a mesh
         if (sdf_geometry->HasElement("mesh"))
@@ -133,13 +133,13 @@ namespace pinocchio
 
           Eigen::Vector3d scale(retrieveMeshScale(sdf_mesh));
 
-          // Create FCL mesh by parsing Collada file.
-          hpp::fcl::BVHModelPtr_t bvh = meshLoader->load(meshPath, scale);
+          // Create coal mesh by parsing Collada file.
+          coal::BVHModelPtr_t bvh = meshLoader->load(meshPath, scale);
           geometry = bvh;
         }
 
         // Handle the case where collision geometry is a cylinder
-        // Use FCL capsules for cylinders
+        // Use coal capsules for cylinders
         else if (sdf_geometry->HasElement("cylinder"))
         {
           meshScale << 1, 1, 1;
@@ -148,9 +148,9 @@ namespace pinocchio
           double radius = collisionGeometry->Get<double>("radius");
           double length = collisionGeometry->Get<double>("length");
 
-          // Create fcl capsule geometry.
+          // Create coal capsule geometry.
           meshPath = "CYLINDER";
-          geometry = std::shared_ptr<fcl::CollisionGeometry>(new fcl::Cylinder(radius, length));
+          geometry = std::shared_ptr<coal::CollisionGeometry>(new coal::Cylinder(radius, length));
         }
         // Handle the case where collision geometry is a box.
         else if (sdf_geometry->HasElement("box"))
@@ -162,7 +162,7 @@ namespace pinocchio
           double x = collisionGeometry->Get<double>("x");
           double y = collisionGeometry->Get<double>("y");
           double z = collisionGeometry->Get<double>("z");
-          geometry = std::shared_ptr<fcl::CollisionGeometry>(new fcl::Box(x, y, z));
+          geometry = std::shared_ptr<coal::CollisionGeometry>(new coal::Box(x, y, z));
         }
         // Handle the case where collision geometry is a sphere.
         else if (sdf_geometry->HasElement("sphere"))
@@ -172,7 +172,7 @@ namespace pinocchio
           const ::sdf::ElementPtr collisionGeometry = sdf_geometry->GetElement("sphere");
 
           double radius = collisionGeometry->Get<double>("radius");
-          geometry = std::shared_ptr<fcl::CollisionGeometry>(new fcl::Sphere(radius));
+          geometry = std::shared_ptr<coal::CollisionGeometry>(new coal::Sphere(radius));
         }
         else
           throw std::invalid_argument("Unknown geometry type :");
@@ -188,7 +188,7 @@ namespace pinocchio
       template<GeometryType type>
       static void addLinkGeometryToGeomModel(
         const SdfGraph & graph,
-        ::hpp::fcl::MeshLoaderPtr & meshLoader,
+        ::coal::MeshLoaderPtr & meshLoader,
         ::sdf::ElementPtr link,
         GeometryModel & geomModel,
         const std::vector<std::string> & package_dirs)
@@ -217,7 +217,7 @@ namespace pinocchio
           {
             meshPath.clear();
             const ::sdf::ElementPtr sdf_geometry = (*i)->GetElement("geometry");
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
             const GeometryObject::CollisionGeometryPtr geometry = retrieveCollisionGeometry(
               meshLoader, sdf_geometry, package_dirs, meshPath, meshScale);
 #else
@@ -231,11 +231,10 @@ namespace pinocchio
               meshScale = retrieveMeshScale(sdf_mesh);
             }
 
-            const auto geometry = std::make_shared<fcl::CollisionGeometry>();
-#endif // PINOCCHIO_WITH_HPP_FCL
+            const auto geometry = std::make_shared<coal::CollisionGeometry>();
+#endif // PINOCCHIO_WITH_COLLISION
 
-            const ignition::math::Pose3d & pose =
-              (*i)->template Get<ignition::math::Pose3d>("pose");
+            const gz::math::Pose3d & pose = (*i)->template Get<gz::math::Pose3d>("pose");
 
             Eigen::Vector4d meshColor(Eigen::Vector4d::Zero());
             std::string meshTexturePath;
@@ -243,8 +242,7 @@ namespace pinocchio
             const ::sdf::ElementPtr sdf_material = (*i)->GetElement("material");
             if (sdf_material)
             {
-              const ignition::math::Color ign_meshColor =
-                sdf_material->Get<ignition::math::Color>("ambient");
+              const gz::math::Color ign_meshColor = sdf_material->Get<gz::math::Color>("ambient");
 
               meshColor << ign_meshColor.R(), ign_meshColor.G(), ign_meshColor.B(),
                 ign_meshColor.A();
@@ -268,7 +266,7 @@ namespace pinocchio
 
       void addLinkGeometryToGeomModel(
         const SdfGraph & graph,
-        ::hpp::fcl::MeshLoaderPtr & meshLoader,
+        ::coal::MeshLoaderPtr & meshLoader,
         const ::sdf::ElementPtr link,
         GeometryModel & geomModel,
         const std::vector<std::string> & package_dirs,
@@ -296,16 +294,16 @@ namespace pinocchio
         const std::string & rootLinkName,
         const GeometryType type,
         const std::vector<std::string> & package_dirs,
-        ::hpp::fcl::MeshLoaderPtr meshLoader)
+        ::coal::MeshLoaderPtr meshLoader)
       {
         std::vector<std::string> hint_directories(package_dirs);
         std::vector<std::string> ros_pkg_paths = rosPaths();
         hint_directories.insert(hint_directories.end(), ros_pkg_paths.begin(), ros_pkg_paths.end());
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
         if (!meshLoader)
-          meshLoader = fcl::MeshLoaderPtr(new fcl::MeshLoader);
-#endif // ifdef PINOCCHIO_WITH_HPP_FCL
+          meshLoader = coal::MeshLoaderPtr(new coal::MeshLoader);
+#endif // ifdef PINOCCHIO_WITH_COLLISION
 
         const ::sdf::ElementPtr rootElement = graph.mapOfLinks.find(rootLinkName)->second;
 

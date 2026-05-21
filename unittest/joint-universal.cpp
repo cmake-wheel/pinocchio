@@ -2,8 +2,7 @@
 // Copyright (c) 2023 INRIA
 //
 
-#include "pinocchio/math/fwd.hpp"
-#include "pinocchio/multibody/joint/joints.hpp"
+#include "pinocchio/multibody/joint.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
 #include "pinocchio/algorithm/aba.hpp"
 #include "pinocchio/algorithm/crba.hpp"
@@ -11,7 +10,6 @@
 #include "pinocchio/algorithm/compute-all-terms.hpp"
 
 #include <boost/test/unit_test.hpp>
-#include <iostream>
 
 using namespace pinocchio;
 using namespace Eigen;
@@ -124,7 +122,6 @@ BOOST_AUTO_TEST_CASE(vsRXRY)
 BOOST_AUTO_TEST_CASE(vsRandomAxis)
 {
   typedef SE3::Vector3 Vector3;
-  typedef SE3::Matrix3 Matrix3;
 
   Vector3 axis1;
   axis1 << 0., 0., 1.;

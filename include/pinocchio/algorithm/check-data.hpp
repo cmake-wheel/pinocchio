@@ -2,10 +2,16 @@
 // Copyright (c) 2025 INRIA
 //
 
-#ifndef __pinocchio_algorithm_check_data_hpp__
-#define __pinocchio_algorithm_check_data_hpp__
+#pragma once
 
-#include "pinocchio/multibody/fwd.hpp"
+// IWYU pragma: begin_keep
+#include <cstddef>
+
+#include <boost/variant/get.hpp>
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -24,6 +30,6 @@ namespace pinocchio
 } // namespace pinocchio
 
 /* --- Details -------------------------------------------------------------------- */
-#include "pinocchio/algorithm/check-data.hxx"
-
-#endif // __pinocchio_algorithm_check_data_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/check-data.hxx"
+// IWYU pragma: end_exports

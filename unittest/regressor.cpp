@@ -2,17 +2,13 @@
 // Copyright (c) 2018-2024 CNRS INRIA
 //
 
-#include "pinocchio/spatial/fwd.hpp"
-#include "pinocchio/spatial/explog.hpp"
+#include "pinocchio/spatial.hpp"
 #include "pinocchio/algorithm/regressor.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
 #include "pinocchio/algorithm/frames.hpp"
-#include "pinocchio/algorithm/joint-configuration.hpp"
 #include "pinocchio/algorithm/center-of-mass.hpp"
 #include "pinocchio/multibody/sample-models.hpp"
 #include "pinocchio/algorithm/compute-all-terms.hpp"
-
-#include <iostream>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
@@ -66,7 +62,7 @@ BOOST_AUTO_TEST_CASE(test_kinematic_regressor_joint)
       Motion::Vector6 v = Motion::Vector6::Zero();
       const SE3 & M_placement = model.jointPlacements[(JointIndex)i];
       SE3 & M_placement_plus = model_plus.jointPlacements[(JointIndex)i];
-      for (Eigen::DenseIndex k = 0; k < 6; ++k)
+      for (Eigen::Index k = 0; k < 6; ++k)
       {
         v[k] = eps;
         M_placement_plus = M_placement * exp6(Motion(v));
@@ -206,7 +202,7 @@ BOOST_AUTO_TEST_CASE(test_kinematic_regressor_frame)
       Motion::Vector6 v = Motion::Vector6::Zero();
       const SE3 & M_placement = model.jointPlacements[(JointIndex)i];
       SE3 & M_placement_plus = model_plus.jointPlacements[(JointIndex)i];
-      for (Eigen::DenseIndex k = 0; k < 6; ++k)
+      for (Eigen::Index k = 0; k < 6; ++k)
       {
         v[k] = eps;
         M_placement_plus = M_placement * exp6(Motion(v));
@@ -391,7 +387,7 @@ BOOST_AUTO_TEST_CASE(test_kinetic_energy_regressor)
 
   Eigen::VectorXd params(10 * (model.njoints - 1));
   for (JointIndex i = 1; i < (Model::JointIndex)model.njoints; ++i)
-    params.segment<10>(Eigen::DenseIndex((i - 1) * 10)) = model.inertias[i].toDynamicParameters();
+    params.segment<10>(Eigen::Index((i - 1) * 10)) = model.inertias[i].toDynamicParameters();
 
   const double kinetic_energy_regressor = data.kineticEnergyRegressor * params;
 
@@ -420,7 +416,7 @@ BOOST_AUTO_TEST_CASE(test_potential_energy_regressor)
 
   Eigen::VectorXd params(10 * (model.njoints - 1));
   for (JointIndex i = 1; i < (Model::JointIndex)model.njoints; ++i)
-    params.segment<10>(Eigen::DenseIndex((i - 1) * 10)) = model.inertias[i].toDynamicParameters();
+    params.segment<10>(Eigen::Index((i - 1) * 10)) = model.inertias[i].toDynamicParameters();
 
   computePotentialEnergyRegressor(model, data, q);
   const double potential_energy_regressor = data.potentialEnergyRegressor * params;

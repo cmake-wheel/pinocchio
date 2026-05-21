@@ -1,24 +1,19 @@
 //
-// Copyright (c) 2015-2022 CNRS INRIA
+// Copyright (c) 2015-2018 CNRS
+// Copyright (x) 2018-2025 INRIA
 //
 
-#ifndef __pinocchio_python_geometry_data_hpp__
-#define __pinocchio_python_geometry_data_hpp__
+#pragma once
 
 #include <eigenpy/memory.hpp>
+#include <eigenpy/copyable.hpp>
 
-#include "pinocchio/serialization/geometry.hpp"
+#include "pinocchio/serialization.hpp"
 
 #include "pinocchio/bindings/python/utils/address.hpp"
 #include "pinocchio/bindings/python/utils/printable.hpp"
-#include "pinocchio/bindings/python/utils/copyable.hpp"
 #include "pinocchio/bindings/python/utils/std-vector.hpp"
-#include "pinocchio/bindings/python/utils/registration.hpp"
 #include "pinocchio/bindings/python/serialization/serializable.hpp"
-
-#if EIGENPY_VERSION_AT_MOST(2, 8, 1)
-EIGENPY_DEFINE_STRUCT_ALLOCATOR_SPECIALIZATION(pinocchio::GeometryData)
-#endif
 
 namespace pinocchio
 {
@@ -39,10 +34,11 @@ namespace pinocchio
           bp::class_<CollisionPair>(
             "CollisionPair", "Pair of ordered index defining a pair of collisions", bp::no_init)
             .def(bp::init<>(bp::args("self"), "Empty constructor."))
-            .def(bp::init<const GeomIndex &, const GeomIndex &>(
-              bp::args("self", "index1", "index2"), "Initializer of collision pair."))
+            .def(
+              bp::init<const GeomIndex &, const GeomIndex &>(
+                bp::args("self", "index1", "index2"), "Initializer of collision pair."))
             .def(PrintableVisitor<CollisionPair>())
-            .def(CopyableVisitor<CollisionPair>())
+            .def(::eigenpy::CopyableVisitor<CollisionPair>())
             .def(bp::self == bp::self)
             .def(bp::self != bp::self)
             .def_readwrite("first", &CollisionPair::first)
@@ -61,9 +57,10 @@ namespace pinocchio
       template<class PyClass>
       void visit(PyClass & cl) const
       {
-        cl
-          .def(bp::init<const GeometryModel &>(
-            bp::args("self", "geometry_model"), "Default constructor from a given GeometryModel."))
+        cl.def(
+            bp::init<const GeometryModel &>(
+              bp::args("self", "geometry_model"),
+              "Default constructor from a given GeometryModel."))
 
           .def_readwrite(
             "oMg", &GeometryData::oMg,
@@ -73,15 +70,15 @@ namespace pinocchio
             "activeCollisionPairs", &GeometryData::activeCollisionPairs,
             "Vector of active CollisionPairs")
 
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
           .def_readwrite(
             "distanceRequests", &GeometryData::distanceRequests,
-            "Defines which information should be computed by FCL for distance computations")
+            "Defines which information should be computed by coal for distance computations")
           .def_readwrite(
             "distanceResults", &GeometryData::distanceResults, "Vector of distance results.")
           .def_readwrite(
             "collisionRequests", &GeometryData::collisionRequests,
-            "Defines which information should be computed by FCL for collision computations.\n\n"
+            "Defines which information should be computed by coal for collision computations.\n\n"
             "Note: it is possible to define a security_margin and a break_distance for a collision "
             "request.\n"
             "Most likely, for robotics application, these thresholds will be different for each "
@@ -90,8 +87,17 @@ namespace pinocchio
           .def_readwrite(
             "collisionResults", &GeometryData::collisionResults, "Vector of collision results.")
           .def_readwrite(
+            "contactPatchRequests", &GeometryData::contactPatchRequests,
+            "Defines which information should be computed by coal for contact patch requests.\n")
+          .def_readwrite(
+            "contactPatchResults", &GeometryData::contactPatchResults,
+            "Vector of contact patch results.")
+          .def_readwrite(
             "collision_functors", &GeometryData::collision_functors,
             "Vector of collision functors.")
+          .def_readwrite(
+            "contact_patch_functors", &GeometryData::contact_patch_functors,
+            "Vector of contact patch functors.")
           .def_readwrite(
             "distance_functors", &GeometryData::distance_functors, "Vector of distance functors.")
           .def_readwrite(
@@ -99,7 +105,7 @@ namespace pinocchio
             "Vector of radius of bodies, i.e. the distance between the further point of the "
             "geometry object from the joint center.\n"
             "note: This radius information might be usuful in continuous collision checking")
-#endif // PINOCCHIO_WITH_HPP_FCL
+#endif // PINOCCHIO_WITH_COLLISION
 
           .def(
             "fillInnerOuterObjectMaps", &GeometryData::fillInnerOuterObjectMaps,
@@ -114,8 +120,8 @@ namespace pinocchio
           .def(
             "setGeometryCollisionStatus", &GeometryData::setGeometryCollisionStatus,
             bp::args("self", "geom_model", "geom_id", "enable_collision"),
-            "Enable or disable collision for the given geometry given by its geometry id with "
-            "all the other geometries registered in the list of collision pairs.")
+            "Enable or disable collision for the given geometry given by its geometry id with all "
+            "the other geometries registered in the list of collision pairs.")
           .def(
             "setActiveCollisionPairs", &GeometryData::setActiveCollisionPairs,
             (bp::arg("self"), bp::arg("geometry_model"), bp::arg("collision_map"),
@@ -129,14 +135,14 @@ namespace pinocchio
           .def(
             "deactivateAllCollisionPairs", &GeometryData::deactivateAllCollisionPairs,
             bp::args("self"), "Deactivate all collision pairs.")
-#ifdef PINOCCHIO_WITH_HPP_FCL
+#ifdef PINOCCHIO_WITH_COLLISION
           .def(
             "setSecurityMargins", &GeometryData::setSecurityMargins,
             (bp::arg("self"), bp::arg("geometry_model"), bp::arg("security_margin_map"),
              bp::arg("upper") = true, bp::arg("sync_distance_upper_bound") = true),
             "Set the security margin of all the collision request in a row, according to the "
             "values stored in the associative map.")
-#endif // PINOCCHIO_WITH_HPP_FCL
+#endif // PINOCCHIO_WITH_COLLISION
 
           .def(bp::self == bp::self)
           .def(bp::self != bp::self)
@@ -156,7 +162,7 @@ namespace pinocchio
             bp::no_init)
             .def(GeometryDataPythonVisitor())
             .def(PrintableVisitor<GeometryData>())
-            .def(CopyableVisitor<GeometryData>())
+            .def(::eigenpy::CopyableVisitor<GeometryData>())
             .def(SerializableVisitor<GeometryData>())
             .def(AddressVisitor<GeometryModel>());
         }
@@ -165,5 +171,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // ifndef __pinocchio_python_geometry_data_hpp__

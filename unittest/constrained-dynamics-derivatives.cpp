@@ -2,15 +2,14 @@
 // Copyright (c) 2019 INRIA
 //
 
+#include "pinocchio/multibody/sample-models.hpp"
+
 #include "pinocchio/algorithm/jacobian.hpp"
 #include "pinocchio/algorithm/rnea.hpp"
 #include "pinocchio/algorithm/rnea-derivatives.hpp"
 #include "pinocchio/algorithm/kinematics-derivatives.hpp"
 #include "pinocchio/algorithm/contact-dynamics.hpp"
 #include "pinocchio/algorithm/joint-configuration.hpp"
-#include "pinocchio/multibody/sample-models.hpp"
-
-#include <iostream>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
@@ -47,15 +46,12 @@ BOOST_AUTO_TEST_CASE(test_FD_with_contact_cst_gamma)
   forwardKinematics(model, data, q, v, VectorXd::Zero(model.nv));
   gamma_RF += data.a[RF_id].toVector(); // Jdot * qdot
 
-  PINOCCHIO_COMPILER_DIAGNOSTIC_PUSH
-  PINOCCHIO_COMPILER_DIAGNOSTIC_IGNORED_DEPRECECATED_DECLARATIONS
   forwardDynamics(model, data, q, v, tau, J_RF, gamma_RF);
-  PINOCCHIO_COMPILER_DIAGNOSTIC_POP
 
   VectorXd ddq_ref = data.ddq;
   Force::Vector6 contact_force_ref = data.lambda_c;
 
-  container::aligned_vector<Force> fext((size_t)model.njoints, Force::Zero());
+  std::vector<Force> fext((size_t)model.njoints, Force::Zero());
   fext[RF_id] = ForceRef<Force::Vector6>(contact_force_ref);
 
   // check call to RNEA
@@ -81,10 +77,7 @@ BOOST_AUTO_TEST_CASE(test_FD_with_contact_cst_gamma)
   {
     tau_plus[k] += eps;
 
-    PINOCCHIO_COMPILER_DIAGNOSTIC_PUSH
-    PINOCCHIO_COMPILER_DIAGNOSTIC_IGNORED_DEPRECECATED_DECLARATIONS
     forwardDynamics(model, data_fd, q, v, tau_plus, J_RF, gamma_RF);
-    PINOCCHIO_COMPILER_DIAGNOSTIC_POP
 
     const Data::TangentVectorType & ddq_plus = data_fd.ddq;
     Force::Vector6 contact_force_plus = data_fd.lambda_c;
@@ -114,10 +107,7 @@ BOOST_AUTO_TEST_CASE(test_FD_with_contact_cst_gamma)
   {
     v_plus[k] += eps;
 
-    PINOCCHIO_COMPILER_DIAGNOSTIC_PUSH
-    PINOCCHIO_COMPILER_DIAGNOSTIC_IGNORED_DEPRECECATED_DECLARATIONS
     forwardDynamics(model, data_fd, q, v_plus, tau, J_RF, gamma_RF);
-    PINOCCHIO_COMPILER_DIAGNOSTIC_POP
 
     const Data::TangentVectorType & ddq_plus = data_fd.ddq;
     Force::Vector6 contact_force_plus = data_fd.lambda_c;
@@ -145,10 +135,7 @@ BOOST_AUTO_TEST_CASE(test_FD_with_contact_cst_gamma)
     computeJointJacobians(model, data_fd, q_plus);
     getJointJacobian(model, data_fd, RF_id, LOCAL, J_RF);
 
-    PINOCCHIO_COMPILER_DIAGNOSTIC_PUSH
-    PINOCCHIO_COMPILER_DIAGNOSTIC_IGNORED_DEPRECECATED_DECLARATIONS
     forwardDynamics(model, data_fd, q_plus, v, tau, J_RF, gamma_RF);
-    PINOCCHIO_COMPILER_DIAGNOSTIC_POP
 
     const Data::TangentVectorType & ddq_plus = data_fd.ddq;
     Force::Vector6 contact_force_plus = data_fd.lambda_c;
@@ -199,10 +186,7 @@ VectorXd constraintDynamics(
   forwardKinematics(model, data, q, v, VectorXd::Zero(model.nv));
   gamma = data.a[id].toVector();
 
-  PINOCCHIO_COMPILER_DIAGNOSTIC_PUSH
-  PINOCCHIO_COMPILER_DIAGNOSTIC_IGNORED_DEPRECECATED_DECLARATIONS
   forwardDynamics(model, data, q, v, tau, J, gamma);
-  PINOCCHIO_COMPILER_DIAGNOSTIC_POP
 
   VectorXd res(VectorXd::Zero(model.nv + 6));
 
@@ -238,7 +222,7 @@ BOOST_AUTO_TEST_CASE(test_FD_with_contact_varying_gamma)
   VectorXd ddq_ref = x_ref.head(model.nv);
   Force::Vector6 contact_force_ref = x_ref.tail(6);
 
-  container::aligned_vector<Force> fext((size_t)model.njoints, Force::Zero());
+  std::vector<Force> fext((size_t)model.njoints, Force::Zero());
   fext[RF_id] = ForceRef<Force::Vector6>(contact_force_ref);
 
   // check call to RNEA

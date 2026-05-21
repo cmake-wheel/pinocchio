@@ -2,29 +2,23 @@
 // Copyright (c) 2016-2018 CNRS
 //
 
-#ifndef __pinocchio_default_check_hpp__
-#define __pinocchio_default_check_hpp__
+#pragma once
 
+// IWYU pragma: begin_keep
 #include <pinocchio/algorithm/check.hpp>
 #include <pinocchio/algorithm/aba.hpp>
 #include <pinocchio/algorithm/crba.hpp>
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
   /// Default checker-list, used as the default argument in Model::check().
-  inline AlgorithmCheckerList<ParentChecker, CRBAChecker, ABAChecker> makeDefaultCheckerList()
-  {
-    return makeAlgoCheckerList(ParentChecker(), CRBAChecker(), ABAChecker());
-  }
+  inline AlgorithmCheckerList<ParentChecker, CRBAChecker, ABAChecker> makeDefaultCheckerList();
 
 #define DEFAULT_CHECKERS makeDefaultCheckerList()
 
-  template<typename Scalar, int Options, template<typename, int> class JointCollectionTpl>
-  inline bool ModelTpl<Scalar, Options, JointCollectionTpl>::check() const
-  {
-    return this->check(DEFAULT_CHECKERS);
-  }
-
 } // namespace pinocchio
 
-#endif // ifndef __pinocchio_default_check_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/default-check.hxx"
+// IWYU pragma: end_exports

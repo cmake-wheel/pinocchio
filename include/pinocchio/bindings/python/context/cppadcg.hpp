@@ -2,8 +2,7 @@
 // Copyright (c) 2022 INRIA
 //
 
-#ifndef __pinocchio_python_context_cppadcg_hpp__
-#define __pinocchio_python_context_cppadcg_hpp__
+#pragma once
 
 #include "pinocchio/codegen/cppadcg.hpp"
 
@@ -34,5 +33,3 @@ namespace pinocchio
 
   } // namespace python
 } // namespace pinocchio
-
-#endif // #ifndef __pinocchio_python_context_cppadcg_hpp__

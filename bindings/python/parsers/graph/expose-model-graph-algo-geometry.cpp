@@ -7,7 +7,7 @@
 
 #include "pinocchio/bindings/python/parsers/model-graph.hpp"
 #include "pinocchio/bindings/python/utils/std-vector.hpp"
-#include "pinocchio/parsers/graph/model-graph-algo-geometry.hpp"
+#include "pinocchio/parsers/graph.hpp"
 
 namespace pinocchio
 {
@@ -23,7 +23,7 @@ namespace pinocchio
       bp::def(
         "buildGeometryModel", &buildGeometryModel,
         (bp::arg("g"), bp::arg("model"), bp::arg("type"),
-         bp::arg("mesh_loader") = ::hpp::fcl::MeshLoaderPtr()),
+         bp::arg("mesh_loader") = ::coal::MeshLoaderPtr()),
         "Build a pinocchio model based on the graph.");
     }
   } // namespace python

@@ -9,11 +9,6 @@
 
 #include <boost/python.hpp>
 
-// Boost 1.58
-#if BOOST_VERSION / 100 % 1000 == 58
-  #include <fstream>
-#endif
-
 namespace pinocchio
 {
   namespace python
@@ -32,17 +27,7 @@ namespace pinocchio
       // can update as you want.
       try
       {
-// Boost 1.58
-#if BOOST_VERSION / 100 % 1000 == 58
-        // Avoid a segv with exec_file
-        // See: https://github.com/boostorg/python/pull/15
-        std::ifstream t(filename.c_str());
-        std::stringstream buffer;
-        buffer << t.rdbuf();
-        bp::exec(buffer.str().c_str(), globals);
-#else // default implementation
         bp::exec_file((bp::str)filename, globals);
-#endif
       }
       catch (bp::error_already_set & e)
       {

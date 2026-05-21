@@ -1,9 +1,34 @@
-#include "pinocchio/codegen/cppadcg.hpp"
 
-#include <iosfwd>
-#include <pinocchio/multibody/model.hpp>
-#include <pinocchio/multibody/sample-models.hpp>
-#include <pinocchio/algorithm/rnea.hpp>
+#include "pinocchio/codegen/cppadcg.hpp"
+#include "pinocchio/autodiff/cppad.hpp"
+
+#include <Eigen/Cholesky>
+#include <Eigen/Core>
+
+#include <boost/core/ref.hpp>
+#include <boost/fusion/algorithm.hpp>
+#include <boost/fusion/functional.hpp>
+#include <boost/variant.hpp>
+
+#include <cppad/cg.hpp>
+#include <cppad/cg/support/cppadcg_eigen.hpp>
+#include <cppad/cppad.hpp>
+
+#include <iostream>
+#include <sstream>
+#include <string>
+
+#include "pinocchio/algorithm/check-data.hpp"
+#include "pinocchio/algorithm/rnea.hpp"
+#include "pinocchio/eigen-common.hpp"
+#include "pinocchio/math.hpp"
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/multibody/sample-models.hpp"
+#include "pinocchio/spatial.hpp"
+#include "pinocchio/utils/cast.hpp"
+#include "pinocchio/utils/check.hpp"
+#include "pinocchio/utils/static-if.hpp"
 
 using namespace CppAD;
 using namespace CppAD::cg;

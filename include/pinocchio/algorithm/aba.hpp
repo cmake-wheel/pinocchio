@@ -1,13 +1,31 @@
 //
-// Copyright (c) 2016-2021 CNRS INRIA
+// Copyright (c) 2016-2018 CNRS
+// Copyright (c) 2018-2024 INRIA
 //
 
-#ifndef __pinocchio_algorithm_aba_hpp__
-#define __pinocchio_algorithm_aba_hpp__
+#pragma once
 
-#include "pinocchio/multibody/model.hpp"
-#include "pinocchio/multibody/data.hpp"
+// IWYU pragma: begin_keep
+#include <Eigen/Core>
+
+#include <cassert>
+#include <vector>
+
+#include <boost/fusion/container/vector.hpp>
+
+#include "pinocchio/macros.hpp"
+#include "pinocchio/eigen-common.hpp"
+
+#include "pinocchio/math.hpp"
+
+#include "pinocchio/spatial.hpp"
+
+#include "pinocchio/multibody.hpp"
+#include "pinocchio/multibody/joint.hpp"
+#include "pinocchio/multibody/visitor.hpp"
+
 #include "pinocchio/algorithm/check.hpp"
+// IWYU pragma: end_keep
 
 namespace pinocchio
 {
@@ -75,15 +93,16 @@ namespace pinocchio
     typename ConfigVectorType,
     typename TangentVectorType1,
     typename TangentVectorType2,
-    typename ForceDerived>
+    typename SpatialForce,
+    typename SpatialForceAllocator>
   const typename DataTpl<Scalar, Options, JointCollectionTpl>::TangentVectorType & aba(
     const ModelTpl<Scalar, Options, JointCollectionTpl> & model,
     DataTpl<Scalar, Options, JointCollectionTpl> & data,
     const Eigen::MatrixBase<ConfigVectorType> & q,
     const Eigen::MatrixBase<TangentVectorType1> & v,
     const Eigen::MatrixBase<TangentVectorType2> & tau,
-    const container::aligned_vector<ForceDerived> & fext,
-    const Convention rf = Convention::LOCAL);
+    const std::vector<SpatialForce, SpatialForceAllocator> & fext,
+    const Convention convention = Convention::LOCAL);
 
   ///
   /// \brief Computes the inverse of the joint space inertia matrix using Articulated Body
@@ -130,11 +149,6 @@ namespace pinocchio
 
 } // namespace pinocchio
 
-/* --- Details -------------------------------------------------------------------- */
-#include "pinocchio/algorithm/aba.hxx"
-
-#if PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-  #include "pinocchio/algorithm/aba.txx"
-#endif // PINOCCHIO_ENABLE_TEMPLATE_INSTANTIATION
-
-#endif // ifndef __pinocchio_algorithm_aba_hpp__
+// IWYU pragma: begin_exports
+#include "pinocchio/src/algorithm/aba.hxx"
+// IWYU pragma: end_exports

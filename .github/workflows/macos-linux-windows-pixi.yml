@@ -98,7 +98,7 @@ jobs:
           key: ccache-macos-linux-conda-${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.environment }}_${{ github.sha }}
           restore-keys: ccache-macos-linux-conda-${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.environment }}_
 
-      - uses: prefix-dev/setup-pixi@v0.9.3
+      - uses: prefix-dev/setup-pixi@v0.9.5
         with:
           cache: true
           environments: ${{ matrix.environment }}
@@ -111,7 +111,7 @@ jobs:
 
       - name: Get Compilation Flags
         id: get_labels
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           LABELS: ${{ env.LABELS }}
         with:
@@ -189,14 +189,14 @@ jobs:
           key: ccache-python-standalone-macos-linux-conda-${{ matrix.os }}-${{ matrix.environment }}_${{ github.sha }}
           restore-keys: ccache-python-standalone-macos-linux-conda-${{ matrix.os }}-${{ matrix.environment }}_
 
-      - uses: prefix-dev/setup-pixi@v0.9.3
+      - uses: prefix-dev/setup-pixi@v0.9.5
         with:
           cache: true
           environments: ${{ matrix.environment }}
 
       - name: Get Compilation Flags
         id: get_labels
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           LABELS: ${{ env.LABELS }}
         with:
@@ -244,30 +244,30 @@ jobs:
         run: |
           pixi run -e ${{ matrix.environment }} ccache -sv
 
-  pinocchio-pixi-build:
-    name: Pixi build - ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+  # pinocchio-pixi-build:
+  #   name: Pixi build - ${{ matrix.os }}
+  #   runs-on: ${{ matrix.os }}
 
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, macos-15-intel, windows-latest]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-latest, macos-latest, macos-15-intel, windows-latest]
 
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: recursive
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #       with:
+  #         submodules: recursive
 
-      - uses: prefix-dev/setup-pixi@v0.9.3
-        env:
-          CMAKE_BUILD_PARALLEL_LEVEL: 2
-        with:
-          cache: true
-          environments: test-pixi-build
+  #     - uses: prefix-dev/setup-pixi@v0.9.5
+  #       env:
+  #         CMAKE_BUILD_PARALLEL_LEVEL: 2
+  #       with:
+  #         cache: true
+  #         environments: test-pixi-build
 
-      - name: Test package [MacOS/Linux/Windows]
-        run: |
-          pixi run -e test-pixi-build test
+  #     - name: Test package [MacOS/Linux/Windows]
+  #       run: |
+  #         pixi run -e test-pixi-build test
 
   pinocchio-rtsan-build:
     name: RTSan build - ${{ matrix.name }}
@@ -279,17 +279,15 @@ jobs:
         include:
           - os: ubuntu-latest
             name: Ubuntu (x86_64)
-          # FIXME: Disabling aarch64 RTSan build
-          # as static local variables uses pthread_mutex_lock()
-          # - os: macos-latest
-          #   name: MacOS (ARM64)
+          - os: macos-latest
+            name: MacOS (ARM64)
 
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
 
-      - uses: prefix-dev/setup-pixi@v0.9.3
+      - uses: prefix-dev/setup-pixi@v0.9.5
         with:
           cache: true
 
@@ -306,7 +304,7 @@ jobs:
     needs:
       - pinocchio-pixi
       - pinocchio-python-standalone-pixi
-      - pinocchio-pixi-build
+      # - pinocchio-pixi-build
       - pinocchio-rtsan-build
 
     runs-on: Ubuntu-latest

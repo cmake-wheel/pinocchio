@@ -2,11 +2,9 @@
 // Copyright (c) 2024 INRIA
 //
 
-#include <iostream>
+#include <Eigen/Core>
 
-#include <pinocchio/serialization/csv.hpp>
-
-#include <boost/variant.hpp> // to avoid C99 warnings
+#include <pinocchio/serialization.hpp>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/utility/binary.hpp>
@@ -17,7 +15,7 @@ using namespace pinocchio;
 
 BOOST_AUTO_TEST_CASE(test_random_matrix)
 {
-  const Eigen::DenseIndex mat_size = 20;
+  const Eigen::Index mat_size = 20;
   const Eigen::MatrixXd matrix = Eigen::MatrixXd::Random(mat_size, mat_size);
   toCSVfile(TEST_SERIALIZATION_FOLDER "/test.csv", matrix);
 }

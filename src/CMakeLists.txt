@@ -6,6 +6,16 @@
 # --- INCLUDE ----------------------------------------
 # ----------------------------------------------------
 
+# Deactivate inline function expansion on Windows because
+# of a compilation issue on Windows. This can create performance issue.
+# TODO Remove this when cl is patched
+if(WIN32 AND (Eigen3_VERSION VERSION_GREATER_EQUAL 5.0.0))
+    set_source_files_properties(
+        algorithm/joint-configuration.cpp
+        PROPERTIES COMPILE_OPTIONS "/Ob0"
+    )
+endif()
+
 # Create header-only target All other target will depend on it.
 add_library(${PROJECT_NAME}_headers INTERFACE)
 # On CMake 3.16, we can't target_sources(${PROJECT_NAME}_headers INTERFACE
@@ -115,6 +125,7 @@ function(PINOCCHIO_TARGET target_name)
 
     # Manage different scope type if building an interface or shared library
     set(LIBRARY_TYPE SHARED)
+
     set(LIBRARY_PUBLIC_SCOPE PUBLIC)
     if(ARGS_INTERFACE)
         set(LIBRARY_TYPE INTERFACE)
@@ -362,20 +373,25 @@ if(BUILD_WITH_COLLISION_SUPPORT)
 endif()
 
 # Define the visualizers target
-set(VISUALIZERS_LIB_NAME "${PROJECT_NAME}_visualizers")
-pinocchio_target(
-  ${VISUALIZERS_LIB_NAME}
-  SCALAR default
-  SOURCES ${${PROJECT_NAME}_VISUALIZERS_SOURCES} ${${PROJECT_NAME}_VISUALIZERS_HEADERS}
-)
-pinocchio_config(visualizers ${VISUALIZERS_LIB_NAME})
-target_link_libraries(${VISUALIZERS_LIB_NAME} PUBLIC ${PROJECT_NAME}_default)
-if(BUILD_WITH_COLLISION_SUPPORT)
-    target_compile_definitions(
-        ${VISUALIZERS_LIB_NAME}
-        PUBLIC PINOCCHIO_WITH_COLLISION
+if(PINOCCHIO_BUILD_VISUALIZERS)
+    set(VISUALIZERS_LIB_NAME "${PROJECT_NAME}_visualizers")
+    pinocchio_target(
+      ${VISUALIZERS_LIB_NAME}
+      SCALAR default
+      SOURCES ${${PROJECT_NAME}_VISUALIZERS_SOURCES} ${${PROJECT_NAME}_VISUALIZERS_HEADERS}
     )
-    target_link_libraries(${VISUALIZERS_LIB_NAME} PUBLIC coal::coal)
+    pinocchio_config(visualizers ${VISUALIZERS_LIB_NAME})
+    target_link_libraries(
+        ${VISUALIZERS_LIB_NAME}
+        PUBLIC ${PROJECT_NAME}_default
+    )
+    if(BUILD_WITH_COLLISION_SUPPORT)
+        target_compile_definitions(
+            ${VISUALIZERS_LIB_NAME}
+            PUBLIC PINOCCHIO_WITH_COLLISION
+        )
+        target_link_libraries(${VISUALIZERS_LIB_NAME} PUBLIC coal::coal)
+    endif()
 endif()
 
 # Define the parsers target.
@@ -403,7 +419,7 @@ if(BUILD_WITH_PARSERS_SUPPORT)
       ${PARSERS_LIB_NAME}
       SCOPE PUBLIC
       TARGETS Boost::filesystem
-      LIBRARIES ${Boost_FILESYSTEM_LIBRARY}}
+      LIBRARIES ${Boost_FILESYSTEM_LIBRARY}
       INCLUDE_DIRS ${Boost_INCLUDE_DIRS}
     )
 
@@ -420,6 +436,19 @@ if(BUILD_WITH_PARSERS_SUPPORT)
           TARGETS urdfdom::urdf_parser
           LIBRARIES ${urdfdom_LIBRARIES}
           INCLUDE_DIRS ${urdfdom_INCLUDE_DIRS}
+        )
+
+        # Expose urdfdom_headers version
+        string(REPLACE "." ";" _URDFDOM_H_VER "${urdfdom_headers_VERSION}")
+        list(GET _URDFDOM_H_VER 0 _URDFDOM_H_MAJOR)
+        list(GET _URDFDOM_H_VER 1 _URDFDOM_H_MINOR)
+        list(GET _URDFDOM_H_VER 2 _URDFDOM_H_PATCH)
+        target_compile_definitions(
+            ${PARSERS_LIB_NAME}
+            PUBLIC
+                PINOCCHIO_URDFDOM_HEADERS_MAJOR_VERSION=${_URDFDOM_H_MAJOR}
+                PINOCCHIO_URDFDOM_HEADERS_MINOR_VERSION=${_URDFDOM_H_MINOR}
+                PINOCCHIO_URDFDOM_HEADERS_PATCH_VERSION=${_URDFDOM_H_PATCH}
         )
     endif()
 

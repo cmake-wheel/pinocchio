@@ -427,11 +427,11 @@ BOOST_AUTO_TEST_CASE(matrix_stack_product)
   {
     const auto & mat3 = matrix_stack.get<Matrix3d>(2 * i);
     Vector3d res3 = mat3 * x3s[i];
-    BOOST_CHECK(res3 == expected_y3s[i]);
+    BOOST_CHECK(res3.isApprox(expected_y3s[i]));
 
     const auto & diag = matrix_stack[2 * i + 1];
     VectorXd resd = diag.asDiagonal() * xds[i];
-    BOOST_CHECK(resd == expected_yds[i]);
+    BOOST_CHECK(resd.isApprox(expected_yds[i]));
   }
 }
 

@@ -2,6 +2,7 @@
 // Copyright (c) 2020 INRIA
 //
 
+#include "pinocchio/bindings/python/fwd.hpp"
 #include <boost/python/tuple.hpp>
 
 #include "pinocchio/bindings/python/algorithm/algorithms.hpp"

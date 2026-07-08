@@ -77,6 +77,8 @@ namespace pinocchio
     template<typename T>
     inline void loadFromStringStream(T & object, std::istringstream & is)
     {
+      std::locale const new_loc(is.getloc(), new boost::math::nonfinite_num_get<char>);
+      is.imbue(new_loc);
       boost::archive::text_iarchive ia(is, boost::archive::no_codecvt);
       ia >> object;
     }

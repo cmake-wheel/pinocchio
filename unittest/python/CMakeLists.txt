@@ -147,6 +147,7 @@ if(urdfdom_FOUND)
         bindings_urdf
         bindings_geometry_model_urdf
         bindings_contact_inverse_dynamics
+        bindings_viser_visualizer
     )
 endif(urdfdom_FOUND)
 
@@ -205,7 +206,7 @@ else()
 endif()
 
 # TODO @jorisv: reenable these on windows when we normalize paths to lib/bin like on eigenpy
-if(NOT WIN32)
+if(NOT WIN32 AND PINOCCHIO_BUILD_VISUALIZERS)
     pinocchio_add_python_cpp_module(bindings_visualizer PIN_TARGETS pinocchio::pinocchio_visualizers)
     pinocchio_add_lib_unit_test(bindings_visualizer)
     add_subdirectory(pybind11)

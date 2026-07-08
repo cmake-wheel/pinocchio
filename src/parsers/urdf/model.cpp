@@ -109,6 +109,8 @@ namespace pinocchio
 
           Vector max_effort(1), max_velocity(1), min_config(1), max_config(1);
           Vector friction(Vector::Constant(1, 0.)), damping(Vector::Constant(1, 0.));
+          Vector min_acceleration(1), max_acceleration(1), min_jerk(1), max_jerk(1);
+
           Vector3 axis(joint->axis.x, joint->axis.y, joint->axis.z);
 
           const Scalar infty = std::numeric_limits<Scalar>::infinity();
@@ -127,10 +129,15 @@ namespace pinocchio
 
             friction = Vector::Constant(6, 0.);
             damping = Vector::Constant(6, 0.);
+            min_acceleration = Vector::Constant(6, -infty);
+            max_acceleration = Vector::Constant(6, infty);
+            min_jerk = Vector::Constant(6, -infty);
+            max_jerk = Vector::Constant(6, infty);
 
             model.addJointAndBody(
               JointType::FLOATING, axis, parentFrameId, jointPlacement, joint->name, Y, link->name,
-              max_effort, max_velocity, min_config, max_config, friction, damping);
+              -max_effort, max_effort, -max_velocity, max_velocity, min_config, max_config,
+              -friction, friction, damping, min_acceleration, max_acceleration, min_jerk, max_jerk);
             break;
 
           case ::urdf::Joint::REVOLUTE:
@@ -144,6 +151,18 @@ namespace pinocchio
               max_velocity << joint->limits->velocity;
               min_config << joint->limits->lower;
               max_config << joint->limits->upper;
+
+#if PINOCCHIO_URDFDOM_HEADERS_VERSION_AT_LEAST(3, 0, 0)
+              min_acceleration << -(joint->limits->deceleration);
+              max_acceleration << joint->limits->acceleration;
+              min_jerk << -(joint->limits->jerk);
+              max_jerk << joint->limits->jerk;
+#else
+              min_acceleration << Vector::Constant(1, -infty);
+              max_acceleration << Vector::Constant(1, infty);
+              min_jerk << Vector::Constant(1, -infty);
+              max_jerk << Vector::Constant(1, infty);
+#endif
             }
 
             if (joint->dynamics)
@@ -167,12 +186,16 @@ namespace pinocchio
 
               model.addJointAndBody(
                 JointType::MIMIC, axis, parentFrameId, jointPlacement, joint->name, Y, link->name,
-                max_effort, max_velocity, min_config, max_config, friction, damping, mimic_info);
+                -max_effort, max_effort, -max_velocity, max_velocity, min_config, max_config,
+                -friction, friction, damping, min_acceleration, max_acceleration, min_jerk,
+                max_jerk, mimic_info);
             }
             else
               model.addJointAndBody(
                 JointType::REVOLUTE, axis, parentFrameId, jointPlacement, joint->name, Y,
-                link->name, max_effort, max_velocity, min_config, max_config, friction, damping);
+                link->name, -max_effort, max_effort, -max_velocity, max_velocity, min_config,
+                max_config, -friction, friction, damping, min_acceleration, max_acceleration,
+                min_jerk, max_jerk);
             break;
 
           case ::urdf::Joint::CONTINUOUS: // Revolute joint with no joint limits
@@ -187,11 +210,26 @@ namespace pinocchio
             {
               max_effort << joint->limits->effort;
               max_velocity << joint->limits->velocity;
+#if PINOCCHIO_URDFDOM_HEADERS_VERSION_AT_LEAST(3, 0, 0)
+              min_acceleration << -(joint->limits->deceleration);
+              max_acceleration << joint->limits->acceleration;
+              min_jerk << -(joint->limits->jerk);
+              max_jerk << joint->limits->jerk;
+#else
+              min_acceleration << Vector::Constant(1, -infty);
+              max_acceleration << Vector::Constant(1, infty);
+              min_jerk << Vector::Constant(1, -infty);
+              max_jerk << Vector::Constant(1, infty);
+#endif
             }
             else
             {
               max_effort << infty;
               max_velocity << infty;
+              min_acceleration << -infty;
+              max_acceleration << infty;
+              min_jerk << -infty;
+              max_jerk << infty;
             }
 
             if (joint->dynamics)
@@ -216,12 +254,16 @@ namespace pinocchio
 
               model.addJointAndBody(
                 JointType::MIMIC, axis, parentFrameId, jointPlacement, joint->name, Y, link->name,
-                max_effort, max_velocity, min_config, max_config, friction, damping, mimic_info);
+                -max_effort, max_effort, -max_velocity, max_velocity, min_config, max_config,
+                -friction, friction, damping, min_acceleration, max_acceleration, min_jerk,
+                max_jerk, mimic_info);
             }
             else
               model.addJointAndBody(
                 JointType::CONTINUOUS, axis, parentFrameId, jointPlacement, joint->name, Y,
-                link->name, max_effort, max_velocity, min_config, max_config, friction, damping);
+                link->name, -max_effort, max_effort, -max_velocity, max_velocity, min_config,
+                max_config, -friction, friction, damping, min_acceleration, max_acceleration,
+                min_jerk, max_jerk);
 
             break;
 
@@ -236,6 +278,18 @@ namespace pinocchio
               max_velocity << joint->limits->velocity;
               min_config << joint->limits->lower;
               max_config << joint->limits->upper;
+
+#if PINOCCHIO_URDFDOM_HEADERS_VERSION_AT_LEAST(3, 0, 0)
+              min_acceleration << -(joint->limits->deceleration);
+              max_acceleration << joint->limits->acceleration;
+              min_jerk << -(joint->limits->jerk);
+              max_jerk << joint->limits->jerk;
+#else
+              min_acceleration << Vector::Constant(1, -infty);
+              max_acceleration << Vector::Constant(1, infty);
+              min_jerk << Vector::Constant(1, -infty);
+              max_jerk << Vector::Constant(1, infty);
+#endif
             }
 
             if (joint->dynamics)
@@ -259,12 +313,16 @@ namespace pinocchio
 
               model.addJointAndBody(
                 JointType::MIMIC, axis, parentFrameId, jointPlacement, joint->name, Y, link->name,
-                max_effort, max_velocity, min_config, max_config, friction, damping, mimic_info);
+                -max_effort, max_effort, -max_velocity, max_velocity, min_config, max_config,
+                -friction, friction, damping, min_acceleration, max_acceleration, min_jerk,
+                max_jerk, mimic_info);
             }
             else
               model.addJointAndBody(
                 JointType::PRISMATIC, axis, parentFrameId, jointPlacement, joint->name, Y,
-                link->name, max_effort, max_velocity, min_config, max_config, friction, damping);
+                link->name, -max_effort, max_effort, -max_velocity, max_velocity, min_config,
+                max_config, -friction, friction, damping, min_acceleration, max_acceleration,
+                min_jerk, max_jerk);
             break;
 
           case ::urdf::Joint::PLANAR:
@@ -280,9 +338,15 @@ namespace pinocchio
             friction = Vector::Constant(3, 0.);
             damping = Vector::Constant(3, 0.);
 
+            min_acceleration = Vector::Constant(3, -infty);
+            max_acceleration = Vector::Constant(3, infty);
+            min_jerk = Vector::Constant(3, -infty);
+            max_jerk = Vector::Constant(3, infty);
+
             model.addJointAndBody(
               JointType::PLANAR, axis, parentFrameId, jointPlacement, joint->name, Y, link->name,
-              max_effort, max_velocity, min_config, max_config, friction, damping);
+              -max_effort, max_effort, -max_velocity, max_velocity, min_config, max_config,
+              -friction, friction, damping, min_acceleration, max_acceleration, min_jerk, max_jerk);
             break;
 
           case ::urdf::Joint::FIXED:

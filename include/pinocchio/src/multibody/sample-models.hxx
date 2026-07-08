@@ -114,10 +114,25 @@ namespace pinocchio
         if (setRandomLimits)
           idx = model.addJoint(
             model.getJointId(parent_name), joint, placement, name + "_joint",
-            TV::Random(joint.nv(), 1) + TV::Constant(joint.nv(), 1, 1), // effort
-            TV::Random(joint.nv(), 1) + TV::Constant(joint.nv(), 1, 1), // vel
-            CV::Random(joint.nq(), 1) - CV::Constant(joint.nq(), 1, 1), // qmin
-            CV::Random(joint.nq(), 1) + CV::Constant(joint.nq(), 1, 1)  // qmax
+            TV::Random(joint.nv(), 1) - TV::Constant(joint.nv(), 1, 1), // min_effort
+            TV::Random(joint.nv(), 1) + TV::Constant(joint.nv(), 1, 1), // max_effort
+
+            TV::Random(joint.nv(), 1) - TV::Constant(joint.nv(), 1, 1), // min_velocity
+            TV::Random(joint.nv(), 1) + TV::Constant(joint.nv(), 1, 1), // max_velocity
+
+            CV::Random(joint.nq(), 1) - CV::Constant(joint.nq(), 1, 1), // min_config
+            CV::Random(joint.nq(), 1) + CV::Constant(joint.nq(), 1, 1), // max_config
+
+            CV::Random(joint.nq(), 1) + CV::Constant(joint.nq(), 1, 1), // config_limit_margin
+            TV::Random(joint.nv(), 1) - TV::Constant(joint.nv(), 1, 1), // min_friction
+            TV::Random(joint.nv(), 1) + TV::Constant(joint.nv(), 1, 1), // max_friction
+            TV::Constant(joint.nv(), 0),                                // damping
+
+            TV::Random(joint.nv(), 1) - TV::Constant(joint.nv(), 1, 1), // min_acceleration
+            TV::Random(joint.nv(), 1) + TV::Constant(joint.nv(), 1, 1), // max_acceleration
+
+            TV::Random(joint.nv(), 1) - TV::Constant(joint.nv(), 1, 1), // min_jerk
+            TV::Random(joint.nv(), 1) + TV::Constant(joint.nv(), 1, 1)  // max_jerk
           );
         else
           idx = model.addJoint(
@@ -211,10 +226,19 @@ namespace pinocchio
 
         model.lowerPositionLimit.segment(idx_q, nq).fill(qmin);
         model.upperPositionLimit.segment(idx_q, nq).fill(qmax);
+        model.positionLimitMargin.segment(idx_q, nq).fill(0);
         model.lowerVelocityLimit.segment(idx_v, nq).fill(vmax);
         model.upperVelocityLimit.segment(idx_v, nq).fill(vmax);
         model.lowerEffortLimit.segment(idx_v, nq).fill(taumax);
         model.upperEffortLimit.segment(idx_v, nq).fill(taumax);
+        model.lowerDryFrictionLimit.segment(idx_v, nq).fill(0);
+        model.upperDryFrictionLimit.segment(idx_v, nq).fill(0);
+        model.damping.segment(idx_v, nq).fill(0);
+        const Scalar inf = std::numeric_limits<Scalar>::infinity();
+        model.lowerAccelerationLimit.segment(idx_v, nq).fill(-inf);
+        model.upperAccelerationLimit.segment(idx_v, nq).fill(inf);
+        model.lowerJerkLimit.segment(idx_v, nq).fill(-inf);
+        model.upperJerkLimit.segment(idx_v, nq).fill(inf);
       }
 
 #ifdef PINOCCHIO_WITH_COLLISION

@@ -440,35 +440,45 @@ namespace pinocchio
     int it = 0;
     data.lambda_c_prox.setZero();
     const Eigen::Index constraint_size = constraint_chol.constraintDim();
-    for (; it < settings.max_iter;)
+    // Don't run solver when there is no constraints
+    if (constraint_size > 0)
     {
-      it++;
-      primal_dual_contact_solution.head(constraint_size) =
-        primal_rhs_contact + data.lambda_c_prox * settings.mu;
-      primal_dual_contact_solution.tail(model.nv) = tau - data.nle;
+      for (; it < settings.max_iter;)
+      {
+        it++;
+        primal_dual_contact_solution.head(constraint_size) =
+          primal_rhs_contact + data.lambda_c_prox * settings.mu;
+        primal_dual_contact_solution.tail(model.nv) = tau - data.nle;
+        constraint_chol.solveInPlace(primal_dual_contact_solution);
+
+        // Use data.lambda_c as tmp variable for computing the constraint residual
+        constraint_chol.getDelassusOperatorCholeskyExpression().applyOnTheRight(
+          primal_dual_contact_solution.head(constraint_size), data.lambda_c);
+        data.lambda_c -= mu * primal_dual_contact_solution.head(constraint_size)
+                         + primal_rhs_contact.head(constraint_size);
+
+        settings.absolute_residual = data.lambda_c.template lpNorm<Eigen::Infinity>();
+        settings.relative_residual =
+          (primal_dual_contact_solution.head(constraint_size) + data.lambda_c_prox)
+            .template lpNorm<Eigen::Infinity>();
+
+        data.lambda_c_prox = -primal_dual_contact_solution.head(constraint_size);
+
+        const bool convergence_criteria_reached =
+          check_expression_if_real<Scalar, false>(
+            settings.absolute_residual <= settings.absolute_accuracy)
+          || check_expression_if_real<Scalar, false>(
+            settings.relative_residual <= settings.relative_accuracy);
+        if (convergence_criteria_reached) // In the case where Scalar is not double, this will
+                                          // iterate for max_it.
+          break;
+      }
+    }
+    else
+    {
       constraint_chol.solveInPlace(primal_dual_contact_solution);
-
-      // Use data.lambda_c as tmp variable for computing the constraint residual
-      constraint_chol.getDelassusOperatorCholeskyExpression().applyOnTheRight(
-        primal_dual_contact_solution.head(constraint_size), data.lambda_c);
-      data.lambda_c -= mu * primal_dual_contact_solution.head(constraint_size)
-                       + primal_rhs_contact.head(constraint_size);
-
-      settings.absolute_residual = data.lambda_c.template lpNorm<Eigen::Infinity>();
-      settings.relative_residual =
-        (primal_dual_contact_solution.head(constraint_size) + data.lambda_c_prox)
-          .template lpNorm<Eigen::Infinity>();
-
-      data.lambda_c_prox = -primal_dual_contact_solution.head(constraint_size);
-
-      const bool convergence_criteria_reached =
-        check_expression_if_real<Scalar, false>(
-          settings.absolute_residual <= settings.absolute_accuracy)
-        || check_expression_if_real<Scalar, false>(
-          settings.relative_residual <= settings.relative_accuracy);
-      if (convergence_criteria_reached) // In the case where Scalar is not double, this will iterate
-                                        // for max_it.
-        break;
+      settings.absolute_residual = 0;
+      settings.relative_residual = 0;
     }
     settings.iter = it;
     assert(settings.iter <= settings.max_iter && "must never happened");

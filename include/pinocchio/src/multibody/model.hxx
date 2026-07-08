@@ -208,6 +208,18 @@ namespace pinocchio
     /// \brief Joint configuration limit margin
     ConfigVectorType positionLimitMargin;
 
+    /// \brief Joint acceleration lower limit
+    TangentVectorType lowerAccelerationLimit;
+
+    /// \brief Joint acceleration upper limit
+    TangentVectorType upperAccelerationLimit;
+
+    /// \brief Joint jerk lower limit
+    TangentVectorType lowerJerkLimit;
+
+    /// \brief Joint jerk upper limit
+    TangentVectorType upperJerkLimit;
+
     /// \brief Vector of operational frames registered on the model.
     FrameVector frames;
 
@@ -493,6 +505,26 @@ namespace pinocchio
       const VectorXs & min_friction,
       const VectorXs & max_friction,
       const VectorXs & damping);
+
+    JointIndex addJoint(
+      const JointIndex parent,
+      const JointModel & joint_model,
+      const SE3 & joint_placement,
+      const std::string & joint_name,
+      const VectorXs & min_effort,
+      const VectorXs & max_effort,
+      const VectorXs & min_velocity,
+      const VectorXs & max_velocity,
+      const VectorXs & min_config,
+      const VectorXs & max_config,
+      const VectorXs & config_limit_margin,
+      const VectorXs & min_friction,
+      const VectorXs & max_friction,
+      const VectorXs & damping,
+      const VectorXs & min_acceleration,
+      const VectorXs & max_acceleration,
+      const VectorXs & min_jerk,
+      const VectorXs & max_jerk);
 
     ///
     /// \copydoc ModelTpl::addJoint(const JointIndex,const JointModel &,const SE3 &,const
@@ -817,6 +849,41 @@ namespace pinocchio
     const VectorXs & max_joint_friction,
     const VectorXs & joint_damping)
   {
+    const Scalar inf = std::numeric_limits<Scalar>::infinity();
+
+    const VectorXs min_acceleration = VectorXs::Constant(joint_model.nv(), -inf);
+    const VectorXs max_acceleration = VectorXs::Constant(joint_model.nv(), inf);
+    const VectorXs min_jerk = VectorXs::Constant(joint_model.nv(), -inf);
+    const VectorXs max_jerk = VectorXs::Constant(joint_model.nv(), inf);
+
+    return addJoint(
+      parent, joint_model, joint_placement, joint_name, min_effort, max_effort, min_velocity,
+      max_velocity, min_config, max_config, config_limit_margin, min_joint_friction,
+      max_joint_friction, joint_damping, min_acceleration, max_acceleration, min_jerk, max_jerk);
+  }
+
+  template<typename Scalar, int Options, template<typename, int> class JointCollectionTpl>
+  typename ModelTpl<Scalar, Options, JointCollectionTpl>::JointIndex
+  ModelTpl<Scalar, Options, JointCollectionTpl>::addJoint(
+    const JointIndex parent,
+    const JointModel & joint_model,
+    const SE3 & joint_placement,
+    const std::string & joint_name,
+    const VectorXs & min_effort,
+    const VectorXs & max_effort,
+    const VectorXs & min_velocity,
+    const VectorXs & max_velocity,
+    const VectorXs & min_config,
+    const VectorXs & max_config,
+    const VectorXs & config_limit_margin,
+    const VectorXs & min_joint_friction,
+    const VectorXs & max_joint_friction,
+    const VectorXs & joint_damping,
+    const VectorXs & min_acceleration,
+    const VectorXs & max_acceleration,
+    const VectorXs & min_jerk,
+    const VectorXs & max_jerk)
+  {
     assert(
       (njoints == (int)joints.size()) && (njoints == (int)inertias.size())
       && (njoints == (int)parents.size()) && (njoints == (int)jointPlacements.size()));
@@ -912,6 +979,14 @@ namespace pinocchio
       jmodel.jointConfigSelector(upperPositionLimit) = max_config;
       positionLimitMargin.conservativeResize(nq);
       jmodel.jointConfigSelector(positionLimitMargin) = config_limit_margin;
+      lowerAccelerationLimit.conservativeResize(nv);
+      jmodel.jointVelocitySelector(lowerAccelerationLimit) = min_acceleration;
+      upperAccelerationLimit.conservativeResize(nv);
+      jmodel.jointVelocitySelector(upperAccelerationLimit) = max_acceleration;
+      lowerJerkLimit.conservativeResize(nv);
+      jmodel.jointVelocitySelector(lowerJerkLimit) = min_jerk;
+      upperJerkLimit.conservativeResize(nv);
+      jmodel.jointVelocitySelector(upperJerkLimit) = max_jerk;
 
       armature.conservativeResize(nv);
       jmodel.jointVelocitySelector(armature).setZero();
@@ -1164,6 +1239,10 @@ namespace pinocchio
     res.lowerPositionLimit = lowerPositionLimit.template cast<NewScalar>();
     res.upperPositionLimit = upperPositionLimit.template cast<NewScalar>();
     res.positionLimitMargin = positionLimitMargin.template cast<NewScalar>();
+    res.lowerAccelerationLimit = lowerAccelerationLimit.template cast<NewScalar>();
+    res.upperAccelerationLimit = upperAccelerationLimit.template cast<NewScalar>();
+    res.lowerJerkLimit = lowerJerkLimit.template cast<NewScalar>();
+    res.upperJerkLimit = upperJerkLimit.template cast<NewScalar>();
 
     typename ConfigVectorMap::const_iterator it;
     for (it = referenceConfigurations.begin(); it != referenceConfigurations.end(); it++)
@@ -1237,6 +1316,10 @@ namespace pinocchio
     this->lowerPositionLimit = other.lowerPositionLimit;
     this->upperPositionLimit = other.upperPositionLimit;
     this->positionLimitMargin = other.positionLimitMargin;
+    this->lowerAccelerationLimit = other.lowerAccelerationLimit;
+    this->upperAccelerationLimit = other.upperAccelerationLimit;
+    this->upperJerkLimit = other.upperJerkLimit;
+    this->lowerJerkLimit = other.lowerJerkLimit;
     this->frames = other.frames;
     this->supports = other.supports;
     this->subtrees = other.subtrees;
@@ -1353,6 +1436,22 @@ namespace pinocchio
     if (other.positionLimitMargin.size() != positionLimitMargin.size())
       return false;
     res &= other.positionLimitMargin == positionLimitMargin;
+
+    if (other.lowerAccelerationLimit.size() != lowerAccelerationLimit.size())
+      return false;
+    res &= other.lowerAccelerationLimit == lowerAccelerationLimit;
+
+    if (other.upperAccelerationLimit.size() != upperAccelerationLimit.size())
+      return false;
+    res &= other.upperAccelerationLimit == upperAccelerationLimit;
+
+    if (other.lowerJerkLimit.size() != lowerJerkLimit.size())
+      return false;
+    res &= other.lowerJerkLimit == lowerJerkLimit;
+
+    if (other.upperJerkLimit.size() != upperJerkLimit.size())
+      return false;
+    res &= other.upperJerkLimit == upperJerkLimit;
 
     if (!res)
       return res;

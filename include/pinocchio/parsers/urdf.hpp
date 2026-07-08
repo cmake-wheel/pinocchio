@@ -23,6 +23,16 @@
 
 #include "pinocchio/macros.hpp"
 
+// clang-format off
+#define PINOCCHIO_URDFDOM_HEADERS_VERSION_AT_LEAST(major, minor, patch)      \
+  (PINOCCHIO_URDFDOM_HEADERS_MAJOR_VERSION > (major)                         \
+   || (PINOCCHIO_URDFDOM_HEADERS_MAJOR_VERSION == (major)                    \
+       && PINOCCHIO_URDFDOM_HEADERS_MINOR_VERSION > (minor))                 \
+   || (PINOCCHIO_URDFDOM_HEADERS_MAJOR_VERSION == (major)                    \
+       && PINOCCHIO_URDFDOM_HEADERS_MINOR_VERSION == (minor)                 \
+       && PINOCCHIO_URDFDOM_HEADERS_PATCH_VERSION >= (patch)))
+// clang-format on
+
 #include "pinocchio/spatial.hpp"
 #include "pinocchio/multibody.hpp"
 #include "pinocchio/geometry.hpp"

@@ -1,6 +1,6 @@
 [workspace]
 name = "pinocchio"
-version = "4.0.0"
+version = "4.1.0"
 description = "A fast and flexible implementation of Rigid Body Dynamics algorithms and their analytical derivatives"
 platforms = ["linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64"]
 channels = ["conda-forge"]
@@ -186,7 +186,7 @@ dependencies = { coal = ">=3" }
 activation = { env = { PINOCCHIO_COLLISION_SUPPORT = "ON" } }
 
 [feature.sdf]
-dependencies = { libsdformat = ">=9.8, <15" }
+dependencies = { libsdformat = ">=9.8", libgz-math = "*" }
 activation = { env = { PINOCCHIO_SDF_SUPPORT = "ON" } }
 
 [feature.casadi]

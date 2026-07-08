@@ -1040,7 +1040,7 @@ Use this checklist to track your implementation progress:
 ## Additional Resources
 
 - **Featherstone's Book**: *Rigid Body Dynamics Algorithms* (2008) - The definitive reference for spatial algebra
-- **Pinocchio Documentation**: https://gepettoweb.laas.fr/doc/stack-of-tasks/pinocchio/master/doxygen-html/
+- **Pinocchio Documentation**: https://gepetto.github.io/doc/pinocchio/doxygen-html/
 - **Existing Joint Implementations**: Study `joint-revolute.hpp`, `joint-spherical-ZYX.hpp`, `joint-free-flyer.hpp` for examples
 - **SymPy for symbolic math**: https://www.sympy.org/
 

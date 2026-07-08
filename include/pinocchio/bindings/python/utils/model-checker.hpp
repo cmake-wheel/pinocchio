@@ -32,8 +32,8 @@ namespace pinocchio
         // Convert the object to a tuple
         boost::python::tuple py_args = boost::python::extract<boost::python::tuple>(args);
 
-        context::Model m = boost::python::extract<context::Model>(py_args[model_arg_list_idx]);
-        if (!m.check(MimicChecker()))
+        boost::python::extract<const context::Model &> get_model(py_args[model_arg_list_idx]);
+        if (!get_model().check(MimicChecker()))
         {
           PyErr_SetString(PyExc_RuntimeError, m_error_message.c_str());
           return false;

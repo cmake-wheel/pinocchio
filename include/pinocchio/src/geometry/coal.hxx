@@ -13,7 +13,7 @@
 
 #ifdef PINOCCHIO_WITH_COLLISION
 
-  #if (WIN32)
+  #ifdef _WIN32
     // It appears that std::snprintf is missing for Windows.
     #if !(                                                                                         \
       (defined(_MSC_VER) && _MSC_VER < 1900)                                                       \

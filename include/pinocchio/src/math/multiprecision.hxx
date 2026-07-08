@@ -115,9 +115,19 @@ namespace Eigen
     }
 
   #if EIGEN_VERSION_AT_LEAST(3, 4, 90)
-    EIGEN_DEVICE_FUNC EIGEN_CONSTEXPR static inline inline int max_digits10()
+    EIGEN_DEVICE_FUNC EIGEN_CONSTEXPR static inline int max_digits10()
     {
       return internal::default_max_digits10_impl<Real>::run();
+    }
+
+    EIGEN_DEVICE_FUNC EIGEN_CONSTEXPR static inline Real infinity()
+    {
+      return std::numeric_limits<Real>::infinity();
+    }
+
+    EIGEN_DEVICE_FUNC EIGEN_CONSTEXPR static inline Real quiet_NaN()
+    {
+      return std::numeric_limits<Real>::quiet_NaN();
     }
   #endif
   };

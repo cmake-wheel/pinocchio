@@ -30,6 +30,7 @@ set(CMAKE_VERBOSE_MAKEFILE True)
 # Need to be set before including base.cmake
 # ----------------------------------------------------
 option(INSTALL_DOCUMENTATION "Generate and install the documentation" OFF)
+option(PINOCCHIO_DOXYGEN_USE_MATHJAX "Avoid latex at build time" OFF)
 
 # Check if the submodule cmake have been initialized
 set(JRL_CMAKE_MODULES "${CMAKE_CURRENT_LIST_DIR}/cmake")
@@ -62,7 +63,9 @@ else()
     endif()
 endif()
 
-set(DOXYGEN_USE_MATHJAX YES)
+if(PINOCCHIO_DOXYGEN_USE_MATHJAX)
+    set(DOXYGEN_USE_MATHJAX YES)
+endif()
 
 # ----------------------------------------------------
 # --- Policy -----------------------------------------
@@ -231,6 +234,15 @@ option(
     "Use and install deprecated headers"
     ON
 )
+
+# PCH and ccache doesn't play well together so we deactivate
+# PCH use by default
+option(
+    PINOCCHIO_BUILD_BINDING_WITH_PCH
+    "Use PCH to accelerate binding build"
+    OFF
+)
+option(PINOCCHIO_BUILD_VISUALIZERS "Build the pinocchio visualizers library" ON)
 
 set(PINOCCHIO_MODEL_DIR "${PROJECT_SOURCE_DIR}/models")
 if(BUILD_BENCHMARK OR BUILD_EXAMPLES OR BUILD_TESTING)

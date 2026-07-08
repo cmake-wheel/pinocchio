@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <boost/python.hpp>
 #include <boost/python/class.hpp>
 #include <boost/python/scope.hpp>
 

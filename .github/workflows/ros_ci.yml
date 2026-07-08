@@ -53,17 +53,19 @@ jobs:
       # Note, this does not affect projects that do not have pure CMake projects in their upstream_ws.
       AFTER_RUN_TARGET_TEST: ici_with_unset_variables source /root/target_ws/install/setup.bash && cd /root/target_ws/build/pinocchio && make test
       IMMEDIATE_TEST_OUTPUT: 1
+      VERBOSE_OUTPUT: true
+      VERBOSE_TESTS: true
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       # This step will fetch/store the directory used by ccache before/after the ci run
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: ${{ env.CCACHE_DIR }}
           key: ccache-${{ matrix.env.ROS_DISTRO }}-${{ github.sha }}
           restore-keys: ccache-${{ matrix.env.ROS_DISTRO }}-
       # Run industrial_ci
-      - uses: 'ros-industrial/industrial_ci@0f4bd2d1b926eac95fd6bc5bd1fcb3051a6e927d'
+      - uses: 'ros-industrial/industrial_ci@125164b9f1883cdf1858897a7146d1bebf2be5c6'
         env: ${{ matrix.env }}

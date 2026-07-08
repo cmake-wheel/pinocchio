@@ -62,6 +62,10 @@ namespace boost
       ar & make_nvp("lowerPositionLimit", model.lowerPositionLimit);
       ar & make_nvp("upperPositionLimit", model.upperPositionLimit);
       ar & make_nvp("positionLimitMargin", model.positionLimitMargin);
+      ar & make_nvp("lowerAccelerationLimit", model.lowerAccelerationLimit);
+      ar & make_nvp("upperAccelerationLimit", model.upperAccelerationLimit);
+      ar & make_nvp("lowerJerkLimit", model.lowerJerkLimit);
+      ar & make_nvp("upperJerkLimit", model.upperJerkLimit);
 
       ar & make_nvp("inertias", model.inertias);
       ar & make_nvp("jointPlacements", model.jointPlacements);

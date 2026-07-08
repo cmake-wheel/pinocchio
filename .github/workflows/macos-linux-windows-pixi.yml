@@ -66,11 +66,11 @@ jobs:
             BUILD_ADVANCED_TESTING: OFF
           - os: macos-15-intel
             BUILD_ADVANCED_TESTING: OFF
-          - os: windows-latest
+          - os: windows-2022
             environment: all
             build_type: Release
             BUILD_ADVANCED_TESTING: OFF
-          - os: windows-latest
+          - os: windows-2022
             environment: all-clang-cl
             build_type: Release
             BUILD_ADVANCED_TESTING: OFF
@@ -87,18 +87,18 @@ jobs:
             echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.BRANCH_NAME }}
           submodules: recursive
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: .ccache
           key: ccache-macos-linux-conda-${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.environment }}_${{ github.sha }}
           restore-keys: ccache-macos-linux-conda-${{ matrix.os }}-${{ matrix.build_type }}-${{ matrix.environment }}_
 
-      - uses: prefix-dev/setup-pixi@v0.9.5
+      - uses: prefix-dev/setup-pixi@v0.10.0
         with:
           cache: true
           environments: ${{ matrix.environment }}
@@ -163,7 +163,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel, windows-latest]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel, windows-2022]
         environment: [all]
 
     steps:
@@ -178,18 +178,18 @@ jobs:
             echo "BRANCH_NAME=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
           fi
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.BRANCH_NAME }}
           submodules: recursive
 
-      - uses: actions/cache@v5
+      - uses: actions/cache@v6
         with:
           path: .ccache
           key: ccache-python-standalone-macos-linux-conda-${{ matrix.os }}-${{ matrix.environment }}_${{ github.sha }}
           restore-keys: ccache-python-standalone-macos-linux-conda-${{ matrix.os }}-${{ matrix.environment }}_
 
-      - uses: prefix-dev/setup-pixi@v0.9.5
+      - uses: prefix-dev/setup-pixi@v0.10.0
         with:
           cache: true
           environments: ${{ matrix.environment }}
@@ -251,14 +251,14 @@ jobs:
   #   strategy:
   #     fail-fast: false
   #     matrix:
-  #       os: [ubuntu-latest, macos-latest, macos-15-intel, windows-latest]
+  #       os: [ubuntu-latest, macos-latest, macos-15-intel, windows-2022]
 
   #   steps:
-  #     - uses: actions/checkout@v6
+  #     - uses: actions/checkout@v7
   #       with:
   #         submodules: recursive
 
-  #     - uses: prefix-dev/setup-pixi@v0.9.5
+  #     - uses: prefix-dev/setup-pixi@v0.10.0
   #       env:
   #         CMAKE_BUILD_PARALLEL_LEVEL: 2
   #       with:
@@ -283,11 +283,11 @@ jobs:
             name: MacOS (ARM64)
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
-      - uses: prefix-dev/setup-pixi@v0.9.5
+      - uses: prefix-dev/setup-pixi@v0.10.0
         with:
           cache: true
 

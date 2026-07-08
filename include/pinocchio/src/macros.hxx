@@ -109,7 +109,7 @@
 
 #define PINOCCHIO_MAYBE_UNUSED [[maybe_unused]]
 
-#ifdef WIN32
+#ifdef _WIN32
   #define PINOCCHIO_FUNCTION_NAME __FUNCTION__
 #else
   #define PINOCCHIO_FUNCTION_NAME __func__
@@ -151,7 +151,7 @@
       _Pragma("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
     #define PINOCCHIO_COMPILER_DIAGNOSTIC_IGNORED_SELF_ASSIGN_OVERLOADED
   #endif
-#elif defined(WIN32)
+#elif defined(_WIN32)
   #define PINOCCHIO_COMPILER_DIAGNOSTIC_PUSH _Pragma("warning(push)")
   #define PINOCCHIO_COMPILER_DIAGNOSTIC_POP _Pragma("warning(pop)")
   #define PINOCCHIO_COMPILER_DIAGNOSTIC_IGNORED_DEPRECECATED_DECLARATIONS                          \
@@ -177,7 +177,7 @@
 PINOCCHIO_COMPILER_DIAGNOSTIC_PUSH
 PINOCCHIO_COMPILER_DIAGNOSTIC_IGNORED_VARIADIC_MACROS
 
-#if WIN32
+#ifdef _WIN32
   #define PINOCCHIO_PRETTY_FUNCTION __FUNCSIG__
 #else
   #define PINOCCHIO_PRETTY_FUNCTION __PRETTY_FUNCTION__

@@ -10,6 +10,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-07-07
+
+### Added
+
+- URDF v1.2 support ([#2909](https://github.com/stack-of-tasks/pinocchio/pull/2909)):
+  - Capsule geometry parsed directly as `CAPSULE` collision/visual shape
+  - Extended joint limits: `acceleration`, `jerk` read from URDF v1.2 `<limit>` element
+    - New `ModelTpl` fields: `lowerAccelerationLimit`, `upperAccelerationLimit`, `lowerJerkLimit`, `upperJerkLimit`
+    (tangent-space vectors, default -inf/+inf)
+    - Extended `ModelTpl::addJoint` overload to accept `min_acceleration`, `max_acceleration`, `min_jerk`, `max_jerk` parameters
+- Add `PINOCCHIO_BUILD_BINDING_WITH_PCH` CMake option to use PCH to build Python bindings (default OFF) ([#2886](https://github.com/stack-of-tasks/pinocchio/pull/2886))
+- Add PINOCCHIO_BUILD_VISUALIZERS option ([#2900](https://github.com/stack-of-tasks/pinocchio/pull/2900))
+
+### Fixed
+
+- Use _WIN32 definition instead of WIN32 ([#2900](https://github.com/stack-of-tasks/pinocchio/pull/2900))
+- Remove extra `}` in modernize_target_link_libraries function ([#2900](https://github.com/stack-of-tasks/pinocchio/pull/2900))
+- Fix `loadFromStringStream` unable to parse `-inf/+inf` values (broke Python pickle of models with acceleration/jerk limits) ([#2909](https://github.com/stack-of-tasks/pinocchio/pull/2909))
+- Fix Viser visualizer: apply URDF `<mesh scale>` to mesh vertices instead of scaling the link translation ([#2878](https://github.com/stack-of-tasks/pinocchio/pull/2878))
+- Fix build issue with g++ 12 ([#2890](https://github.com/stack-of-tasks/pinocchio/pull/2890))
+- Fix useless memory allocation in Python checkers ([#2897](https://github.com/stack-of-tasks/pinocchio/pull/2897) and [#2907](https://github.com/stack-of-tasks/pinocchio/pull/2907))
+- Fix Eigen 5 support ([#2886](https://github.com/stack-of-tasks/pinocchio/pull/2886))
+
+### Changed
+
+- nix: switch to flakoboros ([#2882](https://github.com/stack-of-tasks/pinocchio/pull/2882))
+- CMake: optionalize `DOXYGEN_USE_MATHJAX` (default to OFF) ([#2915](https://github.com/stack-of-tasks/pinocchio/pull/2915))
+
+
 ## [4.0.0] - 2026-04-13
 
 ### Highlights
@@ -79,6 +108,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Add `internal::matrix_product` in `math.hpp`
 - Add `internal::matrix_inversion` in `math.hpp`
 - Add `internal::matrix_inversion_code_generated` in `math.hpp`
+- Add support to `libsdformat` > 14
 
 ### Changed
 - C++17 is now the minimal supported version of the C++ standard. Check [cppreference](https://en.cppreference.com/w/cpp/compiler_support/17) to see if your compiler supports it.
@@ -1360,7 +1390,8 @@ The model can either be parsed from a URDF format or be created by appendending 
         • Fixed (concatenation of two consecutive bodies)
 
 
-[Unreleased]: https://github.com/stack-of-tasks/pinocchio/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/stack-of-tasks/pinocchio/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/stack-of-tasks/pinocchio/compare/v4.0.0...v4.1.0
 [4.0.0]: https://github.com/stack-of-tasks/pinocchio/compare/v3.9.0...v4.0.0
 [3.9.0]: https://github.com/stack-of-tasks/pinocchio/compare/v3.8.0...v3.9.0
 [3.8.0]: https://github.com/stack-of-tasks/pinocchio/compare/v3.7.0...v3.8.0

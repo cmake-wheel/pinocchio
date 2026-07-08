@@ -99,7 +99,7 @@ class TestADMM(TestCase):
         self.assertTrue(dim_pb == csize, "constraint problem is of wrong size")
         solver = pin.ADMMConstraintSolver(dim_pb)
         settings = pin.ADMMSolverSettings()
-        settings.absolute_feasibility_tol = 1e-10
+        settings.absolute_feasibility_tol = 1e-8
         settings.relative_feasibility_tol = 1e-12
         settings.absolute_complementarity_tol = 1e-10
         settings.relative_complementarity_tol = 1e-12

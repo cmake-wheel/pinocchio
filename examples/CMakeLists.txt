@@ -54,7 +54,7 @@ function(ADD_PINOCCHIO_CPP_EXAMPLE EXAMPLE)
           ${EXAMPLE_NAME}
           SCOPE PRIVATE
           TARGETS Boost::filesystem
-          LIBRARIES ${Boost_FILESYSTEM_LIBRARY}}
+          LIBRARIES ${Boost_FILESYSTEM_LIBRARY}
           INCLUDE_DIRS ${Boost_INCLUDE_DIRS}
         )
 

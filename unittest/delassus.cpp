@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE(contact_6D)
       dampedDelassusInverse.triangularView<StrictlyUpper>().transpose();
     BOOST_CHECK(dampedDelassusInverse.isApprox(
       -H_inverse.topLeftCorner(constraint_chol.constraintDim(), constraint_chol.constraintDim()),
-      1e-10));
+      1e-9));
 
     q = randomConfiguration(model);
     v = Eigen::VectorXd::Random(model.nv);

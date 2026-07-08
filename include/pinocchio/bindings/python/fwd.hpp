@@ -6,6 +6,7 @@
 #pragma once
 
 #include "pinocchio/bindings/python/context.hpp"
+#include <boost/python.hpp>
 #include <eigenpy/eigenpy.hpp>
 
 #include <memory>

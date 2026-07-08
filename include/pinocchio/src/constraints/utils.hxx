@@ -943,12 +943,12 @@ namespace pinocchio
         PINOCCHIO_UNUSED_VARIABLE(dispatcher);
 
         // For some reason this assert is always evaluated when building
-        // with g++ 11.
-        // TODO Remove when Ubuntu 22.04 is no more supported.
-#if !defined(__GNUC__) || __GNUC__ >= 12
+        // with g++ 11 and 12.
+        // TODO Remove when Ubuntu 22.04 and Debian 12 (ROS) is no more supported.
+#if !defined(__GNUC__) || __GNUC__ >= 13
         static_assert(
           false, "ComputeBlockDiagonalPatternImpl not implemented for this constraint.");
-#endif // !defined(__GNUC__) || __GNUC__ >= 12
+#endif // !defined(__GNUC__) || __GNUC__ >= 13
       }
     };
 

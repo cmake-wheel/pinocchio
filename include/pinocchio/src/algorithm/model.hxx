@@ -217,7 +217,11 @@ namespace pinocchio
           jmodel_in.jointConfigSelector(modelAB.positionLimitMargin),
           jmodel_in.jointVelocitySelector(modelAB.lowerDryFrictionLimit),
           jmodel_in.jointVelocitySelector(modelAB.upperDryFrictionLimit),
-          jmodel_in.jointVelocitySelector(modelAB.damping));
+          jmodel_in.jointVelocitySelector(modelAB.damping),
+          jmodel_in.jointVelocitySelector(modelAB.lowerAccelerationLimit),
+          jmodel_in.jointVelocitySelector(modelAB.upperAccelerationLimit),
+          jmodel_in.jointVelocitySelector(modelAB.lowerJerkLimit),
+          jmodel_in.jointVelocitySelector(modelAB.upperJerkLimit));
         assert(joint_id_out < model.joints.size());
 
         model.appendBodyToJoint(joint_id_out, modelAB.inertias[joint_id_in]);
@@ -228,7 +232,6 @@ namespace pinocchio
           jmodel_in.jointVelocitySelector(modelAB.rotorInertia);
         jmodel_out.jointVelocitySelector(model.rotorGearRatio) =
           jmodel_in.jointVelocitySelector(modelAB.rotorGearRatio);
-
         // Add all frames whose parent is this joint.
         for (FrameIndex fid = 1; fid < modelAB.frames.size(); ++fid)
         {
@@ -238,7 +241,6 @@ namespace pinocchio
             PINOCCHIO_CHECK_INPUT_ARGUMENT(
               !model.existFrame(frame.name, frame.type),
               "The two models have conflicting frame names.");
-
             frame.parentJoint = joint_id_out;
             assert(frame.parentFrame > 0 || frame.type == JOINT);
             if (frame.parentFrame != 0)
@@ -664,7 +666,11 @@ namespace pinocchio
             mimic_joint.jointVelocitySelector(input_model.positionLimitMargin),
             mimic_joint.jointVelocitySelector(input_model.lowerDryFrictionLimit),
             mimic_joint.jointVelocitySelector(input_model.upperDryFrictionLimit),
-            mimic_joint.jointVelocitySelector(input_model.damping));
+            mimic_joint.jointVelocitySelector(input_model.damping),
+            mimic_joint.jointVelocitySelector(input_model.lowerAccelerationLimit),
+            mimic_joint.jointVelocitySelector(input_model.upperAccelerationLimit),
+            mimic_joint.jointVelocitySelector(input_model.lowerJerkLimit),
+            mimic_joint.jointVelocitySelector(input_model.upperJerkLimit));
         }
         else
         {
@@ -681,7 +687,11 @@ namespace pinocchio
             joint_input_model.jointConfigSelector(input_model.positionLimitMargin),
             joint_input_model.jointVelocitySelector(input_model.lowerDryFrictionLimit),
             joint_input_model.jointVelocitySelector(input_model.upperDryFrictionLimit),
-            joint_input_model.jointVelocitySelector(input_model.damping));
+            joint_input_model.jointVelocitySelector(input_model.damping),
+            joint_input_model.jointVelocitySelector(input_model.lowerAccelerationLimit),
+            joint_input_model.jointVelocitySelector(input_model.upperAccelerationLimit),
+            joint_input_model.jointVelocitySelector(input_model.lowerJerkLimit),
+            joint_input_model.jointVelocitySelector(input_model.upperJerkLimit));
         }
         // Append inertia
         reduced_model.appendBodyToJoint(
@@ -907,6 +917,10 @@ namespace pinocchio
     output_model.lowerDryFrictionLimit.resize(nv);
     output_model.upperDryFrictionLimit.resize(nv);
     output_model.damping.resize(nv);
+    output_model.lowerAccelerationLimit.resize(nv);
+    output_model.upperAccelerationLimit.resize(nv);
+    output_model.lowerJerkLimit.resize(nv);
+    output_model.upperJerkLimit.resize(nv);
 
     // Move indexes and limits
     for (JointIndex joint_id = 1; joint_id < (JointIndex)index_mimicking; ++joint_id)
@@ -929,6 +943,15 @@ namespace pinocchio
         jmodel_input.jointConfigSelector(input_model.upperPositionLimit);
       jmodel_output.jointConfigSelector(output_model.positionLimitMargin) =
         jmodel_input.jointConfigSelector(input_model.positionLimitMargin);
+
+      jmodel_output.jointVelocitySelector(output_model.lowerAccelerationLimit) =
+        jmodel_input.jointVelocitySelector(input_model.lowerAccelerationLimit);
+      jmodel_output.jointVelocitySelector(output_model.upperAccelerationLimit) =
+        jmodel_input.jointVelocitySelector(input_model.upperAccelerationLimit);
+      jmodel_output.jointVelocitySelector(output_model.lowerJerkLimit) =
+        jmodel_input.jointVelocitySelector(input_model.lowerJerkLimit);
+      jmodel_output.jointVelocitySelector(output_model.upperJerkLimit) =
+        jmodel_input.jointVelocitySelector(input_model.upperJerkLimit);
 
       jmodel_output.jointVelocitySelector(output_model.armature) =
         jmodel_input.jointVelocitySelector(input_model.armature);
@@ -988,6 +1011,15 @@ namespace pinocchio
           jmodel_input.jointConfigSelector(input_model.upperPositionLimit);
         jmodel_output.jointConfigSelector(output_model.positionLimitMargin) =
           jmodel_input.jointConfigSelector(input_model.positionLimitMargin);
+
+        jmodel_output.jointVelocitySelector(output_model.lowerAccelerationLimit) =
+          jmodel_input.jointVelocitySelector(input_model.lowerAccelerationLimit);
+        jmodel_output.jointVelocitySelector(output_model.upperAccelerationLimit) =
+          jmodel_input.jointVelocitySelector(input_model.upperAccelerationLimit);
+        jmodel_output.jointVelocitySelector(output_model.lowerJerkLimit) =
+          jmodel_input.jointVelocitySelector(input_model.lowerJerkLimit);
+        jmodel_output.jointVelocitySelector(output_model.upperJerkLimit) =
+          jmodel_input.jointVelocitySelector(input_model.upperJerkLimit);
 
         jmodel_output.jointVelocitySelector(output_model.armature) =
           jmodel_input.jointVelocitySelector(input_model.armature);

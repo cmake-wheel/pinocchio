@@ -1070,9 +1070,12 @@ namespace pinocchio
         const auto rhs_block = rhs.middleRows(row_id, block_size);
         auto res_block = res.middleRows(row_id, block_size);
 
+        // This operation should work on null matrix.
+        // Assert is then deactivated if one matrix is null.
         assert(
-          rhs_block.data() != res_block.data()
-          && "There is aliasing between rhs_block and res_block.");
+          (rhs_block.data() == nullptr) || (res_block.data() == nullptr)
+          || (rhs_block.data() != res_block.data())
+               && "There is aliasing between rhs_block and res_block.");
 
         switch (block_info.type())
         {
@@ -1165,9 +1168,12 @@ namespace pinocchio
         const auto lhs_block = lhs.middleCols(col_id, block_size);
         auto res_block = res.middleCols(col_id, block_size);
 
+        // This operation should work on null matrix.
+        // Assert is then deactivated if one matrix is null.
         assert(
-          lhs_block.data() != res_block.data()
-          && "There is aliasing between lhs_block and res_block.");
+          (lhs_block.data() == nullptr) || (res_block.data() == nullptr)
+          || (lhs_block.data() != res_block.data())
+               && "There is aliasing between lhs_block and res_block.");
 
         switch (block_info.type())
         {

@@ -227,6 +227,80 @@ namespace pinocchio
           const VectorConstRef & damping,
           const boost::optional<MimicInfo> & mimic_info = boost::none)
         {
+          const Scalar inf = std::numeric_limits<Scalar>::infinity();
+
+          const Vector min_acceleration = Vector::Constant(min_velocity.size(), -inf);
+
+          const Vector max_acceleration = Vector::Constant(min_velocity.size(), inf);
+
+          const Vector min_jerk = Vector::Constant(min_velocity.size(), -inf);
+
+          const Vector max_jerk = Vector::Constant(min_velocity.size(), inf);
+
+          addJointAndBody(
+            type, axis, parentFrameId, placement, joint_name, Y, frame_placement, body_name,
+            min_effort, max_effort, min_velocity, max_velocity, min_config, max_config,
+            config_limit_margin, min_dry_friction, max_dry_friction, damping, min_acceleration,
+            max_acceleration, min_jerk, max_jerk, mimic_info);
+        }
+
+        void addJointAndBody(
+          JointType type,
+          const Vector3 & axis,
+          const FrameIndex & parentFrameId,
+          const SE3 & placement,
+          const std::string & joint_name,
+          const Inertia & Y,
+          const std::string & body_name,
+          const VectorConstRef & min_effort,
+          const VectorConstRef & max_effort,
+          const VectorConstRef & min_velocity,
+          const VectorConstRef & max_velocity,
+          const VectorConstRef & min_config,
+          const VectorConstRef & max_config,
+          const VectorConstRef & min_dry_friction,
+          const VectorConstRef & max_dry_friction,
+          const VectorConstRef & damping,
+          const VectorConstRef & min_acceleration,
+          const VectorConstRef & max_acceleration,
+          const VectorConstRef & min_jerk,
+          const VectorConstRef & max_jerk,
+          const boost::optional<MimicInfo> & mimic_info = boost::none)
+        {
+          const Vector config_limit_margin =
+            Vector::Constant(max_config.size(), static_cast<Scalar>(0));
+          addJointAndBody(
+            type, axis, parentFrameId, placement, joint_name, Y, SE3::Identity(), body_name,
+            min_effort, max_effort, min_velocity, max_velocity, min_config, max_config,
+            config_limit_margin, min_dry_friction, max_dry_friction, damping, min_acceleration,
+            max_acceleration, min_jerk, max_jerk, mimic_info);
+        }
+
+        void addJointAndBody(
+          JointType type,
+          const Vector3 & axis,
+          const FrameIndex & parentFrameId,
+          const SE3 & placement,
+          const std::string & joint_name,
+          const Inertia & Y,
+          const SE3 & frame_placement,
+          const std::string & body_name,
+          const VectorConstRef & min_effort,
+          const VectorConstRef & max_effort,
+          const VectorConstRef & min_velocity,
+          const VectorConstRef & max_velocity,
+          const VectorConstRef & min_config,
+          const VectorConstRef & max_config,
+          const VectorConstRef & config_limit_margin,
+          const VectorConstRef & min_dry_friction,
+          const VectorConstRef & max_dry_friction,
+          const VectorConstRef & damping,
+          const VectorConstRef & min_acceleration,
+          const VectorConstRef & max_acceleration,
+          const VectorConstRef & min_jerk,
+          const VectorConstRef & max_jerk,
+          const boost::optional<MimicInfo> & mimic_info = boost::none)
+        {
           JointIndex joint_id;
           const Frame & frame = model.frames[parentFrameId];
           switch (type)
@@ -236,7 +310,7 @@ namespace pinocchio
               frame.parentJoint, typename JointCollection::JointModelFreeFlyer(),
               frame.placement * placement, joint_name, min_effort, max_effort, min_velocity,
               max_velocity, min_config, max_config, config_limit_margin, min_dry_friction,
-              max_dry_friction, damping);
+              max_dry_friction, damping, min_acceleration, max_acceleration, min_jerk, max_jerk);
             break;
           case JointType::REVOLUTE:
             joint_id = addJoint<
@@ -245,7 +319,7 @@ namespace pinocchio
               typename JointCollection::JointModelRevoluteUnaligned>(
               axis, frame, placement, joint_name, min_effort, max_effort, min_velocity,
               max_velocity, min_config, max_config, config_limit_margin, min_dry_friction,
-              max_dry_friction, damping);
+              max_dry_friction, damping, min_acceleration, max_acceleration, min_jerk, max_jerk);
             break;
           case CONTINUOUS:
             joint_id = addJoint<
@@ -254,7 +328,7 @@ namespace pinocchio
               typename JointCollection::JointModelRevoluteUnboundedUnaligned>(
               axis, frame, placement, joint_name, min_effort, max_effort, min_velocity,
               max_velocity, min_config, max_config, config_limit_margin, min_dry_friction,
-              max_dry_friction, damping);
+              max_dry_friction, damping, min_acceleration, max_acceleration, min_jerk, max_jerk);
             break;
           case PRISMATIC:
             joint_id = addJoint<
@@ -263,21 +337,21 @@ namespace pinocchio
               typename JointCollection::JointModelPrismaticUnaligned>(
               axis, frame, placement, joint_name, min_effort, max_effort, min_velocity,
               max_velocity, min_config, max_config, config_limit_margin, min_dry_friction,
-              max_dry_friction, damping);
+              max_dry_friction, damping, min_acceleration, max_acceleration, min_jerk, max_jerk);
             break;
           case JointType::PLANAR:
             joint_id = model.addJoint(
               frame.parentJoint, typename JointCollection::JointModelPlanar(),
               frame.placement * placement, joint_name, min_effort, max_effort, min_velocity,
               max_velocity, min_config, max_config, config_limit_margin, min_dry_friction,
-              max_dry_friction, damping);
+              max_dry_friction, damping, min_acceleration, max_acceleration, min_jerk, max_jerk);
             break;
           case JointType::SPHERICAL:
             joint_id = model.addJoint(
               frame.parentJoint, typename JointCollection::JointModelSpherical(),
               frame.placement * placement, joint_name, min_effort, max_effort, min_velocity,
               max_velocity, min_config, max_config, config_limit_margin, min_dry_friction,
-              max_dry_friction, damping);
+              max_dry_friction, damping, min_acceleration, max_acceleration, min_jerk, max_jerk);
             break;
           case MIMIC:
             if (mimic_info)
@@ -290,7 +364,7 @@ namespace pinocchio
                   typename JointCollection::JointModelRevoluteUnaligned>(
                   frame, placement, joint_name, min_effort, max_effort, min_velocity, max_velocity,
                   min_config, max_config, config_limit_margin, min_dry_friction, max_dry_friction,
-                  damping, *mimic_info);
+                  damping, min_acceleration, max_acceleration, min_jerk, max_jerk, *mimic_info);
                 break;
               case JointType::PRISMATIC:
                 joint_id = addMimicJoint<
@@ -299,7 +373,7 @@ namespace pinocchio
                   typename JointCollection::JointModelPrismaticUnaligned>(
                   frame, placement, joint_name, min_effort, max_effort, min_velocity, max_velocity,
                   min_config, max_config, config_limit_margin, min_dry_friction, max_dry_friction,
-                  damping, *mimic_info);
+                  damping, min_acceleration, max_acceleration, min_jerk, max_jerk, *mimic_info);
                 break;
               case JointType::CONTINUOUS:
                 joint_id = addMimicJoint<
@@ -309,7 +383,7 @@ namespace pinocchio
                   typename JointCollection::JointModelRevoluteUnboundedUnaligned>(
                   frame, placement, joint_name, min_effort, max_effort, min_velocity, max_velocity,
                   min_config, max_config, config_limit_margin, min_dry_friction, max_dry_friction,
-                  damping, *mimic_info);
+                  damping, min_acceleration, max_acceleration, min_jerk, max_jerk, *mimic_info);
                 break;
               default:
                 PINOCCHIO_CHECK_INPUT_ARGUMENT(
@@ -488,6 +562,44 @@ namespace pinocchio
           const VectorConstRef & max_dry_friction,
           const VectorConstRef & damping)
         {
+
+          const Scalar inf = std::numeric_limits<Scalar>::infinity();
+
+          const Vector min_acceleration = Vector::Constant(min_velocity.size(), -inf);
+
+          const Vector max_acceleration = Vector::Constant(min_velocity.size(), inf);
+
+          const Vector min_jerk = Vector::Constant(min_velocity.size(), -inf);
+
+          const Vector max_jerk = Vector::Constant(min_velocity.size(), inf);
+
+          return addJoint<TypeX, TypeY, TypeZ, TypeUnaligned>(
+            axis, frame, placement, joint_name, min_effort, max_effort, min_velocity, max_velocity,
+            min_config, max_config, config_limit_margin, min_dry_friction, max_dry_friction,
+            damping, min_acceleration, max_acceleration, min_jerk, max_jerk);
+        }
+
+        template<typename TypeX, typename TypeY, typename TypeZ, typename TypeUnaligned>
+        JointIndex addJoint(
+          const Vector3 & axis,
+          const Frame & frame,
+          const SE3 & placement,
+          const std::string & joint_name,
+          const VectorConstRef & min_effort,
+          const VectorConstRef & max_effort,
+          const VectorConstRef & min_velocity,
+          const VectorConstRef & max_velocity,
+          const VectorConstRef & min_config,
+          const VectorConstRef & max_config,
+          const VectorConstRef & config_limit_margin,
+          const VectorConstRef & min_dry_friction,
+          const VectorConstRef & max_dry_friction,
+          const VectorConstRef & damping,
+          const VectorConstRef & min_acceleration,
+          const VectorConstRef & max_acceleration,
+          const VectorConstRef & min_jerk,
+          const VectorConstRef & max_jerk)
+        {
           CartesianAxis axisType = extractCartesianAxis(axis);
           switch (axisType)
           {
@@ -495,28 +607,32 @@ namespace pinocchio
             return model.addJoint(
               frame.parentJoint, TypeX(), frame.placement * placement, joint_name, min_effort,
               max_effort, min_velocity, max_velocity, min_config, max_config, config_limit_margin,
-              min_dry_friction, max_dry_friction, damping);
+              min_dry_friction, max_dry_friction, damping, min_acceleration, max_acceleration,
+              min_jerk, max_jerk);
             break;
 
           case AXIS_Y:
             return model.addJoint(
               frame.parentJoint, TypeY(), frame.placement * placement, joint_name, min_effort,
               max_effort, min_velocity, max_velocity, min_config, max_config, config_limit_margin,
-              min_dry_friction, max_dry_friction, damping);
+              min_dry_friction, max_dry_friction, damping, min_acceleration, max_acceleration,
+              min_jerk, max_jerk);
             break;
 
           case AXIS_Z:
             return model.addJoint(
               frame.parentJoint, TypeZ(), frame.placement * placement, joint_name, min_effort,
               max_effort, min_velocity, max_velocity, min_config, max_config, config_limit_margin,
-              min_dry_friction, max_dry_friction, damping);
+              min_dry_friction, max_dry_friction, damping, min_acceleration, max_acceleration,
+              min_jerk, max_jerk);
             break;
 
           case AXIS_UNALIGNED:
             return model.addJoint(
               frame.parentJoint, TypeUnaligned(axis.normalized()), frame.placement * placement,
               joint_name, min_effort, max_effort, min_velocity, max_velocity, min_config,
-              max_config, config_limit_margin, min_dry_friction, max_dry_friction, damping);
+              max_config, config_limit_margin, min_dry_friction, max_dry_friction, damping,
+              min_acceleration, max_acceleration, min_jerk, max_jerk);
             break;
           default:
             PINOCCHIO_CHECK_INPUT_ARGUMENT(false, "The axis type of the joint is of wrong type.");
@@ -541,6 +657,41 @@ namespace pinocchio
           const VectorConstRef & damping,
           const MimicInfo & mimic_info)
         {
+
+          const Scalar inf = std::numeric_limits<Scalar>::infinity();
+
+          const Vector min_acceleration = Vector::Constant(min_velocity.size(), -inf);
+          const Vector max_acceleration = Vector::Constant(min_velocity.size(), inf);
+          const Vector min_jerk = Vector::Constant(min_velocity.size(), -inf);
+          const Vector max_jerk = Vector::Constant(min_velocity.size(), inf);
+
+          return addMimicJoint<TypeX, TypeY, TypeZ, TypeUnaligned>(
+            frame, placement, joint_name, min_effort, max_effort, min_velocity, max_velocity,
+            min_config, max_config, config_limit_margin, min_dry_friction, max_dry_friction,
+            damping, min_acceleration, max_acceleration, min_jerk, max_jerk, mimic_info);
+        }
+
+        template<typename TypeX, typename TypeY, typename TypeZ, typename TypeUnaligned>
+        JointIndex addMimicJoint(
+          const Frame & frame,
+          const SE3 & placement,
+          const std::string & joint_name,
+          const VectorConstRef & min_effort,
+          const VectorConstRef & max_effort,
+          const VectorConstRef & min_velocity,
+          const VectorConstRef & max_velocity,
+          const VectorConstRef & min_config,
+          const VectorConstRef & max_config,
+          const VectorConstRef & config_limit_margin,
+          const VectorConstRef & min_dry_friction,
+          const VectorConstRef & max_dry_friction,
+          const VectorConstRef & damping,
+          const VectorConstRef & min_acceleration,
+          const VectorConstRef & max_acceleration,
+          const VectorConstRef & min_jerk,
+          const VectorConstRef & max_jerk,
+          const MimicInfo & mimic_info)
+        {
           if (!model.existJointName(mimic_info.mimicked_name))
             PINOCCHIO_CHECK_INPUT_ARGUMENT(
               false, "The parent joint of the mimic joint is not in the kinematic tree");
@@ -557,7 +708,7 @@ namespace pinocchio
                 TypeX(), mimicked_joint, mimic_info.multiplier, mimic_info.offset),
               frame.placement * placement, joint_name, min_effort, max_effort, min_velocity,
               max_velocity, min_config, max_config, config_limit_margin, min_dry_friction,
-              max_dry_friction, damping);
+              max_dry_friction, damping, min_acceleration, max_acceleration, min_jerk, max_jerk);
             break;
           case AXIS_Y:
             return model.addJoint(
@@ -566,7 +717,7 @@ namespace pinocchio
                 TypeY(), mimicked_joint, mimic_info.multiplier, mimic_info.offset),
               frame.placement * placement, joint_name, min_effort, max_effort, min_velocity,
               max_velocity, min_config, max_config, config_limit_margin, min_dry_friction,
-              max_dry_friction, damping);
+              max_dry_friction, damping, min_acceleration, max_acceleration, min_jerk, max_jerk);
             break;
 
           case AXIS_Z:
@@ -576,7 +727,7 @@ namespace pinocchio
                 TypeZ(), mimicked_joint, mimic_info.multiplier, mimic_info.offset),
               frame.placement * placement, joint_name, min_effort, max_effort, min_velocity,
               max_velocity, min_config, max_config, config_limit_margin, min_dry_friction,
-              max_dry_friction, damping);
+              max_dry_friction, damping, min_acceleration, max_acceleration, min_jerk, max_jerk);
             break;
 
           case AXIS_UNALIGNED:
@@ -587,7 +738,7 @@ namespace pinocchio
                 mimic_info.offset),
               frame.placement * placement, joint_name, min_effort, max_effort, min_velocity,
               max_velocity, min_config, max_config, config_limit_margin, min_dry_friction,
-              max_dry_friction, damping);
+              max_dry_friction, damping, min_acceleration, max_acceleration, min_jerk, max_jerk);
             break;
 
           default:
